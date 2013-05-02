@@ -1,4 +1,4 @@
-import functools as ft
+import functools as fun
 import numpy as np
 import scipy.ndimage as nd
 from skimage import feature, color, io as imio, img_as_float
@@ -6,12 +6,14 @@ from skimage import feature, color, io as imio, img_as_float
 def lab_hist(rgb_image, **kwargs):
     return np.histogram(color.rgb2lab(rgb_image), **kwargs)
 
+
 full_feature_list = \
-    [ft.partial(np.histogram, bins=16, range=(0.0, 1.0)),
-    ft.partial(lab_hist, bins=16, range=(0.0, 1.0)),
+    [fun.partial(np.histogram, bins=16, range=(0.0, 1.0)),
+    fun.partial(lab_hist, bins=16, range=(0.0, 1.0)),
     feature.hog
     ]
     # TO-DO: add segmentation features
+
 
 def quadrant_stitch(nw, ne, sw, se):
     """Stitch four seamless quadrant images into a single big image.
