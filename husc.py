@@ -1,7 +1,9 @@
 import functools as fun
+import itertools as it
 import numpy as np
 import scipy.ndimage as nd
-from skimage import feature, color, io as imio, img_as_float
+from skimage import feature, color, io as imio, img_as_float, \
+    morphology as skmorph, filter as imfilter
 
 def lab_hist(rgb_image, **kwargs):
     return np.histogram(color.rgb2lab(rgb_image), **kwargs)
@@ -48,16 +50,46 @@ def quadrant_stitch(nw, ne, sw, se):
     return stitched
 
 
+def find_background_illumination(im_iter, radius=25, quantile=0.05):
+    """Use a set of related images to find uneven background illumination.
+
+    Parameters
+    ----------
+    im_iter : iterable of np.ndarray, uint8 or uint16 type, shape (M, N)
+        An iterable of grayscale images. skimage's rank filter will be used on
+        the images, so the max value is limited to 4095.
+    radius : int, optional
+        The radius of the structuring element used to find background. 
+        default: 51
+    quantile : float in [0, 1], optional
+        The desired quantile to find background. default: 0.05
+
+    Returns
+    -------
+    illum : np.ndarray, float, shape (M, N)
+        The estimated illumination over the image field.
+    """
+    selem = skmorph.disk(radius)
+    qfilter = fun.partial(imfilter.rank.percentile, selem=selem, p0=quantile)
+    bg_iter = it.imap(qfilter, im_iter)
+    im0 = bg_iter.next()
+    accumulator = np.zeros(im0.shape, float)
+    illum = reduce(lambda x, y: x + y, bg_iter, accumulator)
+    return illum
+
+
 def find_cells(p_background, background_threshold=0.9, min_cell_size=100,
                              watershed_merge_threshold=0):
     """Segment out cells in an nD image of the probability of background."""
     background = find_background(p_background, background_threshold)
     cells = nd.label(True - background)[0]
-    cells = morpho.remove_small_connected_components(cells, min_cell_size, True)
+    cells = skmorph.remove_small_connected_components(cells, 
+                                                      min_cell_size, True)
     distances = nd.distance_transform_edt(cells)
     cells = morpho.watershed(distances.max() - distances,
             mask=cells.astype(bool))
     return cells
+
 
 def find_background(p, threshold=0.9):
     """Obtain the largest connected component of points above threshold."""
