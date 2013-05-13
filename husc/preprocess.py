@@ -1,5 +1,6 @@
 import functools as fun
 import itertools as it
+import re
 import numpy as np
 import scipy.ndimage as nd
 from skimage import feature, color, io as imio, img_as_float, \
@@ -15,6 +16,59 @@ full_feature_list = \
     feature.hog
     ]
     # TO-DO: add segmentation features
+
+def group_by_quadrant(fns, re_string='(.*)_(s[1-4])_(w[1-3]).TIF',
+                      re_quadrant_group=1):
+    """Group filenames by quadrant to prepare for stitching.
+
+    Parameters
+    ----------
+    fns : list of string
+        The filenames to be processed.
+    re_string : string, optional
+        The regular expression to match the filename.
+    re_quadrant_group : int, optional
+        The group from the re.match object that will contain quadrant info.
+
+    Returns
+    -------
+    grouped : dict mapping tuple of string to tuple of string
+        The filenames, grouped into tuples containing four quadrants of the
+        same image. The keys are all the regular expression match groups
+        *other* than the quadrant group, useful for composing a filename for
+        the stitched images.
+
+    Examples
+    --------
+    >>> fn_numbering = it.product(range(2), range(1, 5))
+    >>> fns = ['image_%i_s%i_w1.TIF' % (i, j) for i, j in fn_numbering]
+    >>> fns
+    ['image_0_s1_w1.TIF',
+     'image_0_s2_w1.TIF',
+     'image_0_s3_w1.TIF',
+     'image_0_s4_w1.TIF',
+     'image_1_s1_w1.TIF',
+     'image_1_s2_w1.TIF',
+     'image_1_s3_w1.TIF',
+     'image_1_s4_w1.TIF']
+    >>> group_by_quadrant(fns)
+    {('image_0', 'w1'): ['image_0_s1_w1.TIF',
+      'image_0_s2_w1.TIF',
+      'image_0_s3_w1.TIF',
+      'image_0_s4_w1.TIF'],
+     ('image_1', 'w1'): ['image_1_s1_w1.TIF',
+      'image_1_s2_w1.TIF',
+      'image_1_s3_w1.TIF',
+      'image_1_s4_w1.TIF']}
+    """
+    re_match = fun.partial(re.match, re_string)
+    matches = map(lambda x: x.groups(), map(re_match, fns))
+    keys = map(tuple, [[m[i] for i in range(len(m)) if i != re_quadrant_group]
+                                                        for m in matches])
+    grouped = {}
+    for k, fn in zip(keys, fns):
+        grouped.setdefault(k, []).append(fn)
+    return grouped
 
 
 def quadrant_stitch(nw, ne, sw, se):
