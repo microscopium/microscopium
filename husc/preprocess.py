@@ -17,6 +17,32 @@ full_feature_list = \
     ]
     # TO-DO: add segmentation features
 
+
+def run_quadrant_stitch(fns, re_string='(.*)_(s[1-4])_(w[1-3]).TIF',
+                        re_quadrant_group=1):
+    """Read images, stitched them, and write out to same directory.
+
+    Parameters
+    ----------
+    fns : list of string
+        The filenames to be processed.
+    re_string : string, optional
+        The regular expression to match the filename.
+    re_quadrant_group : int, optional
+        The group from the re.match object that will contain quadrant info.
+
+    Returns
+    -------
+    None
+    """
+    qd = group_by_quadrant(fns, re_string, re_quadrant_group)
+    for fn_pattern, fns in qd.items():
+        new_filename = '_'.join(fn_pattern)[:-4] + '_stitched.tif'
+        ims = map(imio.imread, sorted(fns))
+        im = quadrant_stitch(*ims)
+        imio.imsave(new_filename, im)
+
+
 def group_by_quadrant(fns, re_string='(.*)_(s[1-4])_(w[1-3]).TIF',
                       re_quadrant_group=1):
     """Group filenames by quadrant to prepare for stitching.
@@ -113,7 +139,7 @@ def find_background_illumination(im_iter, radius=25, quantile=0.05):
         An iterable of grayscale images. skimage's rank filter will be used on
         the images, so the max value is limited to 4095.
     radius : int, optional
-        The radius of the structuring element used to find background. 
+        The radius of the structuring element used to find background.
         default: 51
     quantile : float in [0, 1], optional
         The desired quantile to find background. default: 0.05
@@ -137,7 +163,7 @@ def find_cells(p_background, background_threshold=0.9, min_cell_size=100,
     """Segment out cells in an nD image of the probability of background."""
     background = find_background(p_background, background_threshold)
     cells = nd.label(True - background)[0]
-    cells = skmorph.remove_small_connected_components(cells, 
+    cells = skmorph.remove_small_connected_components(cells,
                                                       min_cell_size, True)
     distances = nd.distance_transform_edt(cells)
     cells = morpho.watershed(distances.max() - distances,
