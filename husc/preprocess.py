@@ -4,7 +4,8 @@ import re
 import numpy as np
 import scipy.ndimage as nd
 from skimage import feature, color, io as imio, img_as_float, \
-    morphology as skmorph, filter as imfilter
+    morphology as skmorph
+import skimage.filter.rank as rank
 
 def lab_hist(rgb_image, **kwargs):
     return np.histogram(color.rgb2lab(rgb_image), **kwargs)
@@ -37,7 +38,7 @@ def run_quadrant_stitch(fns, re_string='(.*)_(s[1-4])_(w[1-3]).TIF',
     """
     qd = group_by_quadrant(fns, re_string, re_quadrant_group)
     for fn_pattern, fns in qd.items():
-        new_filename = '_'.join(fn_pattern)[:-4] + '_stitched.tif'
+        new_filename = '_'.join(fn_pattern) + '_stitched.tif'
         ims = map(imio.imread, sorted(fns))
         im = quadrant_stitch(*ims)
         imio.imsave(new_filename, im)
@@ -150,7 +151,7 @@ def find_background_illumination(im_iter, radius=25, quantile=0.05):
         The estimated illumination over the image field.
     """
     selem = skmorph.disk(radius)
-    qfilter = fun.partial(imfilter.rank.percentile, selem=selem, p0=quantile)
+    qfilter = fun.partial(rank.percentile, selem=selem, p0=quantile)
     bg_iter = it.imap(qfilter, im_iter)
     im0 = bg_iter.next()
     accumulator = np.zeros(im0.shape, float)
