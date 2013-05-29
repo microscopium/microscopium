@@ -91,7 +91,10 @@ def group_by_quadrant(fns, re_string='(.*)_(s[1-4])_(w[1-3]).TIF',
       'image_1_s4_w1.TIF']}
     """
     re_match = fun.partial(re.match, re_string)
-    matches = map(lambda x: x.groups(), map(re_match, fns))
+    match_objs = map(re_match, fns)
+    fns = [fn for fn, match in zip(fns, match_objs) if match is not None]
+    match_objs = filter(lambda x: x is not None, match_objs)
+    matches = map(lambda x: x.groups(), match_objs)
     keys = map(tuple, [[m[i] for i in range(len(m)) if i != re_quadrant_group]
                                                         for m in matches])
     grouped = {}
