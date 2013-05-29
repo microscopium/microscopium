@@ -169,29 +169,6 @@ def find_background_illumination(im_iter, radius=51, quantile=0.05):
     return illum
 
 
-def find_cells(p_background, background_threshold=0.9, min_cell_size=100,
-                             watershed_merge_threshold=0):
-    """Segment out cells in an nD image of the probability of background."""
-    background = find_background(p_background, background_threshold)
-    cells = nd.label(True - background)[0]
-    cells = skmorph.remove_small_connected_components(cells,
-                                                      min_cell_size, True)
-    distances = nd.distance_transform_edt(cells)
-    cells = morpho.watershed(distances.max() - distances,
-            mask=cells.astype(bool))
-    return cells
-
-
-def find_background(p, threshold=0.9):
-    """Obtain the largest connected component of points above threshold."""
-    b = p > threshold
-    bccs = nd.label(b)[0]
-    real_cc = np.argmax(np.bincount(bccs.ravel()))
-    b[bccs != real_cc] = False
-    return b
-
-def expand_cell_centroids(centroids, p_background):
-    pass
 
 def image_feature_vector(im, feature_list=None):
     if type(im) == str:
