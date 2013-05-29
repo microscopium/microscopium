@@ -7,6 +7,8 @@ from skimage import feature, color, io as imio, img_as_float, \
     morphology as skmorph
 import skimage.filter.rank as rank
 
+from .io import imwrite
+
 def lab_hist(rgb_image, **kwargs):
     return np.histogram(color.rgb2lab(rgb_image), **kwargs)
 
@@ -41,7 +43,7 @@ def run_quadrant_stitch(fns, re_string='(.*)_(s[1-4])_(w[1-3]).TIF',
         new_filename = '_'.join(fn_pattern) + '_stitched.tif'
         ims = map(imio.imread, sorted(fns))
         im = quadrant_stitch(*ims)
-        imio.imsave(new_filename, im)
+        imwrite(im, new_filename)
 
 
 def group_by_quadrant(fns, re_string='(.*)_(s[1-4])_(w[1-3]).TIF',
