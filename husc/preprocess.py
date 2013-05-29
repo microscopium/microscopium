@@ -136,7 +136,7 @@ def quadrant_stitch(nw, ne, sw, se):
     return stitched
 
 
-def find_background_illumination(im_iter, radius=25, quantile=0.05):
+def find_background_illumination(im_iter, radius=51, quantile=0.05):
     """Use a set of related images to find uneven background illumination.
 
     Parameters
