@@ -1,2 +1,6 @@
+Name: husc
+Author: Juan Nunez-Iglesias <juan.n@unimelb.edu.au>
+Summary: HCS Unsupervised Sample Clustering
+
 Library:
     Packages: husc

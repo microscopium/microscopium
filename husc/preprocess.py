@@ -9,6 +9,7 @@ import skimage.filter.rank as rank
 
 from .io import imwrite
 
+
 def lab_hist(rgb_image, **kwargs):
     return np.histogram(color.rgb2lab(rgb_image), **kwargs)
 
@@ -44,6 +45,63 @@ def run_quadrant_stitch(fns, re_string='(.*)_(s[1-4])_(w[1-3]).TIF',
         ims = map(imio.imread, sorted(fns))
         im = quadrant_stitch(*ims)
         imwrite(im, new_filename)
+
+
+def group_by_channel(fns, re_string='(.*)_(s[1-4])_(w[1-3]).TIF',
+                      re_channel_group=2):
+    """Group filenames by channel to prepare for illumination estimation.
+
+    Parameters
+    ----------
+    fns : list of string
+        The filenames to be processed.
+    re_string : string, optional
+        The regular expression to match the filename.
+    re_quadrant_group : int, optional
+        The group from the re.match object that will contain channel info.
+
+    Returns
+    -------
+    grouped : dict mapping tuple of string to tuple of string
+        The filenames, grouped into tuples containing four quadrants of the
+        same image. The keys are all the regular expression match groups
+        *other* than the quadrant group, useful for composing a filename for
+        the stitched images.
+
+    Examples
+    --------
+    >>> fn_numbering = it.product(range(2), range(1, 5))
+    >>> fns = ['image_%i_s1_w%i.TIF' % (i, j) for i, j in fn_numbering]
+    >>> fns
+    ['image_0_s1_w1.TIF',
+     'image_0_s1_w2.TIF',
+     'image_0_s1_w3.TIF',
+     'image_0_s1_w4.TIF',
+     'image_1_s1_w1.TIF',
+     'image_1_s1_w2.TIF',
+     'image_1_s1_w3.TIF',
+     'image_1_s1_w4.TIF']
+    >>> group_by_quadrant(fns)
+    {('image_0', 's1'): ['image_0_s1_w1.TIF',
+      'image_0_s1_w2.TIF',
+      'image_0_s1_w3.TIF',
+      'image_0_s1_w4.TIF'],
+     ('image_1', 's1'): ['image_1_s1_w1.TIF',
+      'image_1_s1_w2.TIF',
+      'image_1_s1_w3.TIF',
+      'image_1_s1_w4.TIF']}
+    """
+    re_match = fun.partial(re.match, re_string)
+    match_objs = map(re_match, fns)
+    fns = [fn for fn, match in zip(fns, match_objs) if match is not None]
+    match_objs = filter(lambda x: x is not None, match_objs)
+    matches = map(lambda x: x.groups(), match_objs)
+    keys = map(tuple, [[m[i] for i in range(len(m)) if i != re_channel_group]
+                       for m in matches])
+    grouped = {}
+    for k, fn in zip(keys, fns):
+        grouped.setdefault(k, []).append(fn)
+    return grouped
 
 
 def group_by_quadrant(fns, re_string='(.*)_(s[1-4])_(w[1-3]).TIF',
