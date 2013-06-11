@@ -37,14 +37,18 @@ def run_quadrant_stitch(fns, re_string='(.*)_(s[1-4])_(w[1-3]).TIF',
 
     Returns
     -------
-    None
+    fns_out : list of string
+        The output filenames
     """
     qd = group_by_quadrant(fns, re_string, re_quadrant_group)
+    fns_out = []
     for fn_pattern, fns in qd.items():
         new_filename = '_'.join(fn_pattern) + '_stitched.tif'
         ims = map(imio.imread, sorted(fns))
         im = quadrant_stitch(*ims)
         imwrite(im, new_filename)
+        fns_out.append(new_filename)
+    return fns_out
 
 
 def group_by_channel(fns, re_string='(.*)_(s[1-4])_(w[1-3]).TIF',
