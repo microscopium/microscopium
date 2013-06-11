@@ -6,6 +6,6 @@ Library:
     Packages: husc
 
 Executable: prehusc-serial
-    Module: scripts/serial-preprocess
+    Module: husc.scripts.serial_preprocess
     Function: main
 
