@@ -51,9 +51,11 @@ def run_quadrant_stitch(fns, re_string='(.*)_(s[1-4])_(w[1-3]).TIF',
     return fns_out
 
 
-def group_by_channel(fns, re_string='(.*)_(s[1-4])_(w[1-3]).TIF',
-                      re_channel_group=2):
+def group_by_channel(fns, re_string='(.*)_(w[1-3])_stitched.tif',
+                      re_channel_group=1):
     """Group filenames by channel to prepare for illumination estimation.
+
+    Intended to be run *after* quadrant stitching.
 
     Parameters
     ----------
@@ -66,34 +68,26 @@ def group_by_channel(fns, re_string='(.*)_(s[1-4])_(w[1-3]).TIF',
 
     Returns
     -------
-    grouped : dict mapping tuple of string to tuple of string
-        The filenames, grouped into tuples containing four quadrants of the
-        same image. The keys are all the regular expression match groups
-        *other* than the quadrant group, useful for composing a filename for
-        the stitched images.
+    grouped : dict mapping tuple of string to list of string
+        The filenames, grouped into lists containing all images of the same
+        channel. The keys are the channel regular expression group, useful for
+        composing a filename for the illumination image.
 
     Examples
     --------
     >>> fn_numbering = it.product(range(2), range(1, 5))
     >>> fns = ['image_%i_s1_w%i.TIF' % (i, j) for i, j in fn_numbering]
     >>> fns
-    ['image_0_s1_w1.TIF',
-     'image_0_s1_w2.TIF',
-     'image_0_s1_w3.TIF',
-     'image_0_s1_w4.TIF',
-     'image_1_s1_w1.TIF',
-     'image_1_s1_w2.TIF',
-     'image_1_s1_w3.TIF',
-     'image_1_s1_w4.TIF']
-    >>> group_by_quadrant(fns)
-    {('image_0', 's1'): ['image_0_s1_w1.TIF',
-      'image_0_s1_w2.TIF',
-      'image_0_s1_w3.TIF',
-      'image_0_s1_w4.TIF'],
-     ('image_1', 's1'): ['image_1_s1_w1.TIF',
-      'image_1_s1_w2.TIF',
-      'image_1_s1_w3.TIF',
-      'image_1_s1_w4.TIF']}
+    ['image_0_w1_stitched.tif',
+     'image_0_w2_stitched.tif',
+     'image_0_w3_stitched.tif',
+     'image_1_w1_stitched.tif',
+     'image_1_w2_stitched.tif',
+     'image_1_w3_stitched.tif']
+    >>> group_by_channel(fns)
+    {('w1'): ['image_0_w1_stitched.tif', 'image_1_w1_stitched.tif'],
+     ('w2'): ['image_0_w2_stitched.tif', 'image_1_w2_stitched.tif'],
+     ('w3'): ['image_0_w3_stitched.tif', 'image_1_w3_stitched.tif']}
     """
     re_match = fun.partial(re.match, re_string)
     match_objs = map(re_match, fns)
