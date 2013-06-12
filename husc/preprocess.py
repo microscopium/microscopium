@@ -2,9 +2,9 @@ import functools as fun
 import itertools as it
 import re
 import numpy as np
-import scipy.ndimage as nd
+from scipy.stats.mstats import mquantiles as quantiles
 from skimage import feature, color, io as imio, img_as_float, \
-    morphology as skmorph
+    morphology as skmorph, img_as_ubyte
 import skimage.filter.rank as rank
 
 from .io import imwrite
@@ -20,6 +20,31 @@ full_feature_list = \
     feature.hog
     ]
     # TO-DO: add segmentation features
+
+
+def stretchlim(im, bottom=0.01, top=0.99):
+    """Stretch the image so new image range corresponds to given quantiles.
+
+    Parameters
+    ----------
+    im : np.ndarray
+        The input image.
+    bottom : float, optional
+        The lower quantile.
+    top : float
+        The upper quantile.
+
+    Returns
+    -------
+    out : np.ndarray of float
+        The stretched image.
+    """
+    im = im.astype(float)
+    q0, q1 = quantiles(im, [bottom, top])
+    out = (im - q0) / (q1 - q0)
+    out[out < 0] = 0
+    out[out > 1] = 1
+    return out
 
 
 def run_quadrant_stitch(fns, re_string='(.*)_(s[1-4])_(w[1-3]).TIF',
@@ -94,8 +119,7 @@ def group_by_channel(fns, re_string='(.*)_(w[1-3])_stitched.tif',
     fns = [fn for fn, match in zip(fns, match_objs) if match is not None]
     match_objs = filter(lambda x: x is not None, match_objs)
     matches = map(lambda x: x.groups(), match_objs)
-    keys = map(tuple, [[m[i] for i in range(len(m)) if i != re_channel_group]
-                       for m in matches])
+    keys = [m[re_channel_group] for m in matches]
     grouped = {}
     for k, fn in zip(keys, fns):
         grouped.setdefault(k, []).append(fn)
@@ -211,6 +235,7 @@ def find_background_illumination(im_iter, radius=51, quantile=0.05):
     illum : np.ndarray, float, shape (M, N)
         The estimated illumination over the image field.
     """
+    im_iter = (img_as_ubyte(im) for im in im_iter)
     selem = skmorph.disk(radius)
     qfilter = fun.partial(rank.percentile, selem=selem, p0=quantile)
     bg_iter = it.imap(qfilter, im_iter)
