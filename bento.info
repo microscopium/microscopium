@@ -3,7 +3,7 @@ Author: Juan Nunez-Iglesias <juan.n@unimelb.edu.au>
 Summary: HCS Unsupervised Sample Clustering
 
 Library:
-    Packages: husc
+    Packages: husc, husc.scripts
 
 Executable: prehusc-serial
     Module: husc.scripts.serial_preprocess
