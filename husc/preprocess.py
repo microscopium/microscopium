@@ -243,7 +243,7 @@ def find_background_illumination(im_iter, radius=51, quantile=0.05):
     accumulator = np.zeros(im0.shape, float)
     bg_iter = it.chain([im0], bg_iter)
     counter = it.count()
-    illum = reduce(lambda x, y: x[0] + y[0],
+    illum = reduce(lambda x, y: x + y[0],
                    it.izip(bg_iter, counter), accumulator)
     n_images = counter.next()
     illum /= n_images
