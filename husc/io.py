@@ -20,6 +20,8 @@ def imwrite(ar, fn, bitdepth=None):
     None : None
         No value is returned.
     """
+    if type(fn) == np.ndarray and type(ar) == str:
+        ar, fn = fn, ar
     fn = os.path.expanduser(fn)
     if 0 <= ar.max() <= 1 and ar.dtype == np.double:
         bitdepth = 16 if None else bitdepth
@@ -42,3 +44,5 @@ def imwrite(ar, fn, bitdepth=None):
     im.fromstring(ar.tostring(), 'raw', mode)
     im.save(fn)
 
+
+imsave = imwrite
