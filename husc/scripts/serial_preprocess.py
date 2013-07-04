@@ -16,6 +16,11 @@ parser.add_argument('-o', '--output-8bit', action='store_true', default=False,
                     help="save 8 bit stitch images.")
 parser.add_argument('-s', '--no-stitch', action='store_false', dest='stitch',
                     default=True, help="Assume stitching already done.")
+parser.add_argument('-d', '--do-not-divide', action='store_false',
+                    dest='divide', default=True,
+                    help="Subtract illumination instead of dividing.")
+parser.add_argument('-N', '--pre-normalise', action='store_true',
+                    help="Normalise images to [0, 1] prior to illumation.")
 
 
 def main():
@@ -37,13 +42,18 @@ def main():
                    for fn in channel_fns)
         illum = preprocess.find_background_illumination(im_iter, args.radius)
         print "illumination range:", illum.min(), illum.max()
-        illum_fn = '_'.join(channel_id) + '_illum.tif'
+        illum_fn = channel_id + '_illum.tif'
         illum_to_save = img_as_ubyte(preprocess.stretchlim(illum))
         io.imsave(illum_fn, illum_to_save)
         for fn in channel_fns:
             im = mh.imread(fn)[100:-100, 250:-300]
-            im = im.astype(float) / illum
-            im = preprocess.stretchlim(im)
+            if args.pre_normalise:
+                im = preprocess.stretchlim(im, 0.001, 0.999)
+            if args.divide:
+                im = im.astype(float) / illum
+            else:
+                im = im.astype(float) - illum
+            im = preprocess.stretchlim(im, 0.001, 0.999)
             im = img_as_ubyte(im)
             fout = fn[:-4] + '_illum.tif'
             io.imsave(fout, im)

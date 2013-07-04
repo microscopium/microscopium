@@ -19,6 +19,10 @@ def imwrite(ar, fn, bitdepth=None):
     -------
     None : None
         No value is returned.
+
+    Notes
+    -----
+    The syntax `imwrite(fn, ar)` is also supported.
     """
     if type(fn) == np.ndarray and type(ar) == str:
         ar, fn = fn, ar
