@@ -1,2 +1,2 @@
-__all__ = ['io', 'preprocess', 'scripts']
+__all__ = ['io', 'preprocess', 'features', 'scripts']
 

@@ -5,7 +5,7 @@ subpar = parser.add_subparsers()
 
 stitch = subpar.add_parser('stitch', 
                             help="Stitch four quadrants into one image.")
-stitch.add_argument('quadrant_image', nargs=4,
+stitch.add_argument('quadrant_image', nargs=4, metavar='IM',
                      help="The images for each quadrant in order: NW, NE, " +
                            "SW, SE.")
 stitch.add_argument('output_image',
