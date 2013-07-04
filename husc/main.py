@@ -6,7 +6,7 @@ import sys
 import argparse
 
 # dependencies
-from skimage import io as skimio
+import mahotas as mh
 
 # local imports
 from . import preprocess as pre
@@ -75,13 +75,13 @@ def run_illum(args):
     -------
     None
     """
-    ims = (skimio.imread(fn) for fn in args.images)
+    ims = (mh.imread(fn) for fn in args.images)
     il = pre.find_background_illumination(ims, args.radius, args.quantile)
     if args.save_illumination is not None:
         io.imsave(il)
     base_fns = (os.path.splitext(fn)[0] for fn in args.images)
     ims_out = (fn + args.output_suffix for fn in base_fns)
-    ims = (skimio.imread(fn) for fn in args.images)
+    ims = (mh.imread(fn) for fn in args.images)
     for im, fout in zip(ims, ims_out):
         pre.correct_image_illumination(im, il, True)
         io.imsave(im, fout)
