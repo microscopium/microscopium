@@ -85,7 +85,7 @@ def run_illum(args):
     if args.verbose:
         print 'illumination field:', type(il), il.dtype, il.min(), il.max()
     if args.save_illumination is not None:
-        io.imsave(il, args.save_illumination)
+        io.imsave(args.save_illumination, il)
     base_fns = (os.path.splitext(fn)[0] for fn in args.images)
     ims_out = (fn + args.output_suffix for fn in base_fns)
     ims = (mh.imread(fn) for fn in args.images)
