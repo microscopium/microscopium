@@ -5,7 +5,7 @@ Summary: HCS Unsupervised Sample Clustering
 Library:
     Packages: husc, husc.scripts
 
-Executable: prehusc-serial
-    Module: husc.scripts.serial_preprocess
+Executable: husc
+    Module: husc.main
     Function: main
 
