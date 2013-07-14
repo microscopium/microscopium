@@ -27,17 +27,16 @@ def imwrite(ar, fn, bitdepth=None):
     if type(fn) == np.ndarray and type(ar) == str:
         ar, fn = fn, ar
     fn = os.path.expanduser(fn)
-    ar = np.round(ar)
     if 0 <= ar.max() <= 1 and ar.dtype == np.double:
         bitdepth = 16 if bitdepth is None else bitdepth
         imdtype = np.uint16 if bitdepth == 16 else np.uint8
         ar = ((2**bitdepth-1)*ar).astype(imdtype)
-    if 1 < ar.max() < 256 and bitdepth == None or bitdepth == 8:
+    if 1 < ar.max() < 256 and (bitdepth == None or bitdepth == 8):
         mode = 'L'
         mode_base = 'L'
         ar = ar.astype(np.uint8)
-    elif 256 <= np.max(ar) < 2**16 and bitdepth == None or \
-                                                bitdepth == 16:
+    elif 256 <= np.max(ar) < 2**16 and (bitdepth == None or \
+                                                bitdepth == 16):
         mode = 'I;16'
         mode_base = 'I'
         ar = ar.astype(np.uint16)
