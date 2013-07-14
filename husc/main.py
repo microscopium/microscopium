@@ -31,10 +31,13 @@ illum.add_argument('images', nargs='+',
 illum.add_argument('-o', '--output-suffix',
                    default='.illum.tif', metavar='SUFFIX',
                    help="What suffix to attach to the corrected images.")
-illum.add_argument('-q', '--quantile', metavar='[0.0-1.0]', default=0.05,
+illum.add_argument('-q', '--quantile', metavar='[0.0-1.0]', type=float, 
+                   default=0.05,
                    help='Use this quantile to determine illumination.')
-illum.add_argument('-r', '--radius', metavar='INT', default=51,
+illum.add_argument('-r', '--radius', metavar='INT', type=int, default=51,
                    help='Radius in which to find quantile.')
+illum.add_argument('-s', '--save-illumination', metavar='FN',
+                   help='Save the illumination field to a file.')
 
 
 def get_command(argv):
