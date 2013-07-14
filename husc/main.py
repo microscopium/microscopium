@@ -7,10 +7,10 @@ import argparse
 
 # dependencies
 import mahotas as mh
+from skimage import io
 
 # local imports
 from . import preprocess as pre
-from . import io
 
 
 parser = argparse.ArgumentParser(description="Run the HUSC functions.")
@@ -38,6 +38,8 @@ illum.add_argument('-r', '--radius', metavar='INT', type=int, default=51,
                    help='Radius in which to find quantile.')
 illum.add_argument('-s', '--save-illumination', metavar='FN',
                    help='Save the illumination field to a file.')
+illum.add_argument('-v', '--verbose', action='store_true',
+                   help='Print runtime information to stdout.')
 
 
 def get_command(argv):
@@ -80,14 +82,16 @@ def run_illum(args):
     """
     ims = (mh.imread(fn) for fn in args.images)
     il = pre.find_background_illumination(ims, args.radius, args.quantile)
+    if args.verbose:
+        print 'illumination field:', type(il), il.dtype, il.min(), il.max()
     if args.save_illumination is not None:
         io.imsave(il, args.save_illumination)
     base_fns = (os.path.splitext(fn)[0] for fn in args.images)
     ims_out = (fn + args.output_suffix for fn in base_fns)
     ims = (mh.imread(fn) for fn in args.images)
     for im, fout in zip(ims, ims_out):
-        pre.correct_image_illumination(im, il, True)
-        io.imsave(im, fout)
+        im = pre.correct_image_illumination(im, il)
+        io.imsave(fout, im)
 
 
 if __name__ == '__main__':
