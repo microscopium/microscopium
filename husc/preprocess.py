@@ -250,7 +250,7 @@ def find_background_illumination(im_iter, radius=51, quantile=0.05):
     return illum
 
 
-def correct_image_illumination(im, illum, in_place=False):
+def correct_image_illumination(im, illum):
     """Divide input image pointwise by the illumination field.
 
     Parameters
@@ -259,19 +259,18 @@ def correct_image_illumination(im, illum, in_place=False):
         The input image.
     illum : np.ndarray of float, same shape as `im`
         The illumination field.
-    in_place : bool, optional
-        Perform the correction in the input array, without making a copy.
 
     Returns
     -------
     imc : np.ndarray of float, same shape as `im`
         The corrected image.
     """
-    if in_place:
-        imc = im
+    if im.dtype != np.float:
+        imc = img_as_float(im)
     else:
         imc = im.copy()
     imc /= illum
+    imc = stretchlim(imc, 0.001, 0.999)
     return imc
 
 
