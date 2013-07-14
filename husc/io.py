@@ -29,7 +29,7 @@ def imwrite(ar, fn, bitdepth=None):
     fn = os.path.expanduser(fn)
     ar = np.round(ar)
     if 0 <= ar.max() <= 1 and ar.dtype == np.double:
-        bitdepth = 16 if None else bitdepth
+        bitdepth = 16 if bitdepth is None else bitdepth
         imdtype = np.uint16 if bitdepth == 16 else np.uint8
         ar = ((2**bitdepth-1)*ar).astype(imdtype)
     if 1 < ar.max() < 256 and bitdepth == None or bitdepth == 8:
