@@ -27,6 +27,7 @@ def imwrite(ar, fn, bitdepth=None):
     if type(fn) == np.ndarray and type(ar) == str:
         ar, fn = fn, ar
     fn = os.path.expanduser(fn)
+    ar = np.round(ar)
     if 0 <= ar.max() <= 1 and ar.dtype == np.double:
         bitdepth = 16 if None else bitdepth
         imdtype = np.uint16 if bitdepth == 16 else np.uint8
