@@ -71,6 +71,42 @@ def object_features(bin_im, im, erode=2):
     return f
 
 
+def percent_positive(bin_im, positive_im, erode=2, overlap_thresh=0.9):
+    """Compute fraction of objects in bin_im overlapping positive_im.
+
+    The purpose of this function is to compute the fraction of nuclei
+    that express a particular transcription factor. By providing the
+    thresholded DAPI channel as `bin_im` and the thresholded TF channel
+    as `positive_im`, this fraction can be computed.
+
+    Parameters
+    ----------
+    bin_im : 2D array of bool
+        The image of objects being tested.
+    positive_im : 2D array of bool
+        The image of positive objects.
+    erode : int, optional
+        Radius of structuring element used to smooth input images.
+    overlap_thresh : float, optional
+        The minimum amount of overlap between an object in `bin_im` and
+        the `positive_im` to consider that object "positive".
+    Returns
+    -------
+    f = 1D array of float, shape (1,)
+        The feature vector.
+    """
+    selem = skmorph.disk(erode)
+    if erode > 0:
+        bin_im = nd.binary_opening(bin_im, selem)
+        positive_im = nd.binary_opening(positive_im, selem)
+    lab_im, n_objs = nd.label(bin_im)
+    means = measure.regionprops(lab_im, ['MeanIntensity'],
+                                intensity_image=positive_im.astype(np.float32))
+    means = np.array([prop['MeanIntensity'] for prop in means], np.float32)
+    f = np.array([np.mean(means > overlap_thresh)])
+    return f
+
+
 full_feature_list = \
     [fun.partial(np.histogram, bins=16, range=(0.0, 1.0)),
     fun.partial(lab_hist, bins=16, range=(0.0, 1.0)),
