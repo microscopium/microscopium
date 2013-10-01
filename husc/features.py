@@ -56,10 +56,8 @@ def object_features(bin_im, im, erode=2):
     """
     selem = skmorph.disk(erode)
     if erode > 0:
-        bin_im = nd.binary_erosion(bin_im, selem)
+        bin_im = nd.binary_opening(bin_im, selem)
     lab_im, n_objs = nd.label(bin_im)
-    if erode > 0:
-        lab_im = nd.grey_dilation(lab_im, footprint=selem)
     feats = measure.regionprops(lab_im,
                                 ['Area', 'Eccentricity', 'EulerNumber',
                                  'Extent', 'MinIntensity', 'MeanIntensity',
