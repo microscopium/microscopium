@@ -2,14 +2,90 @@ import functools as fun
 import numpy as np
 from scipy.stats.mstats import mquantiles
 from scipy import ndimage as nd
+from scipy.spatial import distance
 from skimage import feature, color, io as imio, img_as_float, \
     morphology as skmorph
 from skimage import filter as imfilter, measure
-
+from sklearn.neighbors import NearestNeighbors
 
 
 def lab_hist(rgb_image, **kwargs):
     return np.histogram(color.rgb2lab(rgb_image), **kwargs)
+
+
+def normalize_vectors(v):
+    """Interpret a matrix as a row of vectors, and divide each by its norm.
+
+    Parameters
+    ----------
+    v : array of float, shape (M, N)
+        M points of dimension N.
+
+    Returns
+    -------
+    v1 : array of float, shape (M, N)
+        The vectors divided by their norm.
+    """
+    v_norm = np.sqrt((v ** 2).sum(axis=1))
+    v1 = v / v_norm
+    v1[np.isnan(v1)] = 0
+    return v1
+
+
+def triplet_angles(points, indices):
+    """Compute the angles formed by point triplets.
+
+    Parameters
+    ----------
+    points : array of float, shape (M, N)
+        Set of M points in N-dimensional space.
+    indices : array of int, shape (Q, 3)
+        Set of Q index triplets, in order (root, leaf1, leaf2). Thus,
+        the angle is computed between the vectors
+            (points[leaf1] - points[root])
+        and
+            (points[leaf2] - points[root]).
+
+    Returns
+    -------
+    angles : array of float, shape (Q,)
+        The desired angles.
+    """
+    angles = np.zeros(len(indices), np.double)
+    roots = points[indices[:, 0]]
+    leaf1 = points[indices[:, 1]]
+    leaf2 = points[indices[:, 2]]
+    u = normalize_vectors(leaf1 - roots)
+    v = normalize_vectors(leaf2 - roots)
+    cosines = (u * v).sum(axis=1)
+    cosines[cosines > 1] = 1
+    cosines[cosines < -1] = -1
+    angles = np.arccos(cosines)
+    return angles
+
+
+def nearest_neighbors(lab_im, n=3):
+    """Find the distances to and angle between the two nearest neighbors.
+
+    Parameters
+    ----------
+    lab_im : 2D array of int
+        An image of labeled objects.
+    n : int, optional
+        How many nearest neighbors to check. (Angle is always between
+        the two nearest only.)
+
+    Returns
+    -------
+    nei : 1D array of float, shape (5 * (n + 1),)
+    """
+    centroids = np.array([p.centroid for p in measure.regionprops(lab_im)])
+    nbrs = (NearestNeighbors(n_neighbors=(n + 1), algorithm='kd_tree').
+                         fit(centroids))
+    distances, indices = nbrs.kneighbors(centroids)
+    angles = triplet_angles(centroids, indices[:, :3])
+    distances[:, 0] = angles
+    return distances.ravel()
 
 
 # threshold and labeling number of objects, statistics about object size and
