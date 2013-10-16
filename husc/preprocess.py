@@ -3,23 +3,11 @@ import itertools as it
 import re
 import numpy as np
 from scipy.stats.mstats import mquantiles as quantiles
-from skimage import feature, color, io as imio, img_as_float, \
+from skimage import io as imio, img_as_float, \
     morphology as skmorph, img_as_ubyte
 import skimage.filter.rank as rank
 
 from .io import imwrite
-
-
-def lab_hist(rgb_image, **kwargs):
-    return np.histogram(color.rgb2lab(rgb_image), **kwargs)
-
-
-full_feature_list = \
-    [fun.partial(np.histogram, bins=16, range=(0.0, 1.0)),
-    fun.partial(lab_hist, bins=16, range=(0.0, 1.0)),
-    feature.hog
-    ]
-    # TO-DO: add segmentation features
 
 
 def stretchlim(im, bottom=0.01, top=0.99):
@@ -273,11 +261,3 @@ def correct_image_illumination(im, illum):
     imc = stretchlim(imc, 0.001, 0.999)
     return imc
 
-
-def image_feature_vector(im, feature_list=None):
-    if type(im) == str:
-        im = img_as_float(imio.imread(im))
-    if feature_list is None:
-        feature_list = full_feature_list
-    features = np.concatenate([f(im) for f in feature_list])
-    return features
