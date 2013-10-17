@@ -204,7 +204,8 @@ def quadrant_stitch(nw, ne, sw, se):
     return stitched
 
 
-def find_background_illumination(im_iter, radius=51, quantile=0.05):
+def find_background_illumination(im_iter, radius=51, quantile=0.05,
+                                 stretch_quantile=0.0):
     """Use a set of related images to find uneven background illumination.
 
     Parameters
@@ -217,12 +218,16 @@ def find_background_illumination(im_iter, radius=51, quantile=0.05):
         default: 51
     quantile : float in [0, 1], optional
         The desired quantile to find background. default: 0.05
+    stretch_quantile : float in [0, 1], optional
+        Stretch image to full dtype limit, saturating above this quantile.
 
     Returns
     -------
     illum : np.ndarray, float, shape (M, N)
         The estimated illumination over the image field.
     """
+    im_iter = (stretchlim(im, stretch_quantile, 1 - stretch_quantile) for
+               im in im_iter)
     im_iter = (img_as_ubyte(im) for im in im_iter)
     selem = skmorph.disk(radius)
     qfilter = fun.partial(rank.percentile, selem=selem, p0=quantile)
