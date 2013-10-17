@@ -2,7 +2,6 @@ import functools as fun
 import numpy as np
 from scipy.stats.mstats import mquantiles
 from scipy import ndimage as nd
-from scipy.spatial import distance
 from skimage import feature, color, io as imio, img_as_float, \
     morphology as skmorph
 from skimage import filter as imfilter, measure
