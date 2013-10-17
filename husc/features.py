@@ -26,7 +26,7 @@ def normalize_vectors(v):
         The vectors divided by their norm.
     """
     v_norm = np.sqrt((v ** 2).sum(axis=1))
-    v1 = v / v_norm
+    v1 = v / v_norm[..., np.newaxis]
     v1[np.isnan(v1)] = 0
     return v1
 
