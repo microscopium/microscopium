@@ -83,6 +83,8 @@ def nearest_neighbors(lab_im, n=3):
                          fit(centroids))
     distances, indices = nbrs.kneighbors(centroids)
     angles = triplet_angles(centroids, indices[:, :3])
+    # ignore order/orientation of vectors, only measure acute angles
+    angles[angles > np.pi] = 2 * np.pi - angles[angles > np.pi]
     distances[:, 0] = angles
     return distances.ravel()
 
