@@ -64,6 +64,25 @@ def run_quadrant_stitch(fns, re_string='(.*)_(s[1-4])_(w[1-3]).TIF',
     return fns_out
 
 
+def crop(im, slices=(slice(100, -100), slice(250, -300))):
+    """Crop an image to contain only plate interior.
+
+    Parameters
+    ----------
+    im : array
+        The image to be cropped.
+    slices : tuple of slice objects, optional
+        The slices defining the crop. The default values are for
+        stitched images from the Marcelle screen.
+
+    Returns
+    -------
+    imc : array
+        The cropped image.
+    """
+    return im[slices]
+
+
 def group_by_channel(fns, re_string='(.*)_(w[1-3])_stitched.tif',
                       re_channel_group=1):
     """Group filenames by channel to prepare for illumination estimation.
