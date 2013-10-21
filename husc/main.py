@@ -4,7 +4,6 @@
 import os
 import sys
 import argparse
-import itertools as it
 
 # dependencies
 import mahotas as mh
@@ -27,7 +26,7 @@ stitch.add_argument('output_image',
 
 illum = subpar.add_parser('illum',
                           help="Estimate and correct illumination.")
-illum.add_argument('images', nargs='*', metavar='IMG',
+illum.add_argument('images', nargs='*', metavar='IMG', default=[],
                    help="The input images.")
 illum.add_argument('-f', '--file-list', type=lambda x: open(x, 'r'),
                    metavar='FN',
@@ -86,10 +85,9 @@ def run_illum(args):
     -------
     None
     """
-    ims = (mh.imread(fn) for fn in args.images)
     if args.file_list is not None:
-        ims2 = (mh.imread(fn.rstrip()) for fn in args.file_list)
-        ims = it.chain(ims, ims2)
+        args.images.extend([fn.rstrip() for fn in args.file_list])
+    ims = (mh.imread(fn) for fn in args.images)
     il = pre.find_background_illumination(ims, args.radius, args.quantile,
                                           args.stretchlim)
     if args.verbose:
