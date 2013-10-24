@@ -35,7 +35,7 @@ def stretchlim(im, bottom=0.01, top=0.99):
     return out
 
 
-def run_quadrant_stitch(fns, re_string='(.*)_(s[1-4])_(w[1-3]).TIF',
+def run_quadrant_stitch(fns, re_string='(.*)_(s[1-4])_(w[1-3]).*',
                         re_quadrant_group=1):
     """Read images, stitched them, and write out to same directory.
 
@@ -83,7 +83,7 @@ def crop(im, slices=(slice(100, -100), slice(250, -300))):
     return im[slices]
 
 
-def group_by_channel(fns, re_string='(.*)_(w[1-3])_stitched.tif',
+def group_by_channel(fns, re_string='(.*)_(w[1-3]).*',
                       re_channel_group=1):
     """Group filenames by channel to prepare for illumination estimation.
 
@@ -133,7 +133,7 @@ def group_by_channel(fns, re_string='(.*)_(w[1-3])_stitched.tif',
     return grouped
 
 
-def group_by_quadrant(fns, re_string='(.*)_(s[1-4])_(w[1-3]).TIF',
+def group_by_quadrant(fns, re_string='(.*)_(s[1-4])_(w[1-3]).*',
                       re_quadrant_group=1):
     """Group filenames by quadrant to prepare for stitching.
 
