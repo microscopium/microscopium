@@ -50,6 +50,12 @@ illum.add_argument('-v', '--verbose', action='store_true',
                    help='Print runtime information to stdout.')
 
 
+stitch = subpar.add_parser('stitch', 
+                            help="Stitch images by quadrant.")
+stitch.add_argument('quadrant_images', nargs='*', metavar='IM',
+                    help="The input images.")
+
+
 def get_command(argv):
     """Get the command name used from the command line.
 
@@ -75,7 +81,7 @@ def main():
     elif cmd == 'illum':
         run_illum(args)
     elif cmd == 'stitch':
-        raise NotImplementedError('stitch not yet implemented.')
+        run_stitch(args)
 
 
 def run_crop(args):
@@ -122,6 +128,21 @@ def run_illum(args):
     for im, fout in it.izip(ims, ims_out):
         im = pre.correct_image_illumination(im, il)
         io.imsave(fout, im)
+
+
+def run_stitch(args):
+    """Run stitching.
+
+    Parameters
+    ----------
+    args : argparse.Namespace
+        The arguments parsed by the argparse library.
+
+    Returns
+    -------
+    None
+    """
+    pre.run_quadrant_stitch(args.images)
 
 
 if __name__ == '__main__':
