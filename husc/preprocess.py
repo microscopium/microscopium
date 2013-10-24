@@ -4,7 +4,7 @@ import re
 import numpy as np
 from scipy.stats.mstats import mquantiles as quantiles
 from skimage import io as imio, img_as_float, \
-    morphology as skmorph, img_as_ubyte
+    morphology as skmorph
 import skimage.filter.rank as rank
 
 from .io import imwrite
@@ -226,6 +226,26 @@ def quadrant_stitch(nw, ne, sw, se):
     return stitched
 
 
+def rescale_to_11bits(im_float):
+    """Rescale a float image in [0, 1] to integers in [0, 2047].
+
+    This operation makes rank filtering much faster.
+
+    Parameters
+    ----------
+    im_float : array of float in [0, 1]
+        The float image. The range and type are *not* checked prior to
+        conversion!
+
+    Returns
+    -------
+    im11 : array of uint16 in [0, 2047]
+        The converted image.
+    """
+    im11 = np.floor(im_float * 2047.9999).astype(np.uint16)
+    return im11
+
+
 def find_background_illumination(im_iter, radius=51, quantile=0.05,
                                  stretch_quantile=0.0):
     """Use a set of related images to find uneven background illumination.
@@ -250,7 +270,7 @@ def find_background_illumination(im_iter, radius=51, quantile=0.05,
     """
     im_iter = (stretchlim(im, stretch_quantile, 1 - stretch_quantile) for
                im in im_iter)
-    im_iter = (img_as_ubyte(im) for im in im_iter)
+    im_iter = it.imap(rescale_to_11bits, im_iter)
     selem = skmorph.disk(radius)
     qfilter = fun.partial(rank.percentile, selem=selem, p0=quantile)
     bg_iter = it.imap(qfilter, im_iter)
