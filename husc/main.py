@@ -4,6 +4,7 @@
 import os
 import sys
 import argparse
+import itertools as it
 
 # dependencies
 import mahotas as mh
@@ -118,7 +119,7 @@ def run_illum(args):
     base_fns = (os.path.splitext(fn)[0] for fn in args.images)
     ims_out = (fn + args.output_suffix for fn in base_fns)
     ims = (mh.imread(fn) for fn in args.images)
-    for im, fout in zip(ims, ims_out):
+    for im, fout in it.izip(ims, ims_out):
         im = pre.correct_image_illumination(im, il)
         io.imsave(fout, im)
 
