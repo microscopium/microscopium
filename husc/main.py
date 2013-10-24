@@ -52,7 +52,7 @@ illum.add_argument('-v', '--verbose', action='store_true',
 
 stitch = subpar.add_parser('stitch', 
                             help="Stitch images by quadrant.")
-stitch.add_argument('quadrant_images', nargs='*', metavar='IM',
+stitch.add_argument('images', nargs='*', metavar='IM',
                     help="The input images.")
 
 
