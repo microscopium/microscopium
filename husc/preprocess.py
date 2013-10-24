@@ -292,8 +292,11 @@ def find_background_illumination(im_iter, radius=51, quantile=0.05,
     illum : np.ndarray, float, shape (M, N)
         The estimated illumination over the image field.
     """
-    im_iter = (stretchlim(im, stretch_quantile, 1 - stretch_quantile) for
-               im in im_iter)
+    if stretch_quantile > 0:
+        im_iter = (stretchlim(im, stretch_quantile, 1 - stretch_quantile) for
+                   im in im_iter)
+    else:
+        im_iter = it.imap(img_as_float, im_iter)
     im_iter = it.imap(rescale_to_11bits, im_iter)
     pad_image = fun.partial(pad, pad_width=radius, mode='reflect')
     im_iter = it.imap(pad_image, im_iter)
