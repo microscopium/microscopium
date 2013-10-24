@@ -108,18 +108,18 @@ def group_by_channel(fns, re_string='(.*)_(w[1-3])_stitched.tif',
     Examples
     --------
     >>> fn_numbering = it.product(range(2), range(1, 5))
-    >>> fns = ['image_%i_s1_w%i.TIF' % (i, j) for i, j in fn_numbering]
+    >>> fns = ['image_%i_w%i.TIF' % (i, j) for i, j in fn_numbering]
     >>> fns
-    ['image_0_w1_stitched.tif',
-     'image_0_w2_stitched.tif',
-     'image_0_w3_stitched.tif',
-     'image_1_w1_stitched.tif',
-     'image_1_w2_stitched.tif',
-     'image_1_w3_stitched.tif']
+    ['image_0_w1.tif',
+     'image_0_w2.tif',
+     'image_0_w3.tif',
+     'image_1_w1.tif',
+     'image_1_w2.tif',
+     'image_1_w3.tif']
     >>> group_by_channel(fns)
-    {('w1'): ['image_0_w1_stitched.tif', 'image_1_w1_stitched.tif'],
-     ('w2'): ['image_0_w2_stitched.tif', 'image_1_w2_stitched.tif'],
-     ('w3'): ['image_0_w3_stitched.tif', 'image_1_w3_stitched.tif']}
+    {('w1'): ['image_0_w1.tif', 'image_1_w1.tif'],
+     ('w2'): ['image_0_w2.tif', 'image_1_w2.tif'],
+     ('w3'): ['image_0_w3.tif', 'image_1_w3.tif']}
     """
     re_match = fun.partial(re.match, re_string)
     match_objs = map(re_match, fns)
