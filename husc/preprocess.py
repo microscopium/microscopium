@@ -1,11 +1,13 @@
 import functools as fun
 import itertools as it
+import collections as coll
 import re
 import numpy as np
 from scipy.stats.mstats import mquantiles as quantiles
 from skimage import io as imio, img_as_float, \
     morphology as skmorph
 import skimage.filter.rank as rank
+from skimage.util import pad
 
 from .io import imwrite
 
@@ -246,6 +248,28 @@ def rescale_to_11bits(im_float):
     return im11
 
 
+def unpad(im, pad_width):
+    """Remove padding from a padded image.
+
+    Parameters
+    ----------
+    im : array
+        The input array.
+    pad_width : int or sequence of int
+        The width of padding: a number for the same width along each
+        dimension, or a sequence for different widths.
+
+    Returns
+    -------
+    imc : array
+        The unpadded image.
+    """
+    if not isinstance(pad_width, coll.Iterable):
+        pad_width = [pad_width] * im.ndim
+    slices = tuple([slice(p, -p) for p in pad_width])
+    return im[slices]
+
+
 def find_background_illumination(im_iter, radius=51, quantile=0.05,
                                  stretch_quantile=0.0):
     """Use a set of related images to find uneven background illumination.
@@ -271,9 +295,13 @@ def find_background_illumination(im_iter, radius=51, quantile=0.05,
     im_iter = (stretchlim(im, stretch_quantile, 1 - stretch_quantile) for
                im in im_iter)
     im_iter = it.imap(rescale_to_11bits, im_iter)
+    pad_image = fun.partial(pad, pad_width=radius, mode='reflect')
+    im_iter = it.imap(pad_image, im_iter)
     selem = skmorph.disk(radius)
     qfilter = fun.partial(rank.percentile, selem=selem, p0=quantile)
     bg_iter = it.imap(qfilter, im_iter)
+    unpad_image = fun.partial(unpad, pad_width=radius)
+    bg_iter = it.imap(unpad_image, bg_iter)
     im0 = bg_iter.next()
     accumulator = np.zeros(im0.shape, float)
     bg_iter = it.chain([im0], bg_iter)
