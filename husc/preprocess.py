@@ -195,13 +195,13 @@ def quadrant_stitch(nw, ne, sw, se):
 
     Parameters
     ----------
-    nw, ne, sw, se : np.ndarray, shape (M, N)
+    nw, ne, sw, se : np.ndarray, shape (Mi, Ni)
         The four quadrant images, corresponding to the cardinal directions of
         north-west, north-east, south-west, south-east.
 
     Returns
     -------
-    stitched : np.ndarray, shape (2*M, 2*N)
+    stitched : np.ndarray, shape (M0+M2, N0+N1)
         The image resulting from stitching the four input images
 
     Examples
@@ -214,12 +214,15 @@ def quadrant_stitch(nw, ne, sw, se):
            [1, 1, 1, 3, 3, 3],
            [1, 1, 1, 3, 3, 3]])
     """
-    s = nw.shape
-    stitched = np.zeros((2 * s[0], 2 * s[1]), nw.dtype)
-    stitched[:s[0], :s[1]] = nw
-    stitched[:s[0], -s[1]:] = ne
-    stitched[-s[0]:, :s[1]] = sw
-    stitched[-s[0]:, -s[1]:] = se
+    x1 = nw.shape[0]
+    x2 = sw.shape[0]
+    y1 = nw.shape[1]
+    y2 = ne.shape[1]
+    stitched = np.zeros((x1 + x2, y1 + y2), nw.dtype)
+    stitched[:x1, :y1] = nw
+    stitched[:x1, y1:] = ne
+    stitched[x1:, :y1] = sw
+    stitched[x1:, y1:] = se
     return stitched
 
 
