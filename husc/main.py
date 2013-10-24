@@ -16,13 +16,15 @@ from . import preprocess as pre
 parser = argparse.ArgumentParser(description="Run the HUSC functions.")
 subpar = parser.add_subparsers()
 
-stitch = subpar.add_parser('stitch', 
-                            help="Stitch four quadrants into one image.")
-stitch.add_argument('quadrant_images', nargs=4, metavar='IM',
-                     help="The images for each quadrant in order: NW, NE, " +
-                           "SW, SE.")
-stitch.add_argument('output_image',
-                     help="The filename for the stitched image.")
+
+crop = subpar.add_parser('crop', help="Crop images.")
+crop.add_argument('crops', nargs=4, metavar='INT',
+                  help='xstart, xstop, ystart, ystop. "None" also allowed.')
+crop.add_argument('images', nargs='+', metavar='IM', help="The input images.")
+crop.add_argument('-o', '--output-suffix',
+                  default='.crop.tif', metavar='SUFFIX',
+                  help="What suffix to attach to the cropped images.")
+
 
 illum = subpar.add_parser('illum',
                           help="Estimate and correct illumination.")
@@ -67,10 +69,29 @@ def main():
     """Run the command-line interface."""
     args = parser.parse_args()
     cmd = get_command(sys.argv)
-    if cmd == 'illum':
+    if cmd == 'crop':
+        run_crop(args)
+    elif cmd == 'illum':
         run_illum(args)
     elif cmd == 'stitch':
         raise NotImplementedError('stitch not yet implemented.')
+
+
+def run_crop(args):
+    """Run image cropping."""
+    crops = []
+    for c in args.crops:
+        try:
+            crops.append(int(c))
+        except ValueError:
+            crops.append(None)
+    xstart, xstop, ystart, ystop = crops
+    slices = (slice(xstart, xstop), slice(ystart, ystop))
+    for imfn in args.images:
+        im = mh.imread(imfn)
+        imout = pre.crop(im, slices)
+        fnout = os.path.splitext(imfn)[0] + args.output_suffix
+        mh.imsave(fnout, imout)
 
 
 def run_illum(args):
