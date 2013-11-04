@@ -39,6 +39,8 @@ illum.add_argument('-o', '--output-suffix',
                    help="What suffix to attach to the corrected images.")
 illum.add_argument('-l', '--stretchlim', metavar='[0.0-1.0]', type=float,
                    default=0.0, help='Stretch image range before all else.')
+illum.add_argument('-L', '--stretchlim-output', metavar='[0.0-1.0]', type=float,
+                   default=0.0, help='Stretch image range before output.')
 illum.add_argument('-q', '--quantile', metavar='[0.0-1.0]', type=float, 
                    default=0.05,
                    help='Use this quantile to determine illumination.')
@@ -127,6 +129,9 @@ def run_illum(args):
     ims = (mh.imread(fn) for fn in args.images)
     for im, fout in it.izip(ims, ims_out):
         im = pre.correct_image_illumination(im, il)
+        if args.stretchlim_output > 0:
+            lim = args.stretchlim_output
+            im = pre.stretchlim(im, lim, 1 - lim)
         io.imsave(fout, im)
 
 
