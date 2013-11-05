@@ -31,25 +31,29 @@ def maxes(fns):
     return maxes
 
 
-def stretchlim(im, bottom=0.01, top=0.99):
+def stretchlim(im, bottom=0.01, top=0.99, mask=None):
     """Stretch the image so new image range corresponds to given quantiles.
 
     Parameters
     ----------
-    im : np.ndarray
+    im : array, shape (M, N, [...,] P)
         The input image.
     bottom : float, optional
         The lower quantile.
     top : float
         The upper quantile.
+    mask : array of bool, shape (M, N, [...,] P), optional
+        Only consider intensity values where `mask` is ``True``.
 
     Returns
     -------
     out : np.ndarray of float
         The stretched image.
     """
+    if mask is None:
+        mask = np.ones(im.shape, dtype=bool)
     im = im.astype(float)
-    q0, q1 = quantiles(im, [bottom, top])
+    q0, q1 = quantiles(im[mask], [bottom, top])
     out = (im - q0) / (q1 - q0)
     out[out < 0] = 0
     out[out > 1] = 1
