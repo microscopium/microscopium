@@ -7,6 +7,7 @@ import argparse
 import itertools as it
 
 # dependencies
+import numpy as np
 import mahotas as mh
 from skimage import io
 
@@ -45,6 +46,10 @@ illum.add_argument('-f', '--file-list', type=lambda x: open(x, 'r'),
 illum.add_argument('-o', '--output-suffix',
                    default='.illum.tif', metavar='SUFFIX',
                    help="What suffix to attach to the corrected images.")
+illum.add_argument('-M', '--use-mask', action='store_true',
+                   help="Mask out abnormally bright parts of the image.")
+illum.add_argument('-m', '--mask-offset', metavar='INT', default=0, type=int,
+                  help='Offset the automatic mask threshold by this amount.')
 illum.add_argument('-l', '--stretchlim', metavar='[0.0-1.0]', type=float,
                    default=0.0, help='Stretch image range before all else.')
 illum.add_argument('-L', '--stretchlim-output', metavar='[0.0-1.0]', type=float,
@@ -135,19 +140,25 @@ def run_illum(args):
     if args.file_list is not None:
         args.images.extend([fn.rstrip() for fn in args.file_list])
     il = pre.find_background_illumination(args.images, args.radius,
-                                          args.quantile, args.stretchlim)
+                                          args.quantile, args.stretchlim,
+                                          args.use_mask, args.mask_offset)
     if args.verbose:
         print 'illumination field:', type(il), il.dtype, il.min(), il.max()
     if args.save_illumination is not None:
         io.imsave(args.save_illumination, il / il.max())
-    base_fns = (os.path.splitext(fn)[0] for fn in args.images)
-    ims_out = (fn + args.output_suffix for fn in base_fns)
+    base_fns = [pre.basefn(fn) for fn in args.images]
+    ims_out = [fn + args.output_suffix for fn in base_fns]
+    mask_fns = [fn + '.mask.tif' for fn in base_fns]
     ims = (mh.imread(fn) for fn in args.images)
-    for im, fout in it.izip(ims, ims_out):
+    for im, fout, mask_fn in it.izip(ims, ims_out, mask_fns):
+        if os.path.isfile(mask_fn):
+            mask = mh.imread(mask_fn).astype(bool)
+        else:
+            mask = np.ones(im.shape, bool)
         im = pre.correct_image_illumination(im, il)
         if args.stretchlim_output > 0:
             lim = args.stretchlim_output
-            im = pre.stretchlim(im, lim, 1 - lim)
+            im = pre.stretchlim(im, lim, 1 - lim, mask)
         io.imsave(fout, im)
 
 

@@ -369,7 +369,8 @@ def unpad(im, pad_width):
 
 
 def find_background_illumination(fns, radius=51, quantile=0.05,
-                                 stretch_quantile=0.0, mask=True):
+                                 stretch_quantile=0.0, mask=True,
+                                 mask_offset=0):
     """Use a set of related images to find uneven background illumination.
 
     Parameters
@@ -385,6 +386,8 @@ def find_background_illumination(fns, radius=51, quantile=0.05,
         Stretch image to full dtype limit, saturating above this quantile.
     mask : bool, optional
         Whether to automatically mask brightness artifacts in the images.
+    mask_offset : int, optional
+        Offset the mask threshold automatically found.
 
     Returns
     -------
@@ -399,8 +402,8 @@ def find_background_illumination(fns, radius=51, quantile=0.05,
     else:
         im_iter = it.imap(img_as_float, im_iter)
     if mask:
-        mask_iter1 = max_mask_iter(fns)
-        mask_iter2 = max_mask_iter(fns)
+        mask_iter1 = max_mask_iter(fns, mask_offset)
+        mask_iter2 = max_mask_iter(fns, mask_offset)
     im_iter = it.imap(rescale_to_11bits, im_iter)
     pad_image = fun.partial(pad, pad_width=radius, mode='reflect')
     im_iter = it.imap(pad_image, im_iter)
@@ -412,7 +415,7 @@ def find_background_illumination(fns, radius=51, quantile=0.05,
     illum = np.zeros(im0.shape, float)
     counter = np.zeros(im0.shape, float)
     for bg, mask in it.izip(bg_iter, mask_iter2):
-        illum[mask] += bg
+        illum[mask] += bg[mask]
         counter[mask] += 1
     illum /= counter
     return illum
