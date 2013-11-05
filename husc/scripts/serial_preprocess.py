@@ -38,9 +38,8 @@ def main():
             io.imsave(fout, im)
     channels = preprocess.group_by_channel(stitch_images)
     for channel_id, channel_fns in channels.items():
-        im_iter = (preprocess.stretchlim(mh.imread(fn))[100:-100, 250:-300]
-                   for fn in channel_fns)
-        illum = preprocess.find_background_illumination(im_iter, args.radius)
+        illum = preprocess.find_background_illumination(args.images,
+                                                        args.radius)
         print "illumination range:", illum.min(), illum.max()
         illum_fn = channel_id + '_illum.tif'
         illum_to_save = img_as_ubyte(preprocess.stretchlim(illum))

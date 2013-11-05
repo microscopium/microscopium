@@ -361,15 +361,14 @@ def unpad(im, pad_width):
     return im[slices]
 
 
-def find_background_illumination(im_iter, radius=51, quantile=0.05,
-                                 stretch_quantile=0.0):
+def find_background_illumination(fns, radius=51, quantile=0.05,
+                                 stretch_quantile=0.0, mask=True):
     """Use a set of related images to find uneven background illumination.
 
     Parameters
     ----------
-    im_iter : iterable of np.ndarray, uint8 or uint16 type, shape (M, N)
-        An iterable of grayscale images. skimage's rank filter will be used on
-        the images, so the max value is limited to 4095.
+    fns : list of string
+        A list of image file names
     radius : int, optional
         The radius of the structuring element used to find background.
         default: 51
@@ -377,33 +376,38 @@ def find_background_illumination(im_iter, radius=51, quantile=0.05,
         The desired quantile to find background. default: 0.05
     stretch_quantile : float in [0, 1], optional
         Stretch image to full dtype limit, saturating above this quantile.
+    mask : bool, optional
+        Whether to automatically mask brightness artifacts in the images.
 
     Returns
     -------
     illum : np.ndarray, float, shape (M, N)
         The estimated illumination over the image field.
     """
+    im0 = mh.imread(fns[0])
+    im_iter = (mh.imread(fn) for fn in fns)
     if stretch_quantile > 0:
         im_iter = (stretchlim(im, stretch_quantile, 1 - stretch_quantile) for
                    im in im_iter)
     else:
         im_iter = it.imap(img_as_float, im_iter)
+    if mask:
+        mask_iter1 = max_mask_iter(fns)
+        mask_iter2 = max_mask_iter(fns)
     im_iter = it.imap(rescale_to_11bits, im_iter)
     pad_image = fun.partial(pad, pad_width=radius, mode='reflect')
     im_iter = it.imap(pad_image, im_iter)
+    mask_iter1 = it.imap(pad_image, mask_iter1)
     selem = skmorph.disk(radius)
-    qfilter = fun.partial(rank.percentile, selem=selem, p0=quantile)
-    bg_iter = it.imap(qfilter, im_iter)
-    unpad_image = fun.partial(unpad, pad_width=radius)
-    bg_iter = it.imap(unpad_image, bg_iter)
-    im0 = bg_iter.next()
-    accumulator = np.zeros(im0.shape, float)
-    bg_iter = it.chain([im0], bg_iter)
-    counter = it.count()
-    illum = reduce(lambda x, y: x + y[0],
-                   it.izip(bg_iter, counter), accumulator)
-    n_images = counter.next()
-    illum /= n_images
+    bg_iter = (rank.percentile(im, selem, mask=mask, p0=quantile) for
+               im, mask in it.izip(im_iter, mask_iter1))
+    bg_iter = (unpad(im, pad_width=radius) for im in bg_iter)
+    illum = np.zeros(im0.shape, float)
+    counter = np.zeros(im0.shape, float)
+    for bg, mask in it.izip(bg_iter, mask_iter2):
+        illum[mask] += bg
+        counter[mask] += 1
+    illum /= counter
     return illum
 
 

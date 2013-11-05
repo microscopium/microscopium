@@ -117,9 +117,8 @@ def run_illum(args):
     """
     if args.file_list is not None:
         args.images.extend([fn.rstrip() for fn in args.file_list])
-    ims = (mh.imread(fn) for fn in args.images)
-    il = pre.find_background_illumination(ims, args.radius, args.quantile,
-                                          args.stretchlim)
+    il = pre.find_background_illumination(args.images, args.radius,
+                                          args.quantile, args.stretchlim)
     if args.verbose:
         print 'illumination field:', type(il), il.dtype, il.min(), il.max()
     if args.save_illumination is not None:
