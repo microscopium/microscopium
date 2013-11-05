@@ -3,6 +3,7 @@ import itertools as it
 import collections as coll
 import re
 import numpy as np
+import mahotas as mh
 from scipy.stats.mstats import mquantiles as quantiles
 from skimage import io as imio, img_as_float, \
     morphology as skmorph
@@ -10,6 +11,24 @@ import skimage.filter.rank as rank
 from skimage.util import pad
 
 from .io import imwrite
+
+
+def maxes(fns):
+    """Return an array of the maximum intensity of each image.
+
+    Parameters
+    ----------
+    fns : list of string
+        The filenames of the images.
+
+    Returns
+    -------
+    maxes : 1D array
+        The maximum value of each image examined.
+    """
+    ims = it.imap(mh.imread, fns)
+    maxes = np.array(map(np.max, ims))
+    return maxes
 
 
 def stretchlim(im, bottom=0.01, top=0.99):
