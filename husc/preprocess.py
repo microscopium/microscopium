@@ -67,18 +67,21 @@ def write_max_masks(fns, suffix='.mask.tif'):
 
     Returns
     -------
-    n : int
-        The number of images for which a mask was created.
+    n, m : int
+        The number of images for which a mask was created, and the
+        total number of images
     """
     masks = max_mask_iter(fns)
     n = 0
+    m = 0
     for fn, mask in it.izip(fns, masks):
         outfn = basefn(fn) + suffix
+        m += 1
         if not mask.all():
             # we multiply by 255 to make the image easy to look at
-            mh.imwrite(outfn, mask.astype(np.uint8) * 255)
+            mh.imsave(outfn, mask.astype(np.uint8) * 255)
             n += 1
-    return n
+    return n, m
 
 
 def maxes(fns):

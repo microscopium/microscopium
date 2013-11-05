@@ -27,6 +27,12 @@ crop.add_argument('-o', '--output-suffix',
                   help="What suffix to attach to the cropped images.")
 
 
+mask = subpar.add_parser('mask', help="Estimate a mask over image artifacts.")
+mask.add_argument('images', nargs='+', metavar='IM', help="The input images.")
+mask.add_argument('-v', '--verbose', action='store_true',
+                  help='Print runtime information to stdout.')
+
+
 illum = subpar.add_parser('illum',
                           help="Estimate and correct illumination.")
 illum.add_argument('images', nargs='*', metavar='IMG', default=[],
@@ -80,6 +86,8 @@ def main():
     cmd = get_command(sys.argv)
     if cmd == 'crop':
         run_crop(args)
+    elif cmd == 'mask':
+        run_mask(args)
     elif cmd == 'illum':
         run_illum(args)
     elif cmd == 'stitch':
@@ -101,6 +109,13 @@ def run_crop(args):
         imout = pre.crop(im, slices)
         fnout = os.path.splitext(imfn)[0] + args.output_suffix
         mh.imsave(fnout, imout)
+
+
+def run_mask(args):
+    """Run mask generation."""
+    n, m = pre.write_max_masks(args.images)
+    if args.verbose:
+        print("%i masks created out of %i images processed" % (n, m))
 
 
 def run_illum(args):
