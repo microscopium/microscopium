@@ -29,6 +29,8 @@ crop.add_argument('-o', '--output-suffix',
 
 mask = subpar.add_parser('mask', help="Estimate a mask over image artifacts.")
 mask.add_argument('images', nargs='+', metavar='IM', help="The input images.")
+mask.add_argument('-o', '--offset', metavar='INT', default=0, type=int,
+                  help='Offset the automatic mask threshold by this amount.')
 mask.add_argument('-v', '--verbose', action='store_true',
                   help='Print runtime information to stdout.')
 
@@ -113,7 +115,7 @@ def run_crop(args):
 
 def run_mask(args):
     """Run mask generation."""
-    n, m = pre.write_max_masks(args.images)
+    n, m = pre.write_max_masks(args.images, offset=args.offset)
     if args.verbose:
         print("%i masks created out of %i images processed" % (n, m))
 

@@ -30,13 +30,15 @@ def basefn(fn):
     return os.path.splitext(fn)[0]
 
 
-def max_mask_iter(fns):
+def max_mask_iter(fns, offset=0):
     """Find masks for a set of images having brightness artifacts.
 
     Parameters
     ----------
     fns : list of string
         The images being examined.
+    offset : int, optional
+        Offset the threshold automatically found.
 
     Returns
     -------
@@ -46,11 +48,11 @@ def max_mask_iter(fns):
     ms = maxes(fns)
     t = imfilter.threshold_otsu(ms)
     ims = it.imap(mh.imread, fns)
-    masks = ((im < t) for im in ims)
+    masks = ((im < t + offset) for im in ims)
     return masks
 
 
-def write_max_masks(fns, suffix='.mask.tif'):
+def write_max_masks(fns, suffix='.mask.tif', offset=0):
     """Find a mask for images having a brightness artifact.
 
     This function iterates over a set of images and finds the maximum
@@ -64,6 +66,8 @@ def write_max_masks(fns, suffix='.mask.tif'):
         The images being examined.
     suffix : string, optional
         Save an image next to the original, with this suffix.
+    offset : int, optional
+        Offset the threshold automatically found.
 
     Returns
     -------
@@ -71,7 +75,7 @@ def write_max_masks(fns, suffix='.mask.tif'):
         The number of images for which a mask was created, and the
         total number of images
     """
-    masks = max_mask_iter(fns)
+    masks = max_mask_iter(fns, offset)
     n = 0
     m = 0
     for fn, mask in it.izip(fns, masks):
