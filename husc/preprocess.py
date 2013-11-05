@@ -1,3 +1,4 @@
+import os
 import functools as fun
 import itertools as it
 import collections as coll
@@ -5,12 +6,79 @@ import re
 import numpy as np
 import mahotas as mh
 from scipy.stats.mstats import mquantiles as quantiles
-from skimage import io as imio, img_as_float, \
-    morphology as skmorph
+from skimage import (io as imio, img_as_float, morphology as skmorph,
+                     filter as imfilter)
 import skimage.filter.rank as rank
 from skimage.util import pad
 
 from .io import imwrite
+
+
+def basefn(fn):
+    """Get the filename without the extension.
+
+    Parameters
+    ----------
+    fn : string
+        A filename.
+
+    Returns
+    -------
+    outfn : string
+        `fn` with the extension stripped.
+    """
+    return os.path.splitext(fn)[0]
+
+
+def max_mask_iter(fns):
+    """Find masks for a set of images having brightness artifacts.
+
+    Parameters
+    ----------
+    fns : list of string
+        The images being examined.
+
+    Returns
+    -------
+    maxes : iterator of bool array
+        The max mask image corresponding to each input image.
+    """
+    ms = maxes(fns)
+    t = imfilter.threshold_otsu(ms)
+    ims = it.imap(mh.imread, fns)
+    masks = ((im < t) for im in ims)
+    return masks
+
+
+def write_max_masks(fns, suffix='.mask.tif'):
+    """Find a mask for images having a brightness artifact.
+
+    This function iterates over a set of images and finds the maximum
+    value of each. Then, Otsu's threshold is applied to the set of
+    maxima, and any element brighter than this in *any* image is
+    masked out.
+
+    Parameters
+    ----------
+    fns : list of string
+        The images being examined.
+    suffix : string, optional
+        Save an image next to the original, with this suffix.
+
+    Returns
+    -------
+    n : int
+        The number of images for which a mask was created.
+    """
+    masks = max_mask_iter(fns)
+    n = 0
+    for fn, mask in it.izip(fns, masks):
+        outfn = basefn(fn) + suffix
+        if not mask.all():
+            # we multiply by 255 to make the image easy to look at
+            mh.imwrite(outfn, mask.astype(np.uint8) * 255)
+            n += 1
+    return n
 
 
 def maxes(fns):
