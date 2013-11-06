@@ -72,7 +72,7 @@ def basefn(fn):
     return os.path.splitext(fn)[0]
 
 
-def max_mask_iter(fns, offset=0):
+def max_mask_iter(fns, offset=0, close_radius=0, erode_radius=0):
     """Find masks for a set of images having brightness artifacts.
 
     Parameters
@@ -81,6 +81,11 @@ def max_mask_iter(fns, offset=0):
         The images being examined.
     offset : int, optional
         Offset the threshold automatically found.
+    close_radius : int, optional
+        Perform a morphological closing of the mask of this radius.
+    erode_radius : int, optional
+        Perform a morphological erosion of the mask, after any closing,
+        of this radius.
 
     Returns
     -------
@@ -91,6 +96,10 @@ def max_mask_iter(fns, offset=0):
     t = imfilter.threshold_otsu(ms)
     ims = it.imap(mh.imread, fns)
     masks = ((im < t + offset) for im in ims)
+    if close_radius > 0:
+        masks = (morphop(mask, 'close', close_radius) for mask in masks)
+    if erode_radius > 0:
+        masks = (morphop(mask, 'erode', erode_radius) for mask in masks)
     return masks
 
 
