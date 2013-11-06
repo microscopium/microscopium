@@ -46,13 +46,13 @@ def morphop(im, operation='open', radius='5'):
         raise ValueError("Image input to 'morphop' should be 2D or 3D"
                          ", got %iD" % im.ndim)
     if operation.startswith('open'):
-        imout = nd.grey_opening(im, structure=selem)
+        imout = nd.grey_opening(im, footprint=selem)
     elif operation.startswith('clos'):
-        imout = nd.grey_closing(im, structure=selem)
+        imout = nd.grey_closing(im, footprint=selem)
     elif operation.startswith('dila'):
-        imout = nd.grey_dilation(im, structure=selem)
+        imout = nd.grey_dilation(im, footprint=selem)
     elif operation.startswith('ero'):
-        imout = nd.grey_erosion(im, structure=selem)
+        imout = nd.grey_erosion(im, footprint=selem)
     return imout
 
 
