@@ -4,6 +4,7 @@ import itertools as it
 import collections as coll
 import re
 import numpy as np
+from scipy import ndimage as nd
 import mahotas as mh
 from scipy.stats.mstats import mquantiles as quantiles
 from skimage import (io as imio, img_as_float, morphology as skmorph,
@@ -12,6 +13,47 @@ import skimage.filter.rank as rank
 from skimage.util import pad
 
 from .io import imwrite
+
+
+def morphop(im, operation='open', radius='5'):
+    """Perform a morphological operation with spherical structuring element.
+
+    Parameters
+    ----------
+    im : array, shape (M, N[, P])
+        2D or 3D grayscale image.
+    operation : string, optional
+        The operation to perform. Choices are 'opening', 'closing',
+        'erosion', and 'dilation'. Imperative verbs also work, e.g.
+        'dilate'.
+    radius : int, optional
+        The radius of the structuring element (disk or ball) used.
+
+    Returns
+    -------
+    imout : array, shape (M, N[, P])
+        The transformed image.
+
+    Raises
+    ------
+    ValueError : if the image is not 2D or 3D.
+    """
+    if im.ndim == 2:
+        selem = skmorph.disk(radius)
+    elif im.ndim == 3:
+        selem = skmorph.ball(radius)
+    else:
+        raise ValueError("Image input to 'morphop' should be 2D or 3D"
+                         ", got %iD" % im.ndim)
+    if operation.startswith('open'):
+        imout = nd.grey_opening(im, structure=selem)
+    elif operation.startswith('clos'):
+        imout = nd.grey_closing(im, structure=selem)
+    elif operation.startswith('dila'):
+        imout = nd.grey_dilation(im, structure=selem)
+    elif operation.startswith('ero'):
+        imout = nd.grey_erosion(im, structure=selem)
+    return imout
 
 
 def basefn(fn):
