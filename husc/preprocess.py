@@ -103,7 +103,8 @@ def max_mask_iter(fns, offset=0, close_radius=0, erode_radius=0):
     return masks
 
 
-def write_max_masks(fns, suffix='.mask.tif', offset=0):
+def write_max_masks(fns, offset=0, close_radius=0, erode_radius=0,
+                    suffix='.mask.tif'):
     """Find a mask for images having a brightness artifact.
 
     This function iterates over a set of images and finds the maximum
@@ -115,10 +116,15 @@ def write_max_masks(fns, suffix='.mask.tif', offset=0):
     ----------
     fns : list of string
         The images being examined.
-    suffix : string, optional
-        Save an image next to the original, with this suffix.
     offset : int, optional
         Offset the threshold automatically found.
+    close_radius : int, optional
+        Perform a morphological closing of the mask of this radius.
+    erode_radius : int, optional
+        Perform a morphological erosion of the mask, after any closing,
+        of this radius.
+    suffix : string, optional
+        Save an image next to the original, with this suffix.
 
     Returns
     -------
@@ -126,7 +132,7 @@ def write_max_masks(fns, suffix='.mask.tif', offset=0):
         The number of images for which a mask was created, and the
         total number of images
     """
-    masks = max_mask_iter(fns, offset)
+    masks = max_mask_iter(fns, offset, close_radius, erode_radius)
     n = 0
     m = 0
     for fn, mask in it.izip(fns, masks):
