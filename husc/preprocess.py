@@ -72,6 +72,36 @@ def basefn(fn):
     return os.path.splitext(fn)[0]
 
 
+def myores_semantic_filename(fn):
+    """Split a MYORES filename into its annotated components.
+
+    Parameters
+    ----------
+    fn : string
+        A filename from the MYORES high-content screening system.
+
+    Returns
+    -------
+    semantic : collections.OrderedDict {string: string}
+        A dictionary mapping the different components of the filename.
+
+    Examples
+    --------
+    >>> fn = ('MYORES-p1-j01-110210_02490688_53caa10e-ac15-4166-9b9d-'
+              '4b1167f3b9c6_C04_s1_w1.TIF')
+    >>> d = myores_filename(fn)
+    >>> d
+    OrderedDict([('prefix', 'MYORES'), ('pass', 'p1'), ('job', 'j01'), ('date', '110210'), ('plate', '02490688'), ('barcode', '53caa10e-ac15-4166-9b9d-4b1167f3b9c6'), ('well', 'C04'), ('quadrant', 's1'), ('channel', 'w1'), ('suffix', '')])
+    """
+    keys = ['prefix', 'pass', 'job', 'date', 'plate', 'barcode',
+            'well', 'quadrant', 'channel', 'suffix']
+    filename, suffix = fn.split('.')[0], '.'.join(fn.split('.')[1:])
+    values = filename.split('_')
+    values = values[0].split('-') + values[1:] + [suffix]
+    semantic = coll.OrderedDict(zip(keys, values))
+    return semantic
+
+
 def max_mask_iter(fns, offset=0, close_radius=0, erode_radius=0):
     """Find masks for a set of images having brightness artifacts.
 
