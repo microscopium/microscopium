@@ -457,7 +457,8 @@ def unpad(im, pad_width):
 
 def find_background_illumination(fns, radius=51, quantile=0.05,
                                  stretch_quantile=0.0, mask=True,
-                                 mask_offset=0):
+                                 mask_offset=0, mask_close_radius=0,
+                                 mask_erode_radius=0):
     """Use a set of related images to find uneven background illumination.
 
     Parameters
@@ -489,8 +490,10 @@ def find_background_illumination(fns, radius=51, quantile=0.05,
     else:
         im_iter = it.imap(img_as_float, im_iter)
     if mask:
-        mask_iter1 = max_mask_iter(fns, mask_offset)
-        mask_iter2 = max_mask_iter(fns, mask_offset)
+        mask_iter1 = max_mask_iter(fns, mask_offset,
+                                   mask_close_radius, mask_erode_radius)
+        mask_iter2 = max_mask_iter(fns, mask_offset,
+                                   mask_close_radius, mask_erode_radius)
     else:
         mask_iter1 = it.repeat(None)
         mask_iter2 = it.repeat(np.ones(im0.shape, bool))
