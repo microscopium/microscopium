@@ -474,13 +474,17 @@ def find_background_illumination(fns, radius=51, quantile=0.05,
         Stretch image to full dtype limit, saturating above this quantile.
     mask : bool, optional
         Whether to automatically mask brightness artifacts in the images.
-    mask_offset : int, optional
-        Offset the mask threshold automatically found.
+    mask_offset, mask_close_radius, mask_erode_radius : int, optional
+        See documentation for ``max_mask_iter``.
 
     Returns
     -------
     illum : np.ndarray, float, shape (M, N)
         The estimated illumination over the image field.
+
+    See Also
+    --------
+    ``max_mask_iter``, ``correct_image_illumination``.
     """
     im0 = mh.imread(fns[0])
     im_iter = (mh.imread(fn) for fn in fns)
