@@ -499,8 +499,7 @@ def find_background_illumination(fns, radius=51, quantile=0.05,
         mask_iter2 = max_mask_iter(fns, mask_offset,
                                    mask_close_radius, mask_erode_radius)
     else:
-        mask_iter1 = it.repeat(None)
-        mask_iter2 = it.repeat(np.ones(im0.shape, bool))
+        mask_iter1 = mask_iter2 = it.repeat(np.ones(im0.shape, bool))
     im_iter = it.imap(rescale_to_11bits, im_iter)
     pad_image = fun.partial(pad, pad_width=radius, mode='reflect')
     im_iter = it.imap(pad_image, im_iter)
