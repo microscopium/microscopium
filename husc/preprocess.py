@@ -517,7 +517,7 @@ def find_background_illumination(fns, radius=51, quantile=0.05,
     return illum
 
 
-def correct_image_illumination(im, illum):
+def correct_image_illumination(im, illum, stretch_quantile=0, mask=None):
     """Divide input image pointwise by the illumination field.
 
     Parameters
@@ -526,6 +526,11 @@ def correct_image_illumination(im, illum):
         The input image.
     illum : np.ndarray of float, same shape as `im`
         The illumination field.
+    stretch_quantile : float, optional
+        Stretch the image intensity to saturate the top and bottom
+        quantiles given.
+    mask : array of bool, same shape as im, optional
+        Only stretch the image intensity where `mask` is ``True``.
 
     Returns
     -------
@@ -537,6 +542,7 @@ def correct_image_illumination(im, illum):
     else:
         imc = im.copy()
     imc /= illum
-    imc = stretchlim(imc, 0.001, 0.999)
+    lim = stretch_quantile
+    imc = stretchlim(imc, lim, 1-lim, mask)
     return imc
 
