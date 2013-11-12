@@ -107,6 +107,10 @@ def main():
         run_illum(args)
     elif cmd == 'stitch':
         run_stitch(args)
+    else:
+        sys.stderr.write("Error: command %s not found. Run %s -h for help." %
+                         (cmd, sys.argv[0]))
+        sys.exit(2) # 2 is commonly a command-line error
 
 
 def run_crop(args):
