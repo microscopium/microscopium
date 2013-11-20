@@ -50,3 +50,45 @@ def imwrite(ar, fn, bitdepth=None):
 
 
 imsave = imwrite
+
+
+def cat_channels(ims, order=[2, 0, 1]):
+    """From a sequence of single-channel images, produce multichannels.
+
+    Suppose the input is a list:
+
+    ```
+    ims = [green1, blue1, red1, green2, blue2, red2]
+    ```
+
+    Then the output will be:
+
+    ```
+    [rgb1, rgb2]
+    ```
+
+    (The order of channels in the list is arbitrary; the default is
+    based on the data for which this software was created.)
+
+    Parameters
+    ----------
+    ims : list of arrays
+        A list of images in which consecutive images represent single
+        channels of the same image. (See example.)
+    order : list of int, optional
+        The order in which the channels appear.
+
+    Returns
+    -------
+    multi : list of arrays
+        A list of the images composed into multi-channel images.
+    """
+    nchannels = len(order)
+    multi = []
+    for i in range(len(ims) // nchannels):
+        channels = [ims[nchannels * i + j] for j in order]
+        channel_im = np.concatenate([c[..., np.newaxis] for c in channels],
+                                    axis=-1)
+        multi.append(channel_im)
+    return multi
+
