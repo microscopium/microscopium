@@ -57,3 +57,6 @@ def feature_vector_from_rgb(image):
     all_names.extend(['adapt-' + name for name in names])
     return np.concatenate(all_fs), all_names
 
+
+feature_map = feature_vector_from_rgb
+
