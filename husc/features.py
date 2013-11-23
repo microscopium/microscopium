@@ -109,6 +109,8 @@ def intensity_object_features(im, adaptive_t_radius=51):
     -------
     f : 1D np.ndarray of float
         The feature vector.
+    names : list of string
+        The list of feature names.
     """
     tim1 = im > imfilter.threshold_otsu(im)
     f1, names1 = object_features(tim1, im)
