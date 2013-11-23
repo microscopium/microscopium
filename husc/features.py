@@ -1,4 +1,4 @@
-import functools as fun
+import functools as ft
 import numpy as np
 from scipy.stats.mstats import mquantiles
 from scipy import ndimage as nd
@@ -235,8 +235,8 @@ def nuclei_per_cell_histogram(nuc_im, cell_im, max_value=10):
 
 
 full_feature_list = \
-    [fun.partial(np.histogram, bins=16, range=(0.0, 1.0)),
-    fun.partial(lab_hist, bins=16, range=(0.0, 1.0)),
+    [ft.partial(np.histogram, bins=16, range=(0.0, 1.0)),
+    ft.partial(lab_hist, bins=16, range=(0.0, 1.0)),
     feature.hog
     ]
     # TO-DO: add segmentation features
