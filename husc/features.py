@@ -148,7 +148,8 @@ def object_features(bin_im, im, erode=2):
     return f
 
 
-def percent_positive(bin_im, positive_im, erode=2, overlap_thresh=0.9):
+def fraction_positive(bin_im, positive_im, erode=2, overlap_thresh=0.9,
+                     bin_name='nuclei', positive_name='tf'):
     """Compute fraction of objects in bin_im overlapping positive_im.
 
     The purpose of this function is to compute the fraction of nuclei
@@ -167,10 +168,17 @@ def percent_positive(bin_im, positive_im, erode=2, overlap_thresh=0.9):
     overlap_thresh : float, optional
         The minimum amount of overlap between an object in `bin_im` and
         the `positive_im` to consider that object "positive".
+    bin_name : string, optional
+        The name of the objects being tested.
+    positive_name : string, optional
+        The name of the property being measured.
+
     Returns
     -------
-    f = 1D array of float, shape (1,)
+    f : 1D array of float, shape (1,)
         The feature vector.
+    name : list of string, length 1
+        The name of the feature.
     """
     selem = skmorph.disk(erode)
     if erode > 0:
@@ -181,7 +189,9 @@ def percent_positive(bin_im, positive_im, erode=2, overlap_thresh=0.9):
                                 intensity_image=positive_im.astype(np.float32))
     means = np.array([prop['MeanIntensity'] for prop in means], np.float32)
     f = np.array([np.mean(means > overlap_thresh)])
-    return f
+    name = ['frac-%s-pos-%s-erode-%i-thresh-%.2f' %
+            (bin_name, positive_name, erode, overlap_thresh)]
+    return f, name
 
 
 full_feature_list = \
