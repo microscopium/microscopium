@@ -1,16 +1,10 @@
-import functools as ft
 import itertools as it
 import numpy as np
 from scipy.stats.mstats import mquantiles
 from scipy import ndimage as nd
-from skimage import feature, color, io as imio, img_as_float, \
-    morphology as skmorph
+from skimage import morphology as skmorph
 from skimage import filter as imfilter, measure, util
 from sklearn.neighbors import NearestNeighbors
-
-
-def lab_hist(rgb_image, **kwargs):
-    return np.histogram(color.rgb2lab(rgb_image), **kwargs)
 
 
 def normalize_vectors(v):
@@ -248,19 +242,3 @@ def nuclei_per_cell_histogram(nuc_im, cell_im, max_value=10):
     fs /= total
     return fs, names
 
-
-full_feature_list = \
-    [ft.partial(np.histogram, bins=16, range=(0.0, 1.0)),
-    ft.partial(lab_hist, bins=16, range=(0.0, 1.0)),
-    feature.hog
-    ]
-    # TO-DO: add segmentation features
-
-
-def image_feature_vector(im, feature_list=None):
-    if type(im) == str:
-        im = img_as_float(imio.imread(im))
-    if feature_list is None:
-        feature_list = full_feature_list
-    features = np.concatenate([f(im) for f in feature_list])
-    return features
