@@ -1,4 +1,5 @@
 import functools as ft
+import itertools as it
 import numpy as np
 from scipy.stats.mstats import mquantiles
 from scipy import ndimage as nd
@@ -63,8 +64,8 @@ def triplet_angles(points, indices):
     return angles
 
 
-def nearest_neighbors(lab_im, n=3):
-    """Find the distances to and angle between the two nearest neighbors.
+def nearest_neighbors(lab_im, n=3, quantiles=[0.05, 0.25, 0.5, 0.75, 0.95]):
+    """Find the distances to and angle between the n nearest neighbors.
 
     Parameters
     ----------
@@ -73,10 +74,15 @@ def nearest_neighbors(lab_im, n=3):
     n : int, optional
         How many nearest neighbors to check. (Angle is always between
         the two nearest only.)
+    quantiles : list of float in [0, 1], optional
+        Which quantiles of the features to compute.
 
     Returns
     -------
     nei : 1D array of float, shape (5 * (n + 1),)
+        The quantiles of angles and `n` nearest neighbor distances.
+    names : list of string
+        The names of each feature.
     """
     centroids = np.array([p.centroid for p in measure.regionprops(lab_im)])
     nbrs = (NearestNeighbors(n_neighbors=(n + 1), algorithm='kd_tree').
@@ -86,7 +92,11 @@ def nearest_neighbors(lab_im, n=3):
     # ignore order/orientation of vectors, only measure acute angles
     angles[angles > np.pi] = 2 * np.pi - angles[angles > np.pi]
     distances[:, 0] = angles
-    return distances.ravel()
+    nei = mquantiles(distances, quantiles, axis=0).ravel()
+    colnames = ['theta'] + ['d-neighbor-%i-' % i for i in range(1, n + 1)]
+    names = ['%s-percentile-%i' % (colname, int(q * 100))
+             for colname, q in it.product(colnames, quantiles)]
+    return nei, names
 
 
 # threshold and labeling number of objects, statistics about object size and
@@ -107,11 +117,13 @@ def intensity_object_features(im, adaptive_t_radius=51):
         The feature vector.
     """
     tim1 = im > imfilter.threshold_otsu(im)
-    f1 = object_features(tim1, im)
+    f1, names1 = object_features(tim1, im)
+    names1 = ['otsu-threshold-' + name for name in names1]
     tim2 = imfilter.threshold_adaptive(im, adaptive_t_radius)
-    f2 = object_features(tim2, im)
+    f2, names2 = object_features(tim2, im)
+    names2 = ['adaptive-threshold-' + name for name in names2]
     f = np.concatenate([f1, f2])
-    return f
+    return f, names1 + names2
 
 
 def object_features(bin_im, im, erode=2):
@@ -128,24 +140,27 @@ def object_features(bin_im, im, erode=2):
 
     Returns
     -------
-    f : 1D np.ndarray of float
+    fs : 1D np.ndarray of float
         The feature vector.
+    names : list of string
+        The names of each feature.
     """
     selem = skmorph.disk(erode)
     if erode > 0:
         bin_im = nd.binary_opening(bin_im, selem)
     lab_im, n_objs = nd.label(bin_im)
-    feats = measure.regionprops(lab_im,
-                                ['Area', 'Eccentricity', 'EulerNumber',
-                                 'Extent', 'MinIntensity', 'MeanIntensity',
-                                 'MaxIntensity', 'Solidity'],
-                                intensity_image=im)
-    feats = np.array([props.values() for props in feats], np.float)
-    feature_quantiles = mquantiles(feats, [0.05, 0.25, 0.5, 0.75, 0.95],
-                                   axis=0)
-    f = np.concatenate([np.array([n_objs], np.float),
-                        feature_quantiles.ravel()])
-    return f
+    prop_names = ['Area', 'Eccentricity', 'EulerNumber', 'Extent',
+                  'MinIntensity', 'MeanIntensity', 'MaxIntensity', 'Solidity']
+    feats = measure.regionprops(lab_im, prop_names, intensity_image=im)
+    feats = np.array([[props[k] for k in prop_names] for props in feats],
+                     np.float)
+    quantiles = [0.05, 0.25, 0.5, 0.75, 0.95]
+    feature_quantiles = mquantiles(feats, quantiles, axis=0)
+    fs = np.concatenate([np.array([n_objs], np.float),
+                         feature_quantiles.ravel()])
+    names = ['%s-percentile%i' % (prop, int(q * 100))
+             for prop, q in it.product(feats, quantiles)]
+    return fs, names
 
 
 def fraction_positive(bin_im, positive_im, erode=2, overlap_thresh=0.9,
