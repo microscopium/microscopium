@@ -4,7 +4,7 @@ from scipy.stats.mstats import mquantiles
 from scipy import ndimage as nd
 from skimage import feature, color, io as imio, img_as_float, \
     morphology as skmorph
-from skimage import filter as imfilter, measure
+from skimage import filter as imfilter, measure, util
 from sklearn.neighbors import NearestNeighbors
 
 
@@ -192,6 +192,46 @@ def fraction_positive(bin_im, positive_im, erode=2, overlap_thresh=0.9,
     name = ['frac-%s-pos-%s-erode-%i-thresh-%.2f' %
             (bin_name, positive_name, erode, overlap_thresh)]
     return f, name
+
+
+def nuclei_per_cell_histogram(nuc_im, cell_im, max_value=10):
+    """Compute the histogram of nucleus count per cell object.
+
+    Counts above or below max_value and min_value are clipped.
+
+    Parameters
+    ----------
+    nuc_im : array of bool or int
+        An image of nucleus objects, binary or labelled.
+    cell_im : array of bool or int
+        An image of cell objects, binary or labelled.
+    max_value : int, optional
+        The highest nucleus count we expect. Anything above this will
+        be clipped to ``max_value + 1``.
+
+    Returns
+    -------
+    fs : array of float, shape ``(max_value - min_value + 2,)``.
+        The proportion of cells with each nucleus counts.
+    names : list of string, same length as fs
+        The name of each feature.
+    """
+    names = [('cells-with-%i-nuclei' % n) for n in range(max_value + 2)]
+    nuc_lab = nd.label(nuc_im)[0]
+    cell_lab = nd.label(cell_im)[0]
+    match = np.vstack((nuc_lab.ravel(), cell_lab.ravel())).T
+    match = match[(match.sum(axis=1) != 0), :]
+    match = util.unique_rows(match)
+    # number of nuclei in each cell
+    cells = np.bincount(match[:, 1])
+    # number of cells with x nuclei
+    nhist = np.bincount(cells, minlength=max_value + 2)
+    total = np.sum(nhist)
+    fs = np.zeros((max_value + 2), np.float)
+    fs[:(max_value + 1)] = nhist[:(max_value + 1)]
+    fs[max_value + 1] = np.sum(nhist[(max_value + 1):])
+    fs /= total
+    return fs, names
 
 
 full_feature_list = \
