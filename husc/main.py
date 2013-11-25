@@ -9,9 +9,12 @@ import itertools as it
 # dependencies
 import numpy as np
 import mahotas as mh
-from skimage import io
+import pandas as pd
+from skimage import io, img_as_ubyte
 
 # local imports
+from . import io as hio
+from . import screens
 from . import preprocess as pre
 
 
@@ -79,6 +82,24 @@ stitch.add_argument('images', nargs='*', metavar='IM',
                     help="The input images.")
 
 
+cat = subpar.add_parser('cat',
+                        help="Glue the different image channels together.")
+cat.add_argument('images', nargs='*', metavar='IM',
+                 help="The input images.")
+
+
+features = subpar.add_parser('features',
+                             help="Map images to feature vectors.")
+features.add_argument('images', nargs='*', metavar='IM',
+                      help="The input images.")
+features.add_argument('output', metavar='OUTFN',
+                      help="The output HDF5 filename.")
+features.add_argument('-s', '--screen', default='myofusion',
+                      help="The name of the screen being run. Feature maps "
+                           "appropriate for the screen should be in the "
+                           "'screens' package.")
+
+
 def get_command(argv):
     """Get the command name used from the command line.
 
@@ -107,6 +128,10 @@ def main():
         run_illum(args)
     elif cmd == 'stitch':
         run_stitch(args)
+    elif cmd == 'cat':
+        run_cat(args)
+    elif cmd == 'features':
+        run_features(args)
     else:
         sys.stderr.write("Error: command %s not found. Run %s -h for help." %
                          (cmd, sys.argv[0]))
@@ -178,6 +203,43 @@ def run_stitch(args):
         The arguments parsed by the argparse library.
     """
     pre.run_quadrant_stitch(args.images)
+
+
+def run_cat(args):
+    """Run channel concatenation.
+
+    Parameters
+    ----------
+    args : argparse.Namespace
+        The arguments parsed by the argparse library.
+    """
+    ims = map(mh.imread, args.images)
+    ims_out = hio.cat_channels(ims)
+    out_fns = [os.path.splitext(fn)[0] + '.chs.tif' for fn in args.images[::3]]
+    for im, fn in zip(ims_out, out_fns):
+        try:
+            mh.imsave(fn, im)
+        except ValueError:
+            im = img_as_ubyte(pre.stretchlim(im, 0.05, 0.95))
+            mh.imsave(fn, im)
+
+
+def run_features(args):
+    """Run image feature computation.
+
+    Parameters
+    ----------
+    args : argparse.Namespace
+        The arguments parsed by the argparse library.
+    """
+    images = it.imap(mh.imread, args.images)
+    fmap = screens.d[args.screen]
+    f0, feature_names = fmap(images.next())
+    feature_vectors = [f0] + [fmap(im)[0] for im in images]
+    filenames = args.images
+    data = pd.DataFrame(np.vstack(feature_vectors), index=filenames,
+                        columns=feature_names)
+    data.to_hdf(args.output, key='data')
 
 
 if __name__ == '__main__':
