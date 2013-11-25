@@ -29,7 +29,7 @@ def feature_vector_from_rgb(image):
     names : list of string
         The feature names.
     """
-    all_fs, all_names = []
+    all_fs, all_names = [], []
     ims = np.rollaxis(image, -1, 0)
     mcf, cells, nuclei = ims
     prefixes = ['mcf', 'cells', 'nuclei']
@@ -48,7 +48,7 @@ def feature_vector_from_rgb(image):
     all_fs.append(fs)
     all_names.extend(names)
     cells_t_otsu = cells > threshold_otsu(cells)
-    cells_t_adapt = cells > threshold_adaptive(cells)
+    cells_t_adapt = cells > threshold_adaptive(cells, 51)
     fs, names = features.nuclei_per_cell_histogram(nuclei_mean, cells_t_otsu)
     all_fs.append(fs)
     all_names.extend(['otsu-' + name for name in names])
