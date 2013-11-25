@@ -151,11 +151,12 @@ def object_features(bin_im, im, erode=2):
     feats = np.array([[props[k] for k in prop_names] for props in feats],
                      np.float)
     quantiles = [0.05, 0.25, 0.5, 0.75, 0.95]
-    feature_quantiles = mquantiles(feats, quantiles, axis=0)
+    feature_quantiles = mquantiles(feats, quantiles, axis=0).T
     fs = np.concatenate([np.array([n_objs], np.float),
                          feature_quantiles.ravel()])
-    names = ['%s-percentile%i' % (prop, int(q * 100))
-             for prop, q in it.product(feats, quantiles)]
+    names = (['num-objs'] +
+             ['%s-percentile%i' % (prop, int(q * 100))
+              for prop, q in it.product(prop_names, quantiles)])
     return fs, names
 
 
