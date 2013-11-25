@@ -16,6 +16,7 @@ from skimage import io, img_as_ubyte
 from . import io as hio
 from . import screens
 from . import preprocess as pre
+from . import io as my_io
 
 
 parser = argparse.ArgumentParser(description="Run the HUSC functions.")
@@ -156,7 +157,7 @@ def run_crop(args):
         fnout = os.path.splitext(imfn)[0] + args.output_suffix
         if args.output_dir is not None:
             fnout = os.path.join(args.output_dir, os.path.split(fnout)[1])
-        mh.imsave(fnout, imout)
+        my_io.imsave(fnout, imout)
 
 
 def run_mask(args):
