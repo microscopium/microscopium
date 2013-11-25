@@ -144,10 +144,6 @@ def run_illum(args):
     ----------
     args : argparse.Namespace
         The arguments parsed by the argparse library.
-
-    Returns
-    -------
-    None
     """
     if args.file_list is not None:
         args.images.extend([fn.rstrip() for fn in args.file_list])
@@ -180,10 +176,6 @@ def run_stitch(args):
     ----------
     args : argparse.Namespace
         The arguments parsed by the argparse library.
-
-    Returns
-    -------
-    None
     """
     pre.run_quadrant_stitch(args.images)
 
