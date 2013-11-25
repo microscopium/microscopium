@@ -244,9 +244,9 @@ def run_quadrant_stitch(fns, re_string='(.*)_(s[1-4])_(w[1-3]).*',
     fns_out = []
     for fn_pattern, fns in qd.items():
         new_filename = '_'.join(fn_pattern) + '_stitched.tif'
-        ims = map(imio.imread, sorted(fns))
+        ims = map(mh.imread, sorted(fns))
         im = quadrant_stitch(*ims)
-        imwrite(im, new_filename)
+        mh.imsave(new_filename, im)
         fns_out.append(new_filename)
     return fns_out
 
