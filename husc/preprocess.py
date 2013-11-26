@@ -13,6 +13,7 @@ import skimage.filter.rank as rank
 from skimage.util import pad
 
 from .io import imwrite
+from . import io as my_io
 
 
 def morphop(im, operation='open', radius='5'):
@@ -246,7 +247,7 @@ def run_quadrant_stitch(fns, re_string='(.*)_(s[1-4])_(w[1-3]).*',
         new_filename = '_'.join(fn_pattern) + '_stitched.tif'
         ims = map(mh.imread, sorted(fns))
         im = quadrant_stitch(*ims)
-        mh.imsave(new_filename, im)
+        my_io.imsave(new_filename, im)
         fns_out.append(new_filename)
     return fns_out
 
@@ -486,8 +487,8 @@ def find_background_illumination(fns, radius=51, quantile=0.05,
     --------
     ``max_mask_iter``, ``correct_image_illumination``.
     """
-    im0 = mh.imread(fns[0])
-    im_iter = (mh.imread(fn) for fn in fns)
+    im0 = my_io.imread(fns[0]).astype(np.uint16)
+    im_iter = (my_io.imread(fn).astype(np.uint16) for fn in fns)
     if stretch_quantile > 0:
         im_iter = (stretchlim(im, stretch_quantile, 1 - stretch_quantile) for
                    im in im_iter)

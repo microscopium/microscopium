@@ -31,6 +31,8 @@ def feature_vector_from_rgb(image):
     """
     all_fs, all_names = [], []
     ims = np.rollaxis(image, -1, 0)
+    if ims.shape[0] == 4:
+        ims = ims[:3] # ignore alpha channel
     mcf, cells, nuclei = ims
     prefixes = ['mcf', 'cells', 'nuclei']
     for im, prefix in zip(ims, prefixes):

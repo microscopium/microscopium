@@ -53,6 +53,15 @@ def imwrite(ar, fn, bitdepth=None):
 imsave = imwrite
 
 
+def imread(imfn):
+    """Read an image in using PIL.
+    """
+    im = Image.open(imfn)
+    ar = (np.squeeze(np.array(im.getdata()).
+                     reshape((im.size[1], im.size[0], -1))))
+    return ar
+
+
 def cat_channels(ims, order=[2, 0, 1]):
     """From a sequence of single-channel images, produce multichannels.
 

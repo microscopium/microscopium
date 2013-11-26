@@ -188,7 +188,7 @@ def run_illum(args):
     base_fns = [pre.basefn(fn) for fn in args.images]
     ims_out = [fn + args.output_suffix for fn in base_fns]
     mask_fns = [fn + '.mask.tif' for fn in base_fns]
-    ims = (mh.imread(fn) for fn in args.images)
+    ims = (my_io.imread(fn).astype(np.uint16) for fn in args.images)
     for im, fout, mask_fn in it.izip(ims, ims_out, mask_fns):
         if os.path.isfile(mask_fn):
             mask = mh.imread(mask_fn).astype(bool)
