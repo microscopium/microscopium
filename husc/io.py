@@ -1,4 +1,5 @@
 import os
+import itertools as it
 import numpy as np
 import Image
 
@@ -80,15 +81,19 @@ def cat_channels(ims, order=[2, 0, 1]):
 
     Returns
     -------
-    multi : list of arrays
+    multi : iterator of arrays
         A list of the images composed into multi-channel images.
     """
     nchannels = len(order)
-    multi = []
-    for i in range(len(ims) // nchannels):
-        channels = [ims[nchannels * i + j] for j in order]
-        channel_im = np.concatenate([c[..., np.newaxis] for c in channels],
-                                    axis=-1)
-        multi.append(channel_im)
-    return multi
+    while True:
+        channels = [ims.next() for i in range(nchannels)]
+        print len(channels)
+        print [(c.min(), c.max()) for c in channels]
+        try:
+            channels_sorted = [channels[j] for j in order]
+        except IndexError:
+            raise StopIteration()
+        channel_im = np.concatenate([c[..., np.newaxis] for
+                                     c in channels_sorted], axis=-1)
+        yield channel_im
 

@@ -213,10 +213,10 @@ def run_cat(args):
     args : argparse.Namespace
         The arguments parsed by the argparse library.
     """
-    ims = map(mh.imread, args.images)
+    ims = it.imap(mh.imread, args.images)
     ims_out = hio.cat_channels(ims)
     out_fns = [os.path.splitext(fn)[0] + '.chs.tif' for fn in args.images[::3]]
-    for im, fn in zip(ims_out, out_fns):
+    for im, fn in it.izip(ims_out, out_fns):
         try:
             mh.imsave(fn, im)
         except ValueError:
