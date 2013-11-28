@@ -233,7 +233,7 @@ def nuclei_per_cell_histogram(nuc_im, cell_im, max_value=10):
     cell_lab = nd.label(cell_im)[0]
     match = np.vstack((nuc_lab.ravel(), cell_lab.ravel())).T
     match = match[(match.sum(axis=1) != 0), :]
-    match = util.unique_rows(match)
+    match = util.unique_rows(match).astype(np.int64)
     # number of nuclei in each cell
     cells = np.bincount(match[:, 1])
     # number of cells with x nuclei
