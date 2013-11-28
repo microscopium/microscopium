@@ -29,6 +29,8 @@ crop.add_argument('images', nargs='+', metavar='IM', help="The input images.")
 crop.add_argument('-o', '--output-suffix',
                   default='.crop.tif', metavar='SUFFIX',
                   help="What suffix to attach to the cropped images.")
+crop.add_argument('-O', '--output-dir',
+                  help="Directory in which to output the cropped images.")
 
 
 mask = subpar.add_parser('mask', help="Estimate a mask over image artifacts.")
@@ -152,6 +154,8 @@ def run_crop(args):
         im = mh.imread(imfn)
         imout = pre.crop(im, slices)
         fnout = os.path.splitext(imfn)[0] + args.output_suffix
+        if args.output_dir is not None:
+            fnout = os.path.join(args.output_dir, os.path.split(fnout)[1])
         mh.imsave(fnout, imout)
 
 
