@@ -99,3 +99,68 @@ def myores_semantic_filename(fn):
     return semantic
 
 
+def dir2plate(dirname):
+    """Return a Plate ID from a directory name.
+    
+    Parameters
+    ----------
+    dirname : string
+        A directory containing export images from an HCS plate.
+
+    Returns
+    -------
+    plateid : string
+        The plate ID parsed from the directory name.
+    """
+    basedir = os.path.split(dirname)[1]
+    plateid = basedir.split('_')[1]
+    return plateid
+
+
+def plate2dir(dirs, base_dir='marcelle/raw-data'):
+    """Return map from plate IDs to directories containing plate images.
+
+    Parameters
+    ----------
+    plateids : list of string
+        The plate IDs to be mapped.
+    base_dir : string, optional
+        The base location on the directories on the server.
+
+    Returns
+    -------
+    plate2dir_dict : {string: string}
+        Dictionary mapping plate IDs to directory paths.
+    """
+    plate2dir_dict = dict([(dir2plate(d), os.path.join(base_dir, d)) for
+                           d in dirs])
+    return plate2dir_dict
+
+
+def scratch2real(fn, plate2dir_dict):
+    """Get the full path from the image filename.
+
+    Parameters
+    ----------
+    fn : string
+        The input filename, stemming from the image file used in the
+        cluster job (i.e. in scratch storage).
+    plate2dir_dict : string
+        A dictionary mapping plates to directories.
+
+    Returns
+    -------
+    fn_out : string
+        The full path (from the base directory) to the filename in its
+        original location.
+    """
+    fn1 = os.path.split(fn)[-1]
+    sem = myores_semantic_filename(fn1)
+    try:
+        d = plate2dir_dict[sem['plate']]
+    except KeyError:
+        print((fn, sem))
+        raise
+    return os.path.join(d, fn1)
+
+
