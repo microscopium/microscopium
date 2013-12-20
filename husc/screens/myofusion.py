@@ -163,3 +163,56 @@ def scratch2real(fn, plate2dir_dict):
     return os.path.join(d, fn1)
 
 
+# annotation file columns:
+#     [(0, 'gene_name'),
+#      (1, 'gene_acc'),
+#      (2, 'source_plate_barcode'),
+#      (3, 'source_plate_label'),
+#      (4, 'cell_plate_barcode'),
+#      (5, 'cell_plate_label'),
+#      (6, 'well'),
+#      (7, 'row'),
+#      (8, 'column'),
+#      (9, 'label'),
+#      (10, 'experimental_content_type_name'),
+#      (11, 'molecule_design_id')]
+
+
+def make_gene2wells_dict(fn, delim=',', header=True,
+                        symbol_plate_well_ctrl=[0, 4, 6, 10]):
+    """Produce a gene to well map from the annotation table file.
+
+    Parameters
+    ----------
+    fn : string
+        The input filename. The file should be a comma or tab delimited
+        table.
+    delim : string, optional
+        The delimiter between columns in a row entry.
+    header : bool, optional
+        Whether the file contains a header of column names.
+    symbol_plate_well_ctrl : list of int, optional
+        Which columns are required for this application: gene symbol,
+        plate number, well, control or sample.
+
+    Returns
+    -------
+    gene2wells : dict, {string: [(int, string)]}
+        Dictionary mapping gene symbols to plate/well combinations.
+        Controls are mapped as 'control-NEG', 'control-POS', and so on.
+    """
+    gene2wells = {}
+    with open(fn, 'r') as fin:
+        if header:
+            _header = fin.readline()
+        for line in fin:
+            line = line.rstrip().split(delim)
+            symbol, plate, well, ctrl = [line[i] for
+                                         i in symbol_plate_well_ctrl]
+            plate = int(plate)
+            if symbol == '' and ctrl.lower() != 'sample':
+                symbol = 'control-' + ctrl
+            gene2wells.setdefault(symbol, []).append((plate, well))
+    return gene2wells
+
+            gene2wells.setdefault(symbol, []).append((plate, 
