@@ -117,7 +117,7 @@ def dir2plate(dirname):
     return plateid
 
 
-def plate2dir(dirs, base_dir='marcelle/raw-data'):
+def make_plate2dir_dict(dirs, base_dir='marcelle/raw-data'):
     """Return map from plate IDs to directories containing plate images.
 
     Parameters
@@ -129,12 +129,11 @@ def plate2dir(dirs, base_dir='marcelle/raw-data'):
 
     Returns
     -------
-    plate2dir_dict : {string: string}
+    plate2dir : {string: string}
         Dictionary mapping plate IDs to directory paths.
     """
-    plate2dir_dict = dict([(dir2plate(d), os.path.join(base_dir, d)) for
-                           d in dirs])
-    return plate2dir_dict
+    plate2dir = dict([(dir2plate(d), os.path.join(base_dir, d)) for d in dirs])
+    return plate2dir
 
 
 def scratch2real(fn, plate2dir_dict):
