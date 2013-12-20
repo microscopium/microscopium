@@ -215,4 +215,4 @@ def make_gene2wells_dict(fn, delim=',', header=True,
             gene2wells.setdefault(symbol, []).append((plate, well))
     return gene2wells
 
-            gene2wells.setdefault(symbol, []).append((plate, 
+
