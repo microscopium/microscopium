@@ -161,14 +161,14 @@ def scratch2real(fn, plate2dir_dict):
         The full path (from the base directory) to the filename in its
         original location.
     """
-    fn1 = os.path.split(fn)[-1]
-    sem = myores_semantic_filename(fn1)
+    base_fn = os.path.split(fn)[-1]
+    sem = myores_semantic_filename(base_fn)
     try:
         d = plate2dir_dict[sem['plate']]
     except KeyError:
         print((fn, sem))
         raise
-    return os.path.join(d, fn1)
+    return os.path.join(d, base_fn)
 
 
 # annotation file columns:
