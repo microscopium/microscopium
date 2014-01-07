@@ -212,7 +212,7 @@ def make_gene2wells_dict(fn, delim=',', header=True,
     gene2wells = {}
     with open(fn, 'r') as fin:
         if header:
-            _header = fin.readline()
+            fin.readline()
         for line in fin:
             line = line.rstrip().split(delim)
             symbol, plate, well, ctrl = [line[i] for
