@@ -76,6 +76,7 @@ def myores_semantic_filename(fn):
     -------
     semantic : collections.OrderedDict {string: string}
         A dictionary mapping the different components of the filename.
+        NOTE: the 'plate' key is converted to an int.
 
     Examples
     --------
@@ -96,6 +97,7 @@ def myores_semantic_filename(fn):
         full_prefix = head + ['-'.join(tail)]
     values = [directory] + full_prefix + values[1:] + [suffix]
     semantic = coll.OrderedDict(zip(keys, values))
+    semantic['plate'] = int(semantic['plate'])
     return semantic
 
 
@@ -109,11 +111,17 @@ def dir2plate(dirname):
 
     Returns
     -------
-    plateid : string
+    plateid : int
         The plate ID parsed from the directory name.
     """
     basedir = os.path.split(dirname)[1]
     plateid = basedir.split('_')[1]
+    try:
+        plateid = int(plateid)
+    except ValueError:
+        print("Plate ID %s cannot be converted to int, replaced with 0." %
+              plateid)
+        return 0
     return plateid
 
 
@@ -144,7 +152,7 @@ def scratch2real(fn, plate2dir_dict):
     fn : string
         The input filename, stemming from the image file used in the
         cluster job (i.e. in scratch storage).
-    plate2dir_dict : string
+    plate2dir_dict : {int: string}
         A dictionary mapping plates to directories.
 
     Returns
