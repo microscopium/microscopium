@@ -247,3 +247,23 @@ def make_well2file_dict(data):
     return well2file
 
 
+def make_gene2files_dict(gene2wells, well2file):
+    """Create a dictionary mapping genes to images.
+
+    Parameters
+    ----------
+    gene2wells : dict, {string: [(int, string)]}
+        A dictionary mapping genes to wells.
+    well2file : dict, {(int, string): string}
+        A dictionary mapping wells to files.
+
+    Returns
+    -------
+    gene2files : dict, {string, [string]}
+        A dictionary mapping genes to files.
+    """
+    gene2files = {}
+    for gene, wells in gene2wells.items():
+        gene2files[gene] = [well2file(well) for well in wells]
+    return gene2files
+
