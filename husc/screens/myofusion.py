@@ -224,3 +224,26 @@ def make_gene2wells_dict(fn, delim=',', header=True,
     return gene2wells
 
 
+def make_well2file_dict(data):
+    """Create a dictionary mapping wells to image files.
+
+    Parameters
+    ----------
+    data : pandas data frame
+        A data frame from feature computation.
+
+    Returns
+    -------
+    well2file : dictionary, {(int, string): string}
+        A dictionary keyed by a (plate, well) tuple whose values are
+        file paths.
+    """
+    filenames = data.index
+    filepaths = map(scratch2real, filenames)
+    file_data = map(myores_semantic_filename, filepaths)
+    well2file = {}
+    for info, path in zip(file_data, filepaths):
+        well2file[(info['plate'], info['well'])] = path
+    return well2file
+
+
