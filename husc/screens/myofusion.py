@@ -84,7 +84,7 @@ def myores_semantic_filename(fn):
               '4b1167f3b9c6_C04_s1_w1.TIF')
     >>> d = myores_semantic_filename(fn)
     >>> d
-    OrderedDict([('directory', ''), ('prefix', 'MYORES'), ('pass', 'p1'), ('job', 'j01'), ('date', '110210'), ('plate', '02490688'), ('barcode', '53caa10e-ac15-4166-9b9d-4b1167f3b9c6'), ('well', 'C04'), ('quadrant', 's1'), ('channel', 'w1'), ('suffix', '')])
+    OrderedDict([('directory', ''), ('prefix', 'MYORES'), ('pass', 'p1'), ('job', 'j01'), ('date', '110210'), ('plate', 2490688), ('barcode', '53caa10e-ac15-4166-9b9d-4b1167f3b9c6'), ('well', 'C04'), ('quadrant', 's1'), ('channel', 'w1'), ('suffix', '')])
     """
     keys = ['directory', 'prefix', 'pass', 'job', 'date', 'plate',
             'barcode', 'well', 'quadrant', 'channel', 'suffix']
