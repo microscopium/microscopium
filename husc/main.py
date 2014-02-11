@@ -237,11 +237,12 @@ def run_features(args):
         The arguments parsed by the argparse library.
     """
     images = it.imap(mh.imread, args.images)
-    fmap = screens.d[args.screen]
+    screen_info = screens.d[args.screen]
+    index_function, fmap = screen_info['index'], screen_info['fmap']
     f0, feature_names = fmap(images.next())
     feature_vectors = [f0] + [fmap(im)[0] for im in images]
-    filenames = args.images
-    data = pd.DataFrame(np.vstack(feature_vectors), index=filenames,
+    data = pd.DataFrame(np.vstack(feature_vectors),
+                        index=index_function(args.images),
                         columns=feature_names)
     data.to_hdf(args.output, key='data')
 

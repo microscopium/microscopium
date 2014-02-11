@@ -101,6 +101,30 @@ def myores_semantic_filename(fn):
     return semantic
 
 
+def filename2coord(fn):
+    """Obtain (plate, well) coordinates from a filename.
+
+    Parameters
+    ----------
+    fn : string
+        The input filename
+
+    Returns
+    -------
+    coord : (int, string) tuple
+        The (plate, well) coordinates of the image.
+
+    Examples
+    --------
+    >>> fn = ('MYORES-p1-j01-110210_02490688_53caa10e-ac15-4166-9b9d-'
+              '4b1167f3b9c6_C04_s1_w1.TIF')
+    >>> filename2coord(fn)
+    (2490688, 'C04')
+    """
+    sem = myores_semantic_filename(fn)
+    return (sem['plate'], sem['well'])
+
+
 def dir2plate(dirname):
     """Return a Plate ID from a directory name.
     
@@ -266,4 +290,9 @@ def make_gene2files_dict(gene2wells, well2file):
     for gene, wells in gene2wells.items():
         gene2files[gene] = [well2file(well) for well in wells]
     return gene2files
+
+
+if __name__ == '__main__':
+    import doctest
+    doctest.testmod()
 

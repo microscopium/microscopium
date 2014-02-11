@@ -2,5 +2,6 @@ from . import myofusion
 
 __all__ = ['myofusion']
 
-d = {'myofusion': myofusion.feature_map}
+d = {'myofusion': {'index': myofusion.filename2coord,
+                   'fmap':  myofusion.feature_map}}
 
