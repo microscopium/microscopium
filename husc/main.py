@@ -244,6 +244,7 @@ def run_features(args):
     data = pd.DataFrame(np.vstack(feature_vectors),
                         index=index_function(args.images),
                         columns=feature_names)
+    data['filenames'] = args.images
     data.to_hdf(args.output, key='data')
 
 
