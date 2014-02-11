@@ -242,10 +242,11 @@ def run_features(args):
     f0, feature_names = fmap(images.next())
     feature_vectors = [f0] + [fmap(im)[0] for im in images]
     data = pd.DataFrame(np.vstack(feature_vectors),
-                        index=index_function(args.images),
+                        index=map(index_function, args.images),
                         columns=feature_names)
-    data['filenames'] = args.images
     data.to_hdf(args.output, key='data')
+    with open(args.output[:-2] + 'filenames.txt', 'w') as fout:
+        fout.writelines((fn + '\n' for fn in args.images))
 
 
 if __name__ == '__main__':
