@@ -292,8 +292,8 @@ def make_gene2files_dict(gene2wells, well2file):
     return gene2files
 
 
-def populate_db(gene_table_filename, image_filenames, 
-                db="myofusion", host='localhost', port=27017):
+def populate_db(gene_table_filename, image_filenames, db="myofusion",
+                coll_name="wells", host='localhost', port=27017):
     """Populate a MongoDB database with gene entries from the screen.
 
     Parameters
@@ -304,23 +304,37 @@ def populate_db(gene_table_filename, image_filenames,
         The filenames of images in the screen.
     db : string, optional
         The name of the database in the MongoDB server.
+    coll_name : string, optional
+        The name of the collection within the database to hold the
+        gene data.
     host : string, optional
         The server hosting the MongoDB daemon.
     port : int, optional
         The port on which to access the MongoDB daemon.
     """
-    from pymongo import MongoClient
-    db = MongoClient(host, port)[db]
-    key2filename = {}
+    key2doc = {}
     for filename in image_filenames:
         sem = myores_semantic_filename(filename)
-        key2filename[(sem['plate'], sem['well'])] = filename
-    key2geneinfo = {}
+        key = (sem['plate'], sem['well'])
+        key2doc[key] = {'filename': filename, '_id': key}
     with open(gene_table_filename, 'r') as fin:
         column_names = fin.readline().rstrip().split(',')
         idx_plate = column_names.find('cell_plate_barcode')
         idx_well = column_names.find('well')
-
+        for line in fin:
+            line = line.rstrip().split(',')
+            line[idx_plate] = int(line[idx_plate])
+            key = (line[idx_plate], line[idx_well])
+            doc = dict(zip(column_names, line))
+            if key2doc.has_key(key):
+                key2doc[key].update(doc)
+            else:
+                key2doc[key] = doc
+                key2doc[key]['_id'] = key
+    from pymongo import MongoClient
+    collection = MongoClient(host, port)[db][coll_name]
+    for doc in key2doc.values():
+        collection.insert(doc)
 
 
 if __name__ == '__main__':
