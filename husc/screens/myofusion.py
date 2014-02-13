@@ -292,6 +292,37 @@ def make_gene2files_dict(gene2wells, well2file):
     return gene2files
 
 
+def populate_db(gene_table_filename, image_filenames, 
+                db="myofusion", host='localhost', port=27017):
+    """Populate a MongoDB database with gene entries from the screen.
+
+    Parameters
+    ----------
+    gene_table_filename : string
+        The file containing the mapping of genes to plates and wells.
+    image_filenames : list of string
+        The filenames of images in the screen.
+    db : string, optional
+        The name of the database in the MongoDB server.
+    host : string, optional
+        The server hosting the MongoDB daemon.
+    port : int, optional
+        The port on which to access the MongoDB daemon.
+    """
+    from pymongo import MongoClient
+    db = MongoClient(host, port)[db]
+    key2filename = {}
+    for filename in image_filenames:
+        sem = myores_semantic_filename(filename)
+        key2filename[(sem['plate'], sem['well'])] = filename
+    key2geneinfo = {}
+    with open(gene_table_filename, 'r') as fin:
+        column_names = fin.readline().rstrip().split(',')
+        idx_plate = column_names.find('cell_plate_barcode')
+        idx_well = column_names.find('well')
+
+
+
 if __name__ == '__main__':
     import doctest
     doctest.testmod()
