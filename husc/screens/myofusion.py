@@ -97,7 +97,10 @@ def myores_semantic_filename(fn):
         full_prefix = head + ['-'.join(tail)]
     values = [directory] + full_prefix + values[1:] + [suffix]
     semantic = coll.OrderedDict(zip(keys, values))
-    semantic['plate'] = int(semantic['plate'])
+    try:
+        semantic['plate'] = int(semantic['plate'])
+    except ValueError: # Some plates are labeled "NOCODE"
+        semantic['plate'] = np.random.randint(1000000)
     return semantic
 
 
