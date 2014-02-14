@@ -322,8 +322,8 @@ def populate_db(gene_table_filename, image_filenames, db="myofusion",
         key2doc[key] = {'filename': filename, '_id': key}
     with open(gene_table_filename, 'r') as fin:
         column_names = fin.readline().rstrip().split(',')
-        idx_plate = column_names.find('cell_plate_barcode')
-        idx_well = column_names.find('well')
+        idx_plate = column_names.index('cell_plate_barcode')
+        idx_well = column_names.index('well')
         for line in fin:
             line = line.rstrip().split(',')
             line[idx_plate] = int(line[idx_plate])
