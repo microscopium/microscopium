@@ -295,6 +295,52 @@ def make_gene2files_dict(gene2wells, well2file):
     return gene2files
 
 
+def key2mongo(tup):
+    """Return a string given an (int, string) plate-well key.
+
+    Parameters
+    ----------
+    tup : (int, string) tuple
+        A (plate, well) identifier.
+
+    Returns
+    -------
+    mongo_id : string
+        A string, suitable for representing a mongodb _id field.
+
+    Examples
+    --------
+    >>> tup = (2490688, 'C04')
+    >>> key2mongo(tup)
+    '2490688-C04'
+    """
+    return str(tup[0]) + '-' + tup[1]
+
+
+def mongo2key(mongo_id):
+    """Return an (int, string) plate-well key, given its string.
+
+    Parameters
+    ----------
+    mongo_id : string
+        A string representing a plate-well key, separated by a dash.
+
+    Returns
+    -------
+    tup : (int, string) tuple
+        The plate-well representation.
+
+    Examples
+    --------
+    >>> mongo_id = "2490688-C04"
+    >>> mongo2key(mongo_id)
+    (2490688, 'C04')
+    """
+    tup = mongo_id.split('-')
+    tup[0] = int(tup[0])
+    return tuple(tup)
+
+
 def populate_db(gene_table_filename, image_filenames, db="myofusion",
                 coll_name="wells", host='localhost', port=27017):
     """Populate a MongoDB database with gene entries from the screen.
@@ -319,7 +365,7 @@ def populate_db(gene_table_filename, image_filenames, db="myofusion",
     for filename in image_filenames:
         sem = myores_semantic_filename(filename)
         key = (sem['plate'], sem['well'])
-        key2doc[key] = {'filename': filename, '_id': key}
+        key2doc[key] = {'filename': filename, '_id': key2mongo(key)}
     with open(gene_table_filename, 'r') as fin:
         column_names = fin.readline().rstrip().split(',')
         idx_plate = column_names.index('cell_plate_barcode')
@@ -333,7 +379,7 @@ def populate_db(gene_table_filename, image_filenames, db="myofusion",
                 key2doc[key].update(doc)
             else:
                 key2doc[key] = doc
-                key2doc[key]['_id'] = key
+                key2doc[key]['_id'] = key2mongo(key)
     from pymongo import MongoClient
     collection = MongoClient(host, port)[db][coll_name]
     for doc in key2doc.values():
