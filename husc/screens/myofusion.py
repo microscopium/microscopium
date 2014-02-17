@@ -383,7 +383,7 @@ def populate_db(gene_table_filename, image_filenames, db="myofusion",
     from pymongo import MongoClient
     collection = MongoClient(host, port)[db][coll_name]
     for doc in key2doc.values():
-        collection.insert(doc)
+        collection.save(doc)
 
 
 if __name__ == '__main__':
