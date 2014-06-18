@@ -74,9 +74,10 @@ def nearest_neighbors(lab_im, n=3, quantiles=[0.05, 0.25, 0.5, 0.75, 0.95]):
     Returns
     -------
     nei : 1D array of float, shape (5 * (n + 1),)
-        The quantiles of angles and `n` nearest neighbor distances.
+        The quantiles of sines, cosines, angles, and `n` nearest neighbor
+        distances.
     names : list of string
-        The names of each feature.
+        The name of each feature.
     """
     centroids = np.array([p.centroid for p in measure.regionprops(lab_im)])
     nbrs = (NearestNeighbors(n_neighbors=(n + 1), algorithm='kd_tree').
@@ -86,8 +87,12 @@ def nearest_neighbors(lab_im, n=3, quantiles=[0.05, 0.25, 0.5, 0.75, 0.95]):
     # ignore order/orientation of vectors, only measure acute angles
     angles[angles > np.pi] = 2 * np.pi - angles[angles > np.pi]
     distances[:, 0] = angles
-    nei = mquantiles(distances, quantiles, axis=0).ravel()
-    colnames = ['theta'] + ['d-neighbor-%i-' % i for i in range(1, n + 1)]
+    sines, cosines = np.sin(angles), np.cos(angles)
+    features = np.hstack((sines[:, np.newaxis], cosines[:, np.newaxis],
+                          distances))
+    nei = mquantiles(features, quantiles, axis=0).ravel()
+    colnames = (['sin-theta', 'cos-theta', 'theta'] +
+                ['d-neighbor-%i-' % i for i in range(1, n + 1)])
     names = ['%s-percentile-%i' % (colname, int(q * 100))
              for colname, q in it.product(colnames, quantiles)]
     return nei, names
