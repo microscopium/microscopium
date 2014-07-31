@@ -127,7 +127,7 @@ def intensity_object_features(im, adaptive_t_radius=51):
     return f, names1 + names2
 
 
-def object_features(bin_im, im, erode=2):
+def object_features(bin_im, im, erode=2, sample_size=None):
     """Compute features about objects in a binary image.
 
     Parameters
@@ -138,6 +138,9 @@ def object_features(bin_im, im, erode=2):
         The actual image.
     erode : int, optional
         Radius of erosion of objects.
+    sample_size : int, optional
+        Sample this many objects randomly, rather than measuring all
+        objects.
 
     Returns
     -------
@@ -150,14 +153,20 @@ def object_features(bin_im, im, erode=2):
     if erode > 0:
         bin_im = nd.binary_opening(bin_im, selem)
     lab_im, n_objs = nd.label(bin_im)
+    if sample_size is None:
+        sample_size = n_objs
+        sample_indices = np.arange(n_objs)
+    else:
+        sample_indices = np.random.randint(0, n_objs, size=sample_size)
     prop_names = ['area', 'eccentricity', 'euler_number', 'extent',
                   'min_intensity', 'mean_intensity', 'max_intensity',
                   'solidity']
-    feats = measure.regionprops(lab_im, intensity_image=im)
-    feats = np.array([[getattr(props, k) for k in prop_names]
-                      for props in feats], np.float)
+    objects = measure.regionprops(lab_im, intensity_image=im)
+    properties = np.empty((sample_size, len(prop_names)), dtype=np.float)
+    for i in sample_indices:
+        properties[i] = [getattr(objects[i], prop) for prop in prop_names]
     quantiles = [0.05, 0.25, 0.5, 0.75, 0.95]
-    feature_quantiles = mquantiles(feats, quantiles, axis=0).T
+    feature_quantiles = mquantiles(properties, quantiles, axis=0).T
     fs = np.concatenate([np.array([n_objs], np.float),
                          feature_quantiles.ravel()])
     names = (['num-objs'] +
