@@ -166,8 +166,8 @@ def object_features(bin_im, im, erode=2, sample_size=None):
                   'solidity']
     objects = measure.regionprops(lab_im, intensity_image=im)
     properties = np.empty((sample_size, len(prop_names)), dtype=np.float)
-    for i in sample_indices:
-        properties[i] = [getattr(objects[i], prop) for prop in prop_names]
+    for i, j in enumerate(sample_indices):
+        properties[i] = [getattr(objects[j], prop) for prop in prop_names]
     quantiles = [0.05, 0.25, 0.5, 0.75, 0.95]
     feature_quantiles = mquantiles(properties, quantiles, axis=0).T
     fs = np.concatenate([np.array([n_objs], np.float),
