@@ -56,7 +56,7 @@ def feature_vector_from_rgb(image, sample_size=None):
     all_fs.append(fs)
     all_names.extend(names)
     cells_t_otsu = cells > threshold_otsu(cells)
-    cells_t_adapt = cells > threshold_adaptive(cells, 51)
+    cells_t_adapt = threshold_adaptive(cells, 51)
     fs, names = features.nuclei_per_cell_histogram(nuclei_mean, cells_t_otsu)
     all_fs.append(fs)
     all_names.extend(['otsu-' + name for name in names])
