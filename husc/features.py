@@ -150,11 +150,12 @@ def object_features(bin_im, im, erode=2):
     if erode > 0:
         bin_im = nd.binary_opening(bin_im, selem)
     lab_im, n_objs = nd.label(bin_im)
-    prop_names = ['Area', 'Eccentricity', 'EulerNumber', 'Extent',
-                  'MinIntensity', 'MeanIntensity', 'MaxIntensity', 'Solidity']
+    prop_names = ['area', 'eccentricity', 'euler_number', 'extent',
+                  'min_intensity', 'mean_intensity', 'max_intensity',
+                  'solidity']
     feats = measure.regionprops(lab_im, intensity_image=im)
-    feats = np.array([[props[k] for k in prop_names] for props in feats],
-                     np.float)
+    feats = np.array([[getattr(props, k) for k in prop_names]
+                      for props in feats], np.float)
     quantiles = [0.05, 0.25, 0.5, 0.75, 0.95]
     feature_quantiles = mquantiles(feats, quantiles, axis=0).T
     fs = np.concatenate([np.array([n_objs], np.float),
