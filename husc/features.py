@@ -100,7 +100,7 @@ def nearest_neighbors(lab_im, n=3, quantiles=[0.05, 0.25, 0.5, 0.75, 0.95]):
 
 # threshold and labeling number of objects, statistics about object size and
 # shape
-def intensity_object_features(im, adaptive_t_radius=51):
+def intensity_object_features(im, adaptive_t_radius=51, sample_size=None):
     """Segment objects based on intensity threshold and compute properties.
 
     Parameters
@@ -109,6 +109,9 @@ def intensity_object_features(im, adaptive_t_radius=51):
         The input image.
     adaptive_t_radius : int, optional
         The radius to calculate background with adaptive threshold.
+    sample_size : int, optional
+        Sample this many objects randomly, rather than measuring all
+        objects.
 
     Returns
     -------
@@ -118,10 +121,10 @@ def intensity_object_features(im, adaptive_t_radius=51):
         The list of feature names.
     """
     tim1 = im > imfilter.threshold_otsu(im)
-    f1, names1 = object_features(tim1, im)
+    f1, names1 = object_features(tim1, im, sample_size=sample_size)
     names1 = ['otsu-threshold-' + name for name in names1]
     tim2 = imfilter.threshold_adaptive(im, adaptive_t_radius)
-    f2, names2 = object_features(tim2, im)
+    f2, names2 = object_features(tim2, im, sample_size=sample_size)
     names2 = ['adaptive-threshold-' + name for name in names2]
     f = np.concatenate([f1, f2])
     return f, names1 + names2
