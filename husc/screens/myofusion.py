@@ -37,7 +37,7 @@ def feature_vector_from_rgb(image, sample_size=None):
         The feature names.
     """
     all_fs, all_names = [], []
-    ims = np.rollaxis(image, -1, 0)
+    ims = np.rollaxis(image[..., :3], -1, 0) # toss out alpha chan if present
     mcf, cells, nuclei = ims
     prefixes = ['mcf', 'cells', 'nuclei']
     for im, prefix in zip(ims, prefixes):
