@@ -152,7 +152,7 @@ def object_features(bin_im, im, erode=2):
     lab_im, n_objs = nd.label(bin_im)
     prop_names = ['Area', 'Eccentricity', 'EulerNumber', 'Extent',
                   'MinIntensity', 'MeanIntensity', 'MaxIntensity', 'Solidity']
-    feats = measure.regionprops(lab_im, prop_names, intensity_image=im)
+    feats = measure.regionprops(lab_im, intensity_image=im)
     feats = np.array([[props[k] for k in prop_names] for props in feats],
                      np.float)
     quantiles = [0.05, 0.25, 0.5, 0.75, 0.95]
@@ -202,9 +202,9 @@ def fraction_positive(bin_im, positive_im, erode=2, overlap_thresh=0.9,
         bin_im = nd.binary_opening(bin_im, selem)
         positive_im = nd.binary_opening(positive_im, selem)
     lab_im, n_objs = nd.label(bin_im)
-    means = measure.regionprops(lab_im, ['MeanIntensity'],
+    means = measure.regionprops(lab_im,
                                 intensity_image=positive_im.astype(np.float32))
-    means = np.array([prop['MeanIntensity'] for prop in means], np.float32)
+    means = np.array([prop.mean_intensity for prop in means], np.float32)
     f = np.array([np.mean(means > overlap_thresh)])
     name = ['frac-%s-pos-%s-erode-%i-thresh-%.2f' %
             (bin_name, positive_name, erode, overlap_thresh)]
