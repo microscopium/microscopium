@@ -12,7 +12,7 @@ from skimage.filter import threshold_otsu, threshold_adaptive
 from .. import features
 
 
-def feature_vector_from_rgb(image):
+def feature_vector_from_rgb(image, sample_size=None):
     """Compute a feature vector from the composite images.
 
     The channels are assumed to be in the following order:
@@ -24,6 +24,10 @@ def feature_vector_from_rgb(image):
     ----------
     im : array, shape (M, N, 3)
         The input image.
+    sample_size : int, optional
+        For features based on quantiles, sample this many objects
+        rather than computing full distribution. This can considerably
+        speed up computation with little cost to feature accuracy.
 
     Returns
     -------
@@ -37,7 +41,8 @@ def feature_vector_from_rgb(image):
     mcf, cells, nuclei = ims
     prefixes = ['mcf', 'cells', 'nuclei']
     for im, prefix in zip(ims, prefixes):
-        fs, names = features.intensity_object_features(im)
+        fs, names = features.intensity_object_features(im,
+                                                       sample_size=sample_size)
         names = [prefix + '-' + name for name in names]
         all_fs.append(fs)
         all_names.extend(names)
