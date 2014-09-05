@@ -463,7 +463,7 @@ def find_background_illumination(fns, radius=51, quantile=0.05,
                im in im_iter)
     bg_iter = (unpad(im, pad_width=radius) for im in bg_iter)
     illum = np.zeros(im0.shape, float)
-    counter = np.zeros(im0.shape, float)
+    counter = 0
     for bg in bg_iter:
         illum += bg
         counter += 1
