@@ -10,7 +10,8 @@ from scipy.stats.mstats import mquantiles as quantiles
 from skimage import (img_as_float, morphology as skmorph,
                      filter as imfilter)
 import skimage.filter.rank as rank
-from skimage.util import pad
+import skimage
+import cytoolz as tlz
 
 
 def morphop(im, operation='open', radius='5'):
@@ -423,6 +424,39 @@ def unpad(im, pad_width):
     return im[slices]
 
 
+def _reduce_with_count(pairwise, iterator, accumulator=None):
+    """Return both the result of the reduction and the number of elements.
+
+    Parameters
+    ----------
+    pairwise : function (a -> b -> a)
+        The function with which to reduce the `iterator` sequence.
+    iterator : iterable
+        The sequence being reduced.
+    accumulator : type "a", optional
+        An initial value with which to perform the reduction.
+
+    Returns
+    -------
+    result : type "a"
+        The result of the reduce operation.
+    count : int
+        The number of elements that were accumulated.
+
+    Examples
+    --------
+    >>> x = [5, 6, 7]
+    >>> _reduce_with_count(np.add, x)
+    (18, 3)
+    """
+    def new_pairwise(a, b):
+        (elem1, c1), (elem2, c2) = a, b
+        return pairwise(elem1, elem2), c2
+    new_iter = it.izip(iterator, it.count())
+    new_acc = (0, accumulator)
+    return tlz.reduce(new_pairwise, new_iter, new_acc)
+
+
 def find_background_illumination(fns, radius=51, quantile=0.05,
                                  stretch_quantile=0.0):
     """Use a set of related images to find uneven background illumination.
@@ -448,26 +482,24 @@ def find_background_illumination(fns, radius=51, quantile=0.05,
     --------
     ``correct_image_illumination``.
     """
-    im0 = mh.imread(fns[0])
-    im_iter = (mh.imread(fn) for fn in fns)
+    read = mh.imread
     if stretch_quantile > 0:
-        im_iter = (stretchlim(im, stretch_quantile, 1 - stretch_quantile) for
-                   im in im_iter)
+        normalize = tlz.partial(stretchlim, bottom=stretch_quantile,
+                                            top=(1 - stretch_quantile))
     else:
-        im_iter = it.imap(img_as_float, im_iter)
-    im_iter = it.imap(rescale_to_11bits, im_iter)
-    pad_image = fun.partial(pad, pad_width=radius, mode='reflect')
-    im_iter = it.imap(pad_image, im_iter)
-    selem = skmorph.disk(radius)
-    bg_iter = (rank.percentile(im, selem, p0=quantile) for
-               im in im_iter)
-    bg_iter = (unpad(im, pad_width=radius) for im in bg_iter)
-    illum = np.zeros(im0.shape, float)
-    counter = 0
-    for bg in bg_iter:
-        illum += bg
-        counter += 1
-    illum /= counter
+        normalize = img_as_float
+    rescale = rescale_to_11bits
+    pad = fun.partial(skimage.util.pad, pad_width=radius, mode='reflect')
+    rank_filter = fun.partial(rank.percentile, selem=skmorph.disk(radius),
+                              p0=quantile)
+    _unpad = fun.partial(unpad, pad_width=radius)
+
+    bg_func = tlz.compose(read, normalize, rescale, pad, rank_filter, _unpad)
+    bg_iter = tlz.map(bg_func, fns)
+    illum, count = _reduce_with_count(np.add, bg_iter)
+
+    illum /= count
+
     return illum
 
 
