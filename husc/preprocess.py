@@ -7,8 +7,7 @@ import numpy as np
 from scipy import ndimage as nd
 import mahotas as mh
 from scipy.stats.mstats import mquantiles as quantiles
-from skimage import (img_as_float, morphology as skmorph,
-                     filter as imfilter)
+from skimage import morphology as skmorph, filter as imfilter
 import skimage.filter.rank as rank
 import skimage
 import cytoolz as tlz
@@ -458,7 +457,7 @@ def _reduce_with_count(pairwise, iterator, accumulator=None):
 
 
 def find_background_illumination(fns, radius=51, quantile=0.05,
-                                 stretch_quantile=0.0):
+                                 stretch_quantile=0.):
     """Use a set of related images to find uneven background illumination.
 
     Parameters
@@ -482,22 +481,27 @@ def find_background_illumination(fns, radius=51, quantile=0.05,
     --------
     ``correct_image_illumination``.
     """
+    # This function follows the "PyToolz" streaming data model to
+    # obtain the illumination estimate. First, define each processing
+    # step:
     read = mh.imread
-    if stretch_quantile > 0:
-        normalize = tlz.partial(stretchlim, bottom=stretch_quantile,
-                                            top=(1 - stretch_quantile))
-    else:
-        normalize = img_as_float
+    normalize = (tlz.partial(stretchlim, bottom=stretch_quantile,
+                                        top=(1 - stretch_quantile))
+                 if stretch_quantile > 0
+                 else skimage.img_as_float)
     rescale = rescale_to_11bits
     pad = fun.partial(skimage.util.pad, pad_width=radius, mode='reflect')
     rank_filter = fun.partial(rank.percentile, selem=skmorph.disk(radius),
                               p0=quantile)
     _unpad = fun.partial(unpad, pad_width=radius)
 
+    # Next, compose all the steps, apply to all images (streaming)
     bg_func = tlz.compose(read, normalize, rescale, pad, rank_filter, _unpad)
     bg_iter = tlz.map(bg_func, fns)
-    illum, count = _reduce_with_count(np.add, bg_iter)
 
+    # Finally, reduce all the images and compute the estimate
+    # (currently the mean)
+    illum, count = _reduce_with_count(np.add, bg_iter)
     illum /= count
 
     return illum
@@ -524,7 +528,7 @@ def correct_image_illumination(im, illum, stretch_quantile=0, mask=None):
         The corrected image.
     """
     if im.dtype != np.float:
-        imc = img_as_float(im)
+        imc = skimage.img_as_float(im)
     else:
         imc = im.copy()
     imc /= illum
