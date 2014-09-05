@@ -424,9 +424,7 @@ def unpad(im, pad_width):
 
 
 def find_background_illumination(fns, radius=51, quantile=0.05,
-                                 stretch_quantile=0.0, mask=True,
-                                 mask_offset=0, mask_close_radius=0,
-                                 mask_erode_radius=0):
+                                 stretch_quantile=0.0):
     """Use a set of related images to find uneven background illumination.
 
     Parameters
@@ -440,10 +438,6 @@ def find_background_illumination(fns, radius=51, quantile=0.05,
         The desired quantile to find background. default: 0.05
     stretch_quantile : float in [0, 1], optional
         Stretch image to full dtype limit, saturating above this quantile.
-    mask : bool, optional
-        Whether to automatically mask brightness artifacts in the images.
-    mask_offset, mask_close_radius, mask_erode_radius : int, optional
-        See documentation for ``max_mask_iter``.
 
     Returns
     -------
@@ -452,7 +446,7 @@ def find_background_illumination(fns, radius=51, quantile=0.05,
 
     See Also
     --------
-    ``max_mask_iter``, ``correct_image_illumination``.
+    ``correct_image_illumination``.
     """
     im0 = mh.imread(fns[0])
     im_iter = (mh.imread(fn) for fn in fns)
@@ -461,26 +455,18 @@ def find_background_illumination(fns, radius=51, quantile=0.05,
                    im in im_iter)
     else:
         im_iter = it.imap(img_as_float, im_iter)
-    if mask:
-        mask_iter1 = max_mask_iter(fns, mask_offset,
-                                   mask_close_radius, mask_erode_radius)
-        mask_iter2 = max_mask_iter(fns, mask_offset,
-                                   mask_close_radius, mask_erode_radius)
-    else:
-        mask_iter1 = mask_iter2 = it.repeat(np.ones(im0.shape, bool))
     im_iter = it.imap(rescale_to_11bits, im_iter)
     pad_image = fun.partial(pad, pad_width=radius, mode='reflect')
     im_iter = it.imap(pad_image, im_iter)
-    mask_iter1 = it.imap(pad_image, mask_iter1)
     selem = skmorph.disk(radius)
-    bg_iter = (rank.percentile(im, selem, mask=mask, p0=quantile) for
-               im, mask in it.izip(im_iter, mask_iter1))
+    bg_iter = (rank.percentile(im, selem, p0=quantile) for
+               im in im_iter)
     bg_iter = (unpad(im, pad_width=radius) for im in bg_iter)
     illum = np.zeros(im0.shape, float)
     counter = np.zeros(im0.shape, float)
-    for bg, mask in it.izip(bg_iter, mask_iter2):
-        illum[mask] += bg[mask]
-        counter[mask] += 1
+    for bg in bg_iter:
+        illum += bg
+        counter += 1
     illum /= counter
     return illum
 
