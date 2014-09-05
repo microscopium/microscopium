@@ -452,7 +452,7 @@ def _reduce_with_count(pairwise, iterator, accumulator=None):
     def new_pairwise(a, b):
         (elem1, c1), (elem2, c2) = a, b
         return pairwise(elem1, elem2), c2
-    new_iter = it.izip(iterator, it.count())
+    new_iter = it.izip(iterator, it.count(1))
     new_acc = (0, accumulator)
     return tlz.reduce(new_pairwise, new_iter, new_acc)
 
