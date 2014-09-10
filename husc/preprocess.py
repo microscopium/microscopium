@@ -6,6 +6,7 @@ import re
 import numpy as np
 from scipy import ndimage as nd
 import mahotas as mh
+from skimage import io
 from scipy.stats.mstats import mquantiles as quantiles
 from skimage import morphology as skmorph, filter as imfilter
 import skimage.filter.rank as rank
@@ -484,7 +485,7 @@ def find_background_illumination(fns, radius=51, quantile=0.05,
     # This function follows the "PyToolz" streaming data model to
     # obtain the illumination estimate. First, define each processing
     # step:
-    read = mh.imread
+    read = io.imread
     normalize = (tlz.partial(stretchlim, bottom=stretch_quantile,
                                         top=(1 - stretch_quantile))
                  if stretch_quantile > 0
@@ -496,13 +497,13 @@ def find_background_illumination(fns, radius=51, quantile=0.05,
     _unpad = fun.partial(unpad, pad_width=radius)
 
     # Next, compose all the steps, apply to all images (streaming)
-    bg_func = tlz.compose(read, normalize, rescale, pad, rank_filter, _unpad)
-    bg_iter = tlz.map(bg_func, fns)
+    bg = (tlz.pipe(fn, read, normalize, rescale, pad, rank_filter, _unpad)
+          for fn in fns)
 
     # Finally, reduce all the images and compute the estimate
     # (currently the mean)
-    illum, count = _reduce_with_count(np.add, bg_iter)
-    illum /= count
+    illum, count = _reduce_with_count(np.add, bg)
+    illum = skimage.img_as_float(illum) / count
 
     return illum
 
