@@ -460,7 +460,7 @@ def _reduce_with_count(pairwise, iterator, accumulator=None):
 
 
 def find_background_illumination(fns, radius=51, quantile=0.05,
-                                 stretch_quantile=0.):
+                                 stretch_quantile=0., method='mean'):
     """Use a set of related images to find uneven background illumination.
 
     Parameters
@@ -474,6 +474,17 @@ def find_background_illumination(fns, radius=51, quantile=0.05,
         The desired quantile to find background. default: 0.05
     stretch_quantile : float in [0, 1], optional
         Stretch image to full dtype limit, saturating above this quantile.
+    method : 'mean', 'average', 'median', or 'histogram', optional
+        How to use combine the smoothed intensities of the input images
+        to infer the illumination field:
+
+        - 'mean' or 'average': Use the mean value of the smoothed
+        images at each pixel as the illumination field.
+        - 'median': use the median value. Since all images need to be
+        in-memory to compute this, use only for small sets of images.
+        - 'histogram': use the median value approximated by a
+        histogram. This can be computed on-line for large sets of
+        images.
 
     Returns
     -------
@@ -502,9 +513,15 @@ def find_background_illumination(fns, radius=51, quantile=0.05,
           for fn in fns)
 
     # Finally, reduce all the images and compute the estimate
-    # (currently the mean)
-    illum, count = _reduce_with_count(np.add, bg)
-    illum = skimage.img_as_float(illum) / count
+    if method == 'mean' or method == 'average':
+        illum, count = _reduce_with_count(np.add, bg)
+        illum = skimage.img_as_float(illum) / count
+    elif method == 'median':
+        all_ims = np.concatenate([im[np.newaxis, ...] for im in bg], axis=0)
+        illum = np.median(all_ims, axis=0)
+    elif method == 'histogram':
+        raise NotImplementedError('histogram background illumination method '
+                                  'not yet implemented.')
 
     return illum
 
