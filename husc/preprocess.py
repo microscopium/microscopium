@@ -488,8 +488,7 @@ def find_background_illumination(fns, radius=51, quantile=0.05,
     # obtain the illumination estimate. First, define each processing
     # step:
     read = io.imread
-    normalize = (tlz.partial(stretchlim, bottom=stretch_quantile,
-                                        top=(1 - stretch_quantile))
+    normalize = (tlz.partial(stretchlim, bottom=stretch_quantile)
                  if stretch_quantile > 0
                  else skimage.img_as_float)
     rescale = rescale_to_11bits
