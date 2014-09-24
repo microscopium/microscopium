@@ -399,9 +399,42 @@ def rescale_to_11bits(im_float):
     -------
     im11 : array of uint16 in [0, 2047]
         The converted image.
+
+    Examples
+    --------
+    >>> im = np.array([0., 0.5, 1.])
+    >>> rescale_to_11_bits(im)
+    array([   0, 1024, 2047], dtype=uint16)
     """
-    im11 = np.floor(im_float * 2047.9999).astype(np.uint16)
+    im11 = np.round(im_float * 2047.).astype(np.uint16)
     return im11
+
+
+def rescale_from_11bits(im11):
+    """Rescale a uint16 image with range in [0, 2047] to float in [0., 1.]
+
+    Parameters
+    ----------
+    im11 : array of uint16, range in [0, 2047]
+        The input image, encoded in uint16 but having 11-bit range.
+
+    Returns
+    -------
+    imfloat : array of float, same shape as `im11`
+        The output image.
+
+    Examples
+    --------
+    >>> im = np.array([0, 1024, 2047], dtype=np.uint16)
+    >>> rescale_from_11bits(im)
+    array([ 0.    ,  0.5002,  1.    ])
+
+    Notes
+    -----
+    Designed to be a no-op with the above `rescale_to_11bits` function,
+    although this is subject to approximation errors.
+    """
+    return np.round(im11 / 2047., decimals=4)
 
 
 def unpad(im, pad_width):
