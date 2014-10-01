@@ -540,9 +540,11 @@ def find_background_illumination(fns, radius=51, quantile=0.05,
     rank_filter = fun.partial(rank.percentile, selem=skmorph.disk(radius),
                               p0=quantile)
     _unpad = fun.partial(unpad, pad_width=radius)
+    unscale = rescale_from_11bits
 
     # Next, compose all the steps, apply to all images (streaming)
-    bg = (tlz.pipe(fn, read, normalize, rescale, pad, rank_filter, _unpad)
+    bg = (tlz.pipe(fn, read, normalize, rescale, pad, rank_filter, _unpad,
+                   unscale)
           for fn in fns)
 
     # Finally, reduce all the images and compute the estimate
