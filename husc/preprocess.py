@@ -555,6 +555,9 @@ def find_background_illumination(fns, radius=51, quantile=0.05,
     elif method == 'histogram':
         raise NotImplementedError('histogram background illumination method '
                                   'not yet implemented.')
+    else:
+        raise ValueError('Method "%s" of background illumination finding '
+                         'not recognised.' % method)
 
     return illum
 
