@@ -53,7 +53,7 @@ def test_illumination_mean(image_files):
 
 
 def test_illumination_median(image_files):
-    illum = pre.find_background_illumination(image_files, radius=51,
+    illum = pre.find_background_illumination(image_files, radius=1,
                                              quantile=0.5,
                                              stretch_quantile=1e-7,
                                              method='median')

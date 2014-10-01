@@ -552,8 +552,7 @@ def find_background_illumination(fns, radius=51, quantile=0.05,
         illum, count = _reduce_with_count(np.add, bg)
         illum = skimage.img_as_float(illum) / count
     elif method == 'median':
-        all_ims = np.concatenate([im[np.newaxis, ...] for im in bg], axis=0)
-        illum = np.median(all_ims, axis=0)
+        illum = np.median(list(bg), axis=0)
     elif method == 'histogram':
         raise NotImplementedError('histogram background illumination method '
                                   'not yet implemented.')
