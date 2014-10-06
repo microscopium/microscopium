@@ -265,19 +265,12 @@ def group_by_channel(fns, re_string='(.*)_(w[1-3]).*',
 
     Examples
     --------
-    >>> fn_numbering = it.product(range(2), range(1, 5))
-    >>> fns = ['image_%i_w%i.TIF' % (i, j) for i, j in fn_numbering]
+    >>> fn_numbering = it.product(range(2), range(1, 4))
+    >>> fns = ['image_%i_w%i.tif' % (i, j) for i, j in fn_numbering]
     >>> fns
-    ['image_0_w1.tif',
-     'image_0_w2.tif',
-     'image_0_w3.tif',
-     'image_1_w1.tif',
-     'image_1_w2.tif',
-     'image_1_w3.tif']
-    >>> group_by_channel(fns)
-    {('w1'): ['image_0_w1.tif', 'image_1_w1.tif'],
-     ('w2'): ['image_0_w2.tif', 'image_1_w2.tif'],
-     ('w3'): ['image_0_w3.tif', 'image_1_w3.tif']}
+    ['image_0_w1.tif', 'image_0_w2.tif', 'image_0_w3.tif', 'image_1_w1.tif', 'image_1_w2.tif', 'image_1_w3.tif']
+    >>> sorted(group_by_channel(fns).items())
+    [('w1', ['image_0_w1.tif', 'image_1_w1.tif']), ('w2', ['image_0_w2.tif', 'image_1_w2.tif']), ('w3', ['image_0_w3.tif', 'image_1_w3.tif'])]
     """
     re_match = fun.partial(re.match, re_string)
     match_objs = map(re_match, fns)
@@ -317,23 +310,9 @@ def group_by_quadrant(fns, re_string='(.*)_(s[1-4])_(w[1-3]).*',
     >>> fn_numbering = it.product(range(2), range(1, 5))
     >>> fns = ['image_%i_s%i_w1.TIF' % (i, j) for i, j in fn_numbering]
     >>> fns
-    ['image_0_s1_w1.TIF',
-     'image_0_s2_w1.TIF',
-     'image_0_s3_w1.TIF',
-     'image_0_s4_w1.TIF',
-     'image_1_s1_w1.TIF',
-     'image_1_s2_w1.TIF',
-     'image_1_s3_w1.TIF',
-     'image_1_s4_w1.TIF']
-    >>> group_by_quadrant(fns)
-    {('image_0', 'w1'): ['image_0_s1_w1.TIF',
-      'image_0_s2_w1.TIF',
-      'image_0_s3_w1.TIF',
-      'image_0_s4_w1.TIF'],
-     ('image_1', 'w1'): ['image_1_s1_w1.TIF',
-      'image_1_s2_w1.TIF',
-      'image_1_s3_w1.TIF',
-      'image_1_s4_w1.TIF']}
+    ['image_0_s1_w1.TIF', 'image_0_s2_w1.TIF', 'image_0_s3_w1.TIF', 'image_0_s4_w1.TIF', 'image_1_s1_w1.TIF', 'image_1_s2_w1.TIF', 'image_1_s3_w1.TIF', 'image_1_s4_w1.TIF']
+    >>> sorted(group_by_quadrant(fns).items())
+    [(('image_0', 'w1'), ['image_0_s1_w1.TIF', 'image_0_s2_w1.TIF', 'image_0_s3_w1.TIF', 'image_0_s4_w1.TIF']), (('image_1', 'w1'), ['image_1_s1_w1.TIF', 'image_1_s2_w1.TIF', 'image_1_s3_w1.TIF', 'image_1_s4_w1.TIF'])]
     """
     re_match = fun.partial(re.match, re_string)
     match_objs = map(re_match, fns)
@@ -367,10 +346,10 @@ def quadrant_stitch(nw, ne, sw, se):
     >>> imbase = np.ones((2, 3), int)
     >>> nw, ne, sw, se = [i * imbase for i in range(4)]
     >>> quadrant_stitch(nw, ne, sw, se)
-    array([[0, 0, 0, 2, 2, 2],
-           [0, 0, 0, 2, 2, 2],
-           [1, 1, 1, 3, 3, 3],
-           [1, 1, 1, 3, 3, 3]])
+    array([[0, 0, 0, 1, 1, 1],
+           [0, 0, 0, 1, 1, 1],
+           [2, 2, 2, 3, 3, 3],
+           [2, 2, 2, 3, 3, 3]])
     """
     x1 = nw.shape[0]
     x2 = sw.shape[0]
