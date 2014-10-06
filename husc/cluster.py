@@ -70,7 +70,7 @@ def mds_mapping(X, **kwargs):
         'max_iter': 500,
         'n_jobs': -1,
         'random_state': None, }
-    params.update(**kwargs)
+    params.update()
     mds_embedding = MDS().set_params(**params)
     X_transformed = mds_embedding.fit_transform(X)
     return mds_embedding, X_transformed
