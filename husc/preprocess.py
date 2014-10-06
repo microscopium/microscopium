@@ -6,11 +6,12 @@ import re
 import numpy as np
 from scipy import ndimage as nd
 import mahotas as mh
+from skimage import io
 from scipy.stats.mstats import mquantiles as quantiles
-from skimage import (img_as_float, morphology as skmorph,
-                     filter as imfilter)
+from skimage import morphology as skmorph, filter as imfilter
 import skimage.filter.rank as rank
-from skimage.util import pad
+import skimage
+import cytoolz as tlz
 
 
 def morphop(im, operation='open', radius='5'):
@@ -161,7 +162,7 @@ def maxes(fns):
     return maxes
 
 
-def stretchlim(im, bottom=0.01, top=0.99, mask=None):
+def stretchlim(im, bottom=0.01, top=None, mask=None):
     """Stretch the image so new image range corresponds to given quantiles.
 
     Parameters
@@ -170,8 +171,8 @@ def stretchlim(im, bottom=0.01, top=0.99, mask=None):
         The input image.
     bottom : float, optional
         The lower quantile.
-    top : float
-        The upper quantile.
+    top : float, optional
+        The upper quantile. If not provided, it is set to 1 - `bottom`.
     mask : array of bool, shape (M, N, [...,] P), optional
         Only consider intensity values where `mask` is ``True``.
 
@@ -182,6 +183,8 @@ def stretchlim(im, bottom=0.01, top=0.99, mask=None):
     """
     if mask is None:
         mask = np.ones(im.shape, dtype=bool)
+    if top is None:
+        top = 1. - bottom
     im = im.astype(float)
     q0, q1 = quantiles(im[mask], [bottom, top])
     out = (im - q0) / (q1 - q0)
@@ -396,9 +399,42 @@ def rescale_to_11bits(im_float):
     -------
     im11 : array of uint16 in [0, 2047]
         The converted image.
+
+    Examples
+    --------
+    >>> im = np.array([0., 0.5, 1.])
+    >>> rescale_to_11_bits(im)
+    array([   0, 1024, 2047], dtype=uint16)
     """
-    im11 = np.floor(im_float * 2047.9999).astype(np.uint16)
+    im11 = np.round(im_float * 2047.).astype(np.uint16)
     return im11
+
+
+def rescale_from_11bits(im11):
+    """Rescale a uint16 image with range in [0, 2047] to float in [0., 1.]
+
+    Parameters
+    ----------
+    im11 : array of uint16, range in [0, 2047]
+        The input image, encoded in uint16 but having 11-bit range.
+
+    Returns
+    -------
+    imfloat : array of float, same shape as `im11`
+        The output image.
+
+    Examples
+    --------
+    >>> im = np.array([0, 1024, 2047], dtype=np.uint16)
+    >>> rescale_from_11bits(im)
+    array([ 0.    ,  0.5002,  1.    ])
+
+    Notes
+    -----
+    Designed to be a no-op with the above `rescale_to_11bits` function,
+    although this is subject to approximation errors.
+    """
+    return np.round(im11 / 2047., decimals=4)
 
 
 def unpad(im, pad_width):
@@ -423,10 +459,41 @@ def unpad(im, pad_width):
     return im[slices]
 
 
+def _reduce_with_count(pairwise, iterator, accumulator=None):
+    """Return both the result of the reduction and the number of elements.
+
+    Parameters
+    ----------
+    pairwise : function (a -> b -> a)
+        The function with which to reduce the `iterator` sequence.
+    iterator : iterable
+        The sequence being reduced.
+    accumulator : type "a", optional
+        An initial value with which to perform the reduction.
+
+    Returns
+    -------
+    result : type "a"
+        The result of the reduce operation.
+    count : int
+        The number of elements that were accumulated.
+
+    Examples
+    --------
+    >>> x = [5, 6, 7]
+    >>> _reduce_with_count(np.add, x)
+    (18, 3)
+    """
+    def new_pairwise(a, b):
+        (elem1, c1), (elem2, c2) = a, b
+        return pairwise(elem1, elem2), c2
+    new_iter = it.izip(iterator, it.count(1))
+    new_acc = (0, accumulator)
+    return tlz.reduce(new_pairwise, new_iter, new_acc)
+
+
 def find_background_illumination(fns, radius=51, quantile=0.05,
-                                 stretch_quantile=0.0, mask=True,
-                                 mask_offset=0, mask_close_radius=0,
-                                 mask_erode_radius=0):
+                                 stretch_quantile=0., method='mean'):
     """Use a set of related images to find uneven background illumination.
 
     Parameters
@@ -440,10 +507,17 @@ def find_background_illumination(fns, radius=51, quantile=0.05,
         The desired quantile to find background. default: 0.05
     stretch_quantile : float in [0, 1], optional
         Stretch image to full dtype limit, saturating above this quantile.
-    mask : bool, optional
-        Whether to automatically mask brightness artifacts in the images.
-    mask_offset, mask_close_radius, mask_erode_radius : int, optional
-        See documentation for ``max_mask_iter``.
+    method : 'mean', 'average', 'median', or 'histogram', optional
+        How to use combine the smoothed intensities of the input images
+        to infer the illumination field:
+
+        - 'mean' or 'average': Use the mean value of the smoothed
+        images at each pixel as the illumination field.
+        - 'median': use the median value. Since all images need to be
+        in-memory to compute this, use only for small sets of images.
+        - 'histogram': use the median value approximated by a
+        histogram. This can be computed on-line for large sets of
+        images.
 
     Returns
     -------
@@ -452,36 +526,40 @@ def find_background_illumination(fns, radius=51, quantile=0.05,
 
     See Also
     --------
-    ``max_mask_iter``, ``correct_image_illumination``.
+    ``correct_image_illumination``.
     """
-    im0 = mh.imread(fns[0])
-    im_iter = (mh.imread(fn) for fn in fns)
-    if stretch_quantile > 0:
-        im_iter = (stretchlim(im, stretch_quantile, 1 - stretch_quantile) for
-                   im in im_iter)
+    # This function follows the "PyToolz" streaming data model to
+    # obtain the illumination estimate. First, define each processing
+    # step:
+    read = io.imread
+    normalize = (tlz.partial(stretchlim, bottom=stretch_quantile)
+                 if stretch_quantile > 0
+                 else skimage.img_as_float)
+    rescale = rescale_to_11bits
+    pad = fun.partial(skimage.util.pad, pad_width=radius, mode='reflect')
+    rank_filter = fun.partial(rank.percentile, selem=skmorph.disk(radius),
+                              p0=quantile)
+    _unpad = fun.partial(unpad, pad_width=radius)
+    unscale = rescale_from_11bits
+
+    # Next, compose all the steps, apply to all images (streaming)
+    bg = (tlz.pipe(fn, read, normalize, rescale, pad, rank_filter, _unpad,
+                   unscale)
+          for fn in fns)
+
+    # Finally, reduce all the images and compute the estimate
+    if method == 'mean' or method == 'average':
+        illum, count = _reduce_with_count(np.add, bg)
+        illum = skimage.img_as_float(illum) / count
+    elif method == 'median':
+        illum = np.median(list(bg), axis=0)
+    elif method == 'histogram':
+        raise NotImplementedError('histogram background illumination method '
+                                  'not yet implemented.')
     else:
-        im_iter = it.imap(img_as_float, im_iter)
-    if mask:
-        mask_iter1 = max_mask_iter(fns, mask_offset,
-                                   mask_close_radius, mask_erode_radius)
-        mask_iter2 = max_mask_iter(fns, mask_offset,
-                                   mask_close_radius, mask_erode_radius)
-    else:
-        mask_iter1 = mask_iter2 = it.repeat(np.ones(im0.shape, bool))
-    im_iter = it.imap(rescale_to_11bits, im_iter)
-    pad_image = fun.partial(pad, pad_width=radius, mode='reflect')
-    im_iter = it.imap(pad_image, im_iter)
-    mask_iter1 = it.imap(pad_image, mask_iter1)
-    selem = skmorph.disk(radius)
-    bg_iter = (rank.percentile(im, selem, mask=mask, p0=quantile) for
-               im, mask in it.izip(im_iter, mask_iter1))
-    bg_iter = (unpad(im, pad_width=radius) for im in bg_iter)
-    illum = np.zeros(im0.shape, float)
-    counter = np.zeros(im0.shape, float)
-    for bg, mask in it.izip(bg_iter, mask_iter2):
-        illum[mask] += bg[mask]
-        counter[mask] += 1
-    illum /= counter
+        raise ValueError('Method "%s" of background illumination finding '
+                         'not recognised.' % method)
+
     return illum
 
 
@@ -506,7 +584,7 @@ def correct_image_illumination(im, illum, stretch_quantile=0, mask=None):
         The corrected image.
     """
     if im.dtype != np.float:
-        imc = img_as_float(im)
+        imc = skimage.img_as_float(im)
     else:
         imc = im.copy()
     imc /= illum
