@@ -382,7 +382,7 @@ def rescale_to_11bits(im_float):
     Examples
     --------
     >>> im = np.array([0., 0.5, 1.])
-    >>> rescale_to_11_bits(im)
+    >>> rescale_to_11bits(im)
     array([   0, 1024, 2047], dtype=uint16)
     """
     im11 = np.round(im_float * 2047.).astype(np.uint16)
