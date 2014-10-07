@@ -1,3 +1,4 @@
+import numpy as np
 from sklearn.ensemble import RandomTreesEmbedding
 from sklearn.manifold import MDS
 
@@ -64,6 +65,13 @@ def mds_mapping(X, **kwargs):
     X_transformed
         error function of embedding - sum of difference
         between points in original space and new space.
+
+    Examples
+    --------
+    >>> data = np.random.rand(5, 10)
+    >>> embedding, transformed_data = mds_mapping(data, n_components=3)
+    >>> transformed_data.shape
+    (5, 3)
     """
     params = {
         'n_components': 2,
