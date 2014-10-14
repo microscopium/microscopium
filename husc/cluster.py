@@ -1,6 +1,6 @@
 from math import floor, sqrt
 import numpy as np
-from sklearn.cluster import KMeans
+from sklearn.cluster import DBSCAN, KMeans
 from sklearn.ensemble import RandomTreesEmbedding
 from sklearn.manifold import MDS
 
@@ -37,6 +37,54 @@ def rt_embedding(X, **kwargs):
     rt = RandomTreesEmbedding().set_params(**params)
     X_transformed = rt.fit_transform(X)
     return rt, X_transformed
+
+
+def dbscan_clustering(X, **kwargs):
+    """DBSCAN clustering applied to data matrix X
+
+    Parameters
+    ----------
+    X : array, shape (n_samples, n_features)
+        The data matrix.
+    eps : float, optional
+        The maximum distance between two samples for them to be
+        considered as in the same neighborhood.
+    min_samples : int, optional
+        The number of samples in a neighborhood for a point to be
+        considered as a core point.
+    metric : string, optional
+        The distance metric to use when calculating pairwise distances.
+        Must be one of the options allowable in
+        sklearn.metrics.pairwise.pairwise_distances. Default euclidean.
+    random_state : int, optional
+        Generator used to initialize, set fixed integer to
+        reproduce results for debugging.
+    **kwargs : dict
+        Keyword arguments to be passed to
+        `sklearn.cluster.DBSCAN`
+
+    Returns
+    -------
+    dbscan_clustered : DBSCAN object
+        The clustering object.
+    core_samples : array, (, n_samples)
+        Indices of core samples.
+    membership: array, (, n_samples)
+        1D array where each element represents which cluster
+        each sample was assigned to. -1 represents noisy/unassigned
+        sample.
+    """
+    params = {
+        'eps': 0.5,
+        'min_samples': 5,
+        'metric': 'euclidean',
+        'random_state': None, }
+    params.update(**kwargs)
+    dbscan_clustered = DBSCAN().set_params(**params)
+    dbscan_clustered.fit(X)
+    core_samples = dbscan_clustered.components_
+    membership = dbscan_clustered.labels_
+    return dbscan_clustered, core_samples, membership
 
 
 def kmeans_clustering(X, **kwargs):
