@@ -5,7 +5,8 @@ virtualenv:
     system_site_packages: true
 before_install:
     - sudo apt-get install python-numpy
-    - pip install scikit-image
+    - pip install six
+    - pip install --process-dependency-links scikit-image
     - pip install pytest pytest-cov
     - pip install coveralls
 
