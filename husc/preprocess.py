@@ -5,7 +5,6 @@ import collections as coll
 import re
 import numpy as np
 from scipy import ndimage as nd
-import mahotas as mh
 from skimage import io
 from scipy.stats.mstats import mquantiles as quantiles
 from skimage import morphology as skmorph, filter as imfilter
@@ -93,7 +92,7 @@ def max_mask_iter(fns, offset=0, close_radius=0, erode_radius=0):
     """
     ms = maxes(fns)
     t = imfilter.threshold_otsu(ms)
-    ims = it.imap(mh.imread, fns)
+    ims = it.imap(io.imread, fns)
     masks = ((im < t + offset) for im in ims)
     if close_radius > 0:
         masks = (morphop(mask, 'close', close_radius) for mask in masks)
@@ -139,7 +138,7 @@ def write_max_masks(fns, offset=0, close_radius=0, erode_radius=0,
         m += 1
         if not mask.all():
             # we multiply by 255 to make the image easy to look at
-            mh.imsave(outfn, mask.astype(np.uint8) * 255)
+            io.imsave(outfn, mask.astype(np.uint8) * 255)
             n += 1
     return n, m
 
@@ -157,7 +156,7 @@ def maxes(fns):
     maxes : 1D array
         The maximum value of each image examined.
     """
-    ims = it.imap(mh.imread, fns)
+    ims = it.imap(io.imread, fns)
     maxes = np.array(map(np.max, ims))
     return maxes
 
@@ -215,9 +214,9 @@ def run_quadrant_stitch(fns, re_string='(.*)_(s[1-4])_(w[1-3]).*',
     fns_out = []
     for fn_pattern, fns in qd.items():
         new_filename = '_'.join(fn_pattern) + '_stitched.tif'
-        ims = map(mh.imread, sorted(fns))
+        ims = map(io.imread, sorted(fns))
         im = quadrant_stitch(*ims)
-        mh.imsave(new_filename, im)
+        io.imsave(new_filename, im)
         fns_out.append(new_filename)
     return fns_out
 

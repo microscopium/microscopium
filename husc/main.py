@@ -151,7 +151,7 @@ def run_crop(args):
     xstart, xstop, ystart, ystop = crops
     slices = (slice(xstart, xstop), slice(ystart, ystop))
     for imfn in args.images:
-        im = mh.imread(imfn)
+        im = io.imread(imfn)
         imout = pre.crop(im, slices)
         fnout = os.path.splitext(imfn)[0] + args.output_suffix
         if args.output_dir is not None:
