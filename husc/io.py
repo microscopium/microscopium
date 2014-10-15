@@ -1,7 +1,6 @@
 import os
-import itertools as it
 import numpy as np
-import Image
+from PIL import Image
 
 
 def imwrite(ar, fn, bitdepth=None):
