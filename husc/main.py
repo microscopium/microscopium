@@ -8,7 +8,6 @@ import itertools as it
 
 # dependencies
 import numpy as np
-import mahotas as mh
 import pandas as pd
 from skimage import io, img_as_ubyte
 
@@ -156,7 +155,7 @@ def run_crop(args):
         fnout = os.path.splitext(imfn)[0] + args.output_suffix
         if args.output_dir is not None:
             fnout = os.path.join(args.output_dir, os.path.split(fnout)[1])
-        mh.imsave(fnout, imout)
+        io.imsave(fnout, imout)
 
 
 def run_mask(args):
@@ -187,10 +186,10 @@ def run_illum(args):
     base_fns = [pre.basefn(fn) for fn in args.images]
     ims_out = [fn + args.output_suffix for fn in base_fns]
     mask_fns = [fn + '.mask.tif' for fn in base_fns]
-    ims = (mh.imread(fn) for fn in args.images)
+    ims = (io.imread(fn) for fn in args.images)
     for im, fout, mask_fn in it.izip(ims, ims_out, mask_fns):
         if os.path.isfile(mask_fn):
-            mask = mh.imread(mask_fn).astype(bool)
+            mask = io.imread(mask_fn).astype(bool)
         else:
             mask = np.ones(im.shape, bool)
         im = pre.correct_image_illumination(im, il,
@@ -217,15 +216,15 @@ def run_cat(args):
     args : argparse.Namespace
         The arguments parsed by the argparse library.
     """
-    ims = it.imap(mh.imread, args.images)
+    ims = it.imap(io.imread, args.images)
     ims_out = hio.cat_channels(ims)
     out_fns = [os.path.splitext(fn)[0] + '.chs.tif' for fn in args.images[::3]]
     for im, fn in it.izip(ims_out, out_fns):
         try:
-            mh.imsave(fn, im)
+            io.imsave(fn, im)
         except ValueError:
             im = img_as_ubyte(pre.stretchlim(im, 0.05, 0.95))
-            mh.imsave(fn, im)
+            io.imsave(fn, im)
 
 
 def run_features(args):
@@ -236,7 +235,7 @@ def run_features(args):
     args : argparse.Namespace
         The arguments parsed by the argparse library.
     """
-    images = it.imap(mh.imread, args.images)
+    images = it.imap(io.imread, args.images)
     screen_info = screens.d[args.screen]
     index_function, fmap = screen_info['index'], screen_info['fmap']
     f0, feature_names = fmap(images.next())
