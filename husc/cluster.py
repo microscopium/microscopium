@@ -125,8 +125,9 @@ def kmeans_clustering(X, max_iter=300, n_init=10, n_jobs=-1,
     >>> membership.shape
     (50,)
     """
-    kwargs['n_clusters'] = int(np.floor(np.sqrt(X.shape[0])))
-    kmeans_clustered = MiniBatchKMeans().set_params(**kwargs)
+    params = {'n_clusters': int(np.floor(np.sqrt(X.shape[0]))), }
+    params.update(**kwargs)
+    kmeans_clustered = MiniBatchKMeans().set_params(**params)
     kmeans_clustered.fit(X)
     centroids = kmeans_clustered.cluster_centers_
     membership = kmeans_clustered.labels_
