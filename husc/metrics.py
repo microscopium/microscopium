@@ -1,3 +1,4 @@
+from collections import defaultdict
 from itertools import combinations
 import numpy as np
 from scipy.spatial.distance import pdist
@@ -33,8 +34,7 @@ def sq_to_dist(i, j, n):
 
 
 def gene_distance_score(X, gene_list, metric='euclidean'):
-    """Finds distance scores between samples belonging to the
-    same gene, samples not belonging to the same gene.
+    """Find intra/extra gene distance scores between samples.
 
     Parameters
     ----------
@@ -53,8 +53,8 @@ def gene_distance_score(X, gene_list, metric='euclidean'):
     all_intragene_data : array
         An 1D array with intra-gene distances (i.e. distances
         between samples with the same gene knocked down).
-    all_intergene_data : array
-        An 1D array with inter-gene distances (i.e. distances
+    all_extragene_data : array
+        An 1D array with extra-gene distances (i.e. distances
         between samples with the same gene knocked down).
 
     Examples
@@ -65,28 +65,29 @@ def gene_distance_score(X, gene_list, metric='euclidean'):
     >>> data[2:4, :] = 4
     >>> data[4:6, :] = 7
     >>> genes = ['A', 'A', 'B', 'B', 'C', 'C']
-    >>> intra, inter = gene_distance_score(data, genes, 'euclidean')
+    >>> intra, extra = gene_distance_score(data, genes, 'euclidean')
     >>> intra
     array([ 0.,  0.,  0.])
-    >>> inter
+    >>> extra
     array([  5.19615242,   5.19615242,  10.39230485,  10.39230485,
              5.19615242,   5.19615242,  10.39230485,  10.39230485,
              5.19615242,   5.19615242,   5.19615242,   5.19615242])
     """
     all_intragene_index = []
-    gene_list = np.array(gene_list)
+    gene_index = defaultdict(list)
 
-    for gene in np.unique(gene_list):
-        intragene_index = np.where(gene_list == gene)[0]
+    for key, value in zip(gene_list, range(len(gene_list))):
+        gene_index[key].append(value)
 
-        for i, j in combinations(intragene_index, 2):
+    for key in gene_index:
+        for i, j in combinations(gene_index[key], 2):
             all_intragene_index.append(sq_to_dist(i, j, X.shape[0]))
 
     n = sq_to_dist(X.shape[0], X.shape[0], X.shape[0])
-    all_intergene_index = np.setdiff1d(np.arange(n), all_intragene_index)
+    all_extragene_index = np.setdiff1d(np.arange(n), all_intragene_index)
 
     all_intragene_data = pdist(X, 'euclidean')[all_intragene_index]
-    all_intergene_data = pdist(X, 'euclidean')[all_intergene_index]
+    all_extragene_data = pdist(X, 'euclidean')[all_extragene_index]
 
-    return all_intragene_data, all_intergene_data
+    return all_intragene_data, all_extragene_data
 
