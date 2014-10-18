@@ -1,12 +1,25 @@
 from collections import defaultdict
 from itertools import combinations
 import numpy as np
-from scipy.spatial.distance import pdist
+from scipy.spatial.distance import pdist, squareform
 
 def sq_to_dist(i, j, n):
-    """Converts [i, j] co-ordinate of pairwise, square distance
-    matrix to co-ordinate of condensed distance matrix.
-    See scipy.spatial.distance.pdist
+    """Convert coordinate of square distance matrix to condensed matrix index.
+
+    The condensed version of a squareform, pairwise distance matrix is
+    a linearisation of the upper triangular, non-diagonal coordinates
+    of the squareform distance matrix. This function returns the [i, j]-th
+    coordinate of the condensed array.
+
+    eg. given a squareform matrix,
+
+    array([[  0.        ,  10.        ,  22.36067977],
+           [ 10.        ,   0.        ,  14.14213562],
+           [ 22.36067977,  14.14213562,   0.        ]])
+
+    The condensed version of this matrix is:
+
+    array([ 10.        ,  22.36067977,  14.14213562])
 
     Parameters
     ----------
@@ -25,9 +38,9 @@ def sq_to_dist(i, j, n):
 
     Examples
     --------
-    ## TODO it's not clear what this function is doing in the example ..
-    >>> sq_to_dist(0, 1, 4)
-    0
+    >>> sq_to_dist(1, 2, 3)
+    2
+
     """
     index = i*n + j - i*(i+1)/2 - i - 1
     return index
