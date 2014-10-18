@@ -1,6 +1,5 @@
-from math import floor, sqrt
 import numpy as np
-from sklearn.cluster import DBSCAN, KMeans
+from sklearn.cluster import DBSCAN, MiniBatchKMeans
 from sklearn.ensemble import RandomTreesEmbedding
 from sklearn.manifold import MDS
 
@@ -39,7 +38,8 @@ def rt_embedding(X, **kwargs):
     return rt, X_transformed
 
 
-def dbscan_clustering(X, **kwargs):
+def dbscan_clustering(X, eps=0.5, min_samples=5, metric='euclidean',
+                      random_state=None, **kwargs):
     """DBSCAN clustering applied to data matrix X
 
     Parameters
@@ -67,28 +67,23 @@ def dbscan_clustering(X, **kwargs):
     -------
     dbscan_clustered : DBSCAN object
         The clustering object.
-    core_samples : array, (, n_samples)
+    core_samples : array of int, shape (n_samples,)
         Indices of core samples.
-    membership: array, (, n_samples)
+    membership: array of int, shape (n_samples,)
         1D array where each element represents which cluster
         each sample was assigned to. -1 represents noisy/unassigned
         sample.
     """
-    params = {
-        'eps': 0.5,
-        'min_samples': 5,
-        'metric': 'euclidean',
-        'random_state': None, }
-    params.update(**kwargs)
-    dbscan_clustered = DBSCAN().set_params(**params)
+    dbscan_clustered = DBSCAN().set_params(**kwargs)
     dbscan_clustered.fit(X)
     core_samples = dbscan_clustered.components_
     membership = dbscan_clustered.labels_
     return dbscan_clustered, core_samples, membership
 
 
-def kmeans_clustering(X, **kwargs):
-    """K-Means clustering applied to data matrix X
+def kmeans_clustering(X, max_iter=300, n_init=10, n_jobs=-1,
+                      random_state=None, **kwargs):
+    """Mini-Batch K-Means clustering applied to data matrix X
 
     Parameters
     ----------
@@ -130,14 +125,8 @@ def kmeans_clustering(X, **kwargs):
     >>> membership.shape
     (50,)
     """
-    params = {
-        'n_clusters': int(floor(sqrt(X.shape[0]))),
-        'max_iter': 300,
-        'n_init': 10,
-        'n_jobs': -1,
-        'random_state': None, }
-    params.update(**kwargs)
-    kmeans_clustered = KMeans().set_params(**params)
+    kwargs['n_clusters'] = int(np.floor(np.sqrt(X.shape[0])))
+    kmeans_clustered = MiniBatchKMeans().set_params(**kwargs)
     kmeans_clustered.fit(X)
     centroids = kmeans_clustered.cluster_centers_
     membership = kmeans_clustered.labels_
