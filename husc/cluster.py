@@ -3,7 +3,7 @@ from sklearn.cluster import DBSCAN, MiniBatchKMeans
 from sklearn.ensemble import RandomTreesEmbedding
 from sklearn.manifold import MDS
 
-def rt_embedding(X, **kwargs):
+def rt_embedding(X, n_estimators=100, max_depth=10, n_jobs=-1):
     """Embed data matrix X in a random forest.
 
     Parameters
@@ -17,9 +17,6 @@ def rt_embedding(X, **kwargs):
     n_jobs : int, optional
         Number of compute jobs when fitting the trees. -1 means number
         of processors on the current computer.
-    **kwargs : dict
-        Keyword arguments to be passed to
-        `sklearn.ensemble.RandomTreesEmbedding`
 
     Returns
     -------
@@ -28,19 +25,15 @@ def rt_embedding(X, **kwargs):
     X_transformed : sparse matrix
         The transformed data.
     """
-    params = {
-        'n_estimators': 100,
-        'max_depth': 10,
-        'n_jobs': -1, }
-    params.update(**kwargs)
-    rt = RandomTreesEmbedding().set_params(**params)
+    rt = RandomTreesEmbedding(n_estimators=n_estimators, max_depth=max_depth,
+                              n_jobs=n_jobs)
     X_transformed = rt.fit_transform(X)
     return rt, X_transformed
 
 
 def dbscan_clustering(X, eps=0.5, min_samples=5, metric='euclidean',
-                      random_state=None, **kwargs):
-    """DBSCAN clustering applied to data matrix X
+                      random_state=None):
+    """``DBSCAN`` clustering applied to data matrix X
 
     Parameters
     ----------
@@ -59,30 +52,27 @@ def dbscan_clustering(X, eps=0.5, min_samples=5, metric='euclidean',
     random_state : int, optional
         Generator used to initialize, set fixed integer to
         reproduce results for debugging.
-    **kwargs : dict
-        Keyword arguments to be passed to
-        `sklearn.cluster.DBSCAN`
 
     Returns
     -------
     dbscan_clustered : DBSCAN object
         The clustering object.
     core_samples : array of int, shape (n_samples,)
-        Indices of core samples.
+        Row indices of core samples in data matrix X.
     membership: array of int, shape (n_samples,)
         1D array where each element represents which cluster
         each sample was assigned to. -1 represents noisy/unassigned
         sample.
     """
-    dbscan_clustered = DBSCAN().set_params(**kwargs)
-    dbscan_clustered.fit(X)
+    dbscan_clustered = DBSCAN(X, eps=eps, min_samples=min_samples,
+                              metric=metric, random_state=random_state)
     core_samples = dbscan_clustered.components_
     membership = dbscan_clustered.labels_
     return dbscan_clustered, core_samples, membership
 
 
-def kmeans_clustering(X, max_iter=300, n_init=10, n_jobs=-1,
-                      random_state=None, **kwargs):
+def kmeans_clustering(X, n_clusters=None, max_iter=300, n_init=10,
+                      random_state=None):
     """Mini-Batch K-Means clustering applied to data matrix X
 
     Parameters
@@ -96,23 +86,17 @@ def kmeans_clustering(X, max_iter=300, n_init=10, n_jobs=-1,
     n_init : int, optional
         Number of time the k-means algorithm will be run with different\
         centroid seeds.
-    n_jobs : int, optional
-        Number of compute jobs when fitting the trees. -1 means number
-        of processors on the current computer.
     random_state : int, optional
         Generator used to initialize, set fixed integer to
         reproduce results for debugging.
-    **kwargs : dict
-        Keyword arguments to be passed to
-        `sklearn.cluster.KMeans`
 
     Returns
     -------
     kmeans_clustered : KMeans object
         The clustering object.
-    centroids : array (n_clusters, n_features)
+    centroids : array , shape (n_clusters, n_features)
         The centroids for each cluster.
-    membership : array (, n_samples)
+    membership : array of int, shape (n_samples,)
         1D array where each element represents which cluster sample
         assigned to.
 
@@ -125,16 +109,19 @@ def kmeans_clustering(X, max_iter=300, n_init=10, n_jobs=-1,
     >>> membership.shape
     (50,)
     """
-    params = {'n_clusters': int(np.floor(np.sqrt(X.shape[0]))), }
-    params.update(**kwargs)
-    kmeans_clustered = MiniBatchKMeans().set_params(**params)
+    if n_clusters is None:
+        n_clusters = int(np.floor(np.sqrt(X.shape[0]/2)))
+    kmeans_clustered = MiniBatchKMeans(
+        n_clusters=n_clusters, max_iter=max_iter, n_init=n_init,
+        random_state=random_state)
     kmeans_clustered.fit(X)
     centroids = kmeans_clustered.cluster_centers_
     membership = kmeans_clustered.labels_
     return kmeans_clustered, centroids, membership
 
 
-def mds_mapping(X, **kwargs):
+def mds_mapping(X, n_components=2, max_iter=500, n_jobs=-1,
+                random_state=None):
     """MDS scaling applied to data matrix X
 
     Parameters
@@ -151,16 +138,13 @@ def mds_mapping(X, **kwargs):
     random_state : int, optional
         Generator used to initialize, set fixed integer to
         reproduce results for debugging.
-    **kwargs : dict
-        Keyword arguments to be passed to
-        `sklearn.manifold.MDS`
 
     Returns
     -------
     mds_embedding: MDS object
         The embedding object.
-    X_transformed
-        error function of embedding - sum of difference
+    error: float
+        Error function of embedding - sum of difference
         between points in original space and new space.
 
     Examples
@@ -170,13 +154,8 @@ def mds_mapping(X, **kwargs):
     >>> transformed_data.shape
     (5, 3)
     """
-    params = {
-        'n_components': 2,
-        'max_iter': 500,
-        'n_jobs': -1,
-        'random_state': None, }
-    params.update(**kwargs)
-    mds_embedding = MDS().set_params(**params)
-    X_transformed = mds_embedding.fit_transform(X)
-    return mds_embedding, X_transformed
+    mds_embedding = MDS(n_components=n_components, max_iter=max_iter,
+                        n_jobs=n_jobs, random_state=random_state)
+    X_transformed, error = mds_embedding.fit_transform(X)
+    return mds_embedding, error
 
