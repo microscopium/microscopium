@@ -143,19 +143,20 @@ def mds_mapping(X, n_components=2, max_iter=500, n_jobs=-1,
     -------
     mds_embedding: MDS object
         The embedding object.
-    error: float
-        Error function of embedding - sum of difference
-        between points in original space and new space.
+    X_transformed : array, (n_samples,
+        The transformed data.
 
     Examples
     --------
     >>> data = np.random.rand(5, 10)
-    >>> embedding, transformed_data = mds_mapping(data, n_components=3)
+    >>> MDS_reduced, transformed_data = mds_mapping(data, n_components=3)
     >>> transformed_data.shape
     (5, 3)
     """
     mds_embedding = MDS(n_components=n_components, max_iter=max_iter,
                         n_jobs=n_jobs, random_state=random_state)
-    X_transformed, error = mds_embedding.fit_transform(X)
-    return mds_embedding, error
+    mds_embedding.fit_transform(X)
+    X_transform = mds_embedding.embedding_
+
+    return mds_embedding, X_transform
 
