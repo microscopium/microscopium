@@ -44,6 +44,51 @@ def sq_to_dist(i, j, n):
     index = i*n + j - i*(i+1)/2 - i - 1
     return index
 
+def mongo_group_by(collection, group_by):
+    """Group MongoDB collection according to specified field.
+
+    Sends aggregate query to MongoDB collection to group
+    all documents by a given field and returns dictionary
+    mapping the field to the corresponding (plate, well)
+    co-ordinate(s).
+
+    Parameters
+    ----------
+    collection : pymongo collection
+        Pymongo object directing to collection.
+    group_by : string
+        Field to group collection by.
+    Returns
+    -------
+    query_dict : dict
+        Query dictionary.
+    """
+    mongo_query = collection.aggregate([{
+            '$group' : {
+                # groups all documents according to specified field
+                '_id': '$' + group_by,
+                'coords': {
+                    '$addToSet': {
+                        # add cell_plate_barcode and well for each document
+                        # belonging to the group
+                        'cell_plate_barcode': '$cell_plate_barcode',
+                        'well': '$well'
+                    }
+                }
+            }
+    }])['result']
+
+    query_dict = {}
+    for doc in mongo_query:
+        query_dict[doc['_id']] = []
+        for coord in doc['coords']:
+            try:
+                new_coord = (coord['cell_plate_barcode'], str(coord['well']))
+                query_dict[doc['_id']].append(new_coord)
+            except KeyError:
+                pass
+    return query_dict
+
 
 def gene_distance_score(X, collection, metric='euclidean'):
     """Find intra/extra gene distance scores between samples.
@@ -52,63 +97,36 @@ def gene_distance_score(X, collection, metric='euclidean'):
     ----------
     X : Data frame, shape (n_samples, n_features)
         Feature data frame.
-    collection : pymongo collection
-        Pymongo object directing to collection.
+
     metric : string, optional
         Which distance measure to use when calculating distances.
         Must be one of the options allowable in
-        scipy.spatial.distance.pdist. Default euclidean.
+        scipy.spatial.distance.pdist. Default is euclidean distance.
 
     Returns
     -------
-    all_intergene_data : array
+    all_intragene_data : array
         An 1D array with intra-gene distances (i.e. distances
         between samples with the same gene knocked down).
-    all_extragene_data : array
-        An 1D array with extra-gene distances (i.e. distances
-        between samples with the same gene knocked down).
+    all_intergene_data : array
+        An 1D array with inter-gene distances (i.e. distances
+        between samples with different gene knocked down).
 
     """
+    gene_dict = mongo_group_by(collection, 'gene_name')
 
-    mongo_query = collection.aggregate([
-        {
-            "$group" : {
-                "_id": "$gene_name",
-                "coords": {
-                    "$addToSet": {
-                        "cell_plate_barcode": "$cell_plate_barcode",
-                        "well": "$well"
-                        }
-                    }
-            }
-        }
-    ])['result']
-
-    # parse mongo query and create (gene) -> (coord) dictionary
-    gene_dict = {}
-    for doc in mongo_query:
-        gene_dict[doc['_id']] = list()
-        for coord in doc['coords']:
-            try:
-                new_coord = (coord['cell_plate_barcode'], str(coord['well']))
-                gene_dict[doc['_id']].append(new_coord)
-            except KeyError:
-                pass
-
-    # get inner indices
-    all_intergene_index = []
+    all_intragene_index = []
     for key in gene_dict:
         if len(gene_dict[key]) > 1:
             indices = map(X.index.get_loc, gene_dict[key])
             for i, j in combinations(indices, 2):
-                all_intergene_index.append(sq_to_dist(i, j, X.shape[0]))
+                all_intragene_index.append(sq_to_dist(i, j, X.shape[0]))
 
-    all_intergene_index.sort()
+    all_intragene_index.sort()
     n = sq_to_dist(X.shape[0], X.shape[0], X.shape[0])
-    all_extragene_index = np.setdiff1d(np.arange(n), all_intergene_index,
+    all_intergene_index = np.setdiff1d(np.arange(n), all_intragene_index,
                                        assume_unique=True)
     distance = pdist(X, metric)
+    all_intragene_data = distance[all_intragene_index]
     all_intergene_data = distance[all_intergene_index]
-    all_extragene_data = distance[all_extragene_index]
-
-    return all_intergene_data, all_extragene_data
+    return all_intragene_data, all_intergene_data
