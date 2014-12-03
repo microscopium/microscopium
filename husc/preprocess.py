@@ -66,6 +66,12 @@ def basefn(fn):
     -------
     outfn : string
         `fn` with the extension stripped.
+
+    Examples
+    --------
+    >>> file_name = 'file_name.ext'
+    >>> basefn(file_name)
+    'file_name'
     """
     return os.path.splitext(fn)[0]
 
@@ -236,6 +242,15 @@ def crop(im, slices=(slice(100, -100), slice(250, -300))):
     -------
     imc : array
         The cropped image.
+
+    Examples
+    --------
+    >>> im = np.zeros((5, 5), int)
+    >>> im[1:4, 1:4] = 1
+    >>> crop(im, slices=(slice(1, 4), slice(1, 4)))
+    array([[1, 1, 1],
+           [1, 1, 1],
+           [1, 1, 1]])
     """
     return im[slices]
 
@@ -430,6 +445,15 @@ def unpad(im, pad_width):
     -------
     imc : array
         The unpadded image.
+
+    Examples
+    --------
+    >>> im = np.zeros((5, 5), int)
+    >>> im[1:4, 1:4] = 1
+    >>> unpad(im, 1)
+    array([[1, 1, 1],
+           [1, 1, 1],
+           [1, 1, 1]])
     """
     if not isinstance(pad_width, coll.Iterable):
         pad_width = [pad_width] * im.ndim
