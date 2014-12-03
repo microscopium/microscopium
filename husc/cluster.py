@@ -143,7 +143,7 @@ def mds_mapping(X, n_components=2, max_iter=500, n_jobs=-1,
     -------
     mds_embedding: MDS object
         The embedding object.
-    X_transformed : array, (n_samples,
+    X_transformed : array, shape (n_samples, n_components)
         The transformed data.
 
     Examples
@@ -156,7 +156,7 @@ def mds_mapping(X, n_components=2, max_iter=500, n_jobs=-1,
     mds_embedding = MDS(n_components=n_components, max_iter=max_iter,
                         n_jobs=n_jobs, random_state=random_state)
     mds_embedding.fit_transform(X)
-    X_transform = mds_embedding.embedding_
+    X_transformed = mds_embedding.embedding_
 
-    return mds_embedding, X_transform
+    return mds_embedding, X_transformed
 
