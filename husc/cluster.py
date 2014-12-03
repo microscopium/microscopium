@@ -33,7 +33,7 @@ def rt_embedding(X, n_estimators=100, max_depth=10, n_jobs=-1):
 
 def dbscan_clustering(X, eps=0.5, min_samples=5, metric='euclidean',
                       random_state=None):
-    """``DBSCAN`` clustering applied to data matrix X
+    """`DBSCAN` clustering applied to data matrix X
 
     Parameters
     ----------
@@ -48,7 +48,7 @@ def dbscan_clustering(X, eps=0.5, min_samples=5, metric='euclidean',
     metric : string, optional
         The distance metric to use when calculating pairwise distances.
         Must be one of the options allowable in
-        sklearn.metrics.pairwise.pairwise_distances. Default euclidean.
+        `sklearn.metrics.pairwise.pairwise_distances`. Default euclidean.
     random_state : int, optional
         Generator used to initialize, set fixed integer to
         reproduce results for debugging.
