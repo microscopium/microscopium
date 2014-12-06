@@ -35,7 +35,7 @@ for doc in cursor:
     titles.append(' '.join([key, gene_name]))
 
 # unpickle dataframe, show first 5 rows
-test_data = pd.read_pickle('data_test.p')
+test_data = pd.read_pickle('data_test.pickle')
 print test_data.head()
 
 # display all images
