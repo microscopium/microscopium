@@ -12,7 +12,7 @@ before_install:
     - conda update -q conda
     - conda info -a
 
-    - conda create -q -n husc-test python=$TRAVIS_PYTHON_VERSION numpy scipy pillow scikit-learn scikit-image cytoolz pandas setuptools pip
+    - conda create -q -n husc-test python=$TRAVIS_PYTHON_VERSION numpy scipy pillow scikit-learn scikit-image cytoolz pandas setuptools pip pymongo
     - source activate husc-test
 
     - pip install pytest pytest-cov
