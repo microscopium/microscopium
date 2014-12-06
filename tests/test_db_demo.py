@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import subprocess as sp
 
 # start mongodb daemon
-sp.Popen(["mongod", "--dbpath", "./mongodb", "--port", "27020",
+sp.Popen(["mongod", "--dbpath", "./testdata/mongodb", "--port", "27020",
           "--smallfiles"])
 
 client = MongoClient('localhost', 27020)
@@ -29,13 +29,13 @@ for doc in cursor:
     key = doc['_id']
     gene_name = doc['gene_name']
     image_fn = doc['filename']
-    image_fn = './images/' + image_fn.split('/')[5]
+    image_fn = './testdata/images/' + image_fn.split('/')[5]
     image = io.imread(image_fn)
     images.append(image)
     titles.append(' '.join([key, gene_name]))
 
 # unpickle dataframe, show first 5 rows
-test_data = pd.read_pickle('data_test.pickle')
+test_data = pd.read_pickle('./testdata/data_test.pickle')
 print test_data.head()
 
 # display all images
