@@ -6,7 +6,6 @@ import pandas as pd
 from skimage import io
 import matplotlib.pyplot as plt
 import subprocess as sp
-import itertools as it
 
 # start mongodb daemon
 sp.Popen(["mongod", "--dbpath", "./mongodb", "--port", "27020",
@@ -24,16 +23,15 @@ if db.wells_test.find({}).count() == 0:
 #  parse image filename and id and gene name
 cursor = collection.find({})
 titles = []
-imgs = []
-for i in range(0, cursor.count()):
-    doc = next(cursor, None)
+images = []
+for doc in cursor:
     print doc
     key = doc['_id']
     gene_name = doc['gene_name']
-    file_name = doc['filename']
-    file_name = './images/' + file_name.split('/')[5]
-    img = io.imread(file_name)
-    imgs.append(img)
+    image_fn = doc['filename']
+    image_fn = './images/' + image_fn.split('/')[5]
+    image = io.imread(image_fn)
+    images.append(image)
     titles.append(' '.join([key, gene_name]))
 
 # unpickle dataframe, show first 5 rows
@@ -41,12 +39,11 @@ test_data = pd.read_pickle('data_test.p')
 print test_data.head()
 
 # display all images
-
 fig, axes = plt.subplots(2, 4)
 
-for i in it.product([0, 1], [0, 1, 2, 3]):
-    axes[i].imshow(imgs.pop())
-    axes[i].set_title(titles.pop())
-    axes[i].axis('off')
+for ax in axes.ravel():
+    ax.imshow(images.pop())
+    ax.set_title(titles.pop())
+    ax.axis('off')
 
 plt.show()
