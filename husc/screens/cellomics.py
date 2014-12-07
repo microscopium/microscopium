@@ -1,5 +1,4 @@
-"""Feature computations and other functions for the Cellomics myoblast
-fusion screen.
+"""Feature computations and other functions for Cellomics screens.
 """
 
 import os
@@ -7,10 +6,29 @@ import collections as coll
 
 import numpy as np
 
-# getting a start on some of these
-# using a (plate, well, cell) convention
-# for 3x3 imaging convention used in these
-# datasets
+def get_img_loc(code):
+    """Convert well-field-channel string to list of values.
+
+    Parameters
+    ----------
+    code : string
+        well-field-channel string from Cellomics filename
+        e.g. 'A01f00d0' is well co-ordinate A01, field 0, channel 0
+
+    Returns
+    -------
+    img_loc : list [string, int, int]
+        List containing the well co-ordinate, field and image channel
+        respectively.
+
+    Examples
+    --------
+    >>> get_img_loc('A01f00d0')
+    ['A01', 0, 0]
+    """
+    img_loc = [code[:3], int(code[4:6]), int(code[-1])]
+    return img_loc
+
 
 def cellomics_semantic_filename(fn):
     """Split a Cellomics filename into its annotated components.
@@ -28,27 +46,20 @@ def cellomics_semantic_filename(fn):
 
     Examples
     --------
-    >>> fn = ('cellomics-p1-j01-110210_02490688_53caa10e-ac15-4166-9b9d-'
-    ...       '4b1167f3b9c6_C04_s1_w1.TIF')
+    >>> fn = ('MFGTMP_140206180002_A01f00d0.TIF')
     >>> d = cellomics_semantic_filename(fn)
     >>> d
-    OrderedDict([('directory', ''), ('prefix', 'cellomics'), ('pass', 'p1'), ('job', 'j01'), ('date', '110210'), ('plate', 2490688), ('barcode', '53caa10e-ac15-4166-9b9d-4b1167f3b9c6'), ('well', 'C04'), ('quadrant', 's1'), ('channel', 'w1'), ('suffix', 'TIF')])
+    OrderedDict([('directory', ''), ('prefix', 'MFGTMP'), ('plate', 140206180002), ('well', 'A01'), ('field', 0), ('channel', 0), ('suffix', 'TIF')])
     """
-    keys = ['directory', 'prefix', 'pass', 'job', 'date', 'plate',
-            'barcode', 'well', 'quadrant', 'channel', 'suffix']
+    keys = ['directory', 'prefix', 'plate', 'well', 'field', 'channel', 'suffix']
     directory, fn = os.path.split(fn)
     filename, suffix = fn.split('.')[0], '.'.join(fn.split('.')[1:])
-    values = filename.split('_')
-    full_prefix = values[0].split('-')
-    if len(full_prefix) > 4:
-        head, tail = full_prefix[:3], full_prefix[3:]
-        full_prefix = head + ['-'.join(tail)]
-    values = [directory] + full_prefix + values[1:] + [suffix]
+    filename_split = filename.split('_')
+    prefix = filename_split[0]
+    plate = int(filename_split[1])
+    code = filename_split[2]
+    values = [directory, prefix, plate] + get_img_loc(code) + [suffix]
     semantic = coll.OrderedDict(zip(keys, values))
-    try:
-        semantic['plate'] = int(semantic['plate'])
-    except ValueError: # Some plates are labeled "NOCODE"
-        semantic['plate'] = np.random.randint(1000000)
     return semantic
 
 
@@ -67,10 +78,9 @@ def filename2coord(fn):
 
     Examples
     --------
-    >>> fn = ('cellomics-p1-j01-110210_02490688_53caa10e-ac15-4166-9b9d-'
-    ...       '4b1167f3b9c6_C04_s1_w1.TIF')
+    >>> fn = 'MFGTMP_140206180002_A01f00d0.TIF'
     >>> filename2coord(fn)
-    (2490688, 'C04')
+    (140206180002, 'A01')
     """
     sem = cellomics_semantic_filename(fn)
     return (sem['plate'], sem['well'])
@@ -88,15 +98,14 @@ def dir2plate(dirname):
     -------
     plateid : int
         The plate ID parsed from the directory name.
+
+    Examples
+    --------
+    >>> dir2plate('MFGTMP_140206180002')
+    140206180002
     """
     basedir = os.path.split(dirname)[1]
-    plateid = basedir.split('_')[1]
-    try:
-        plateid = int(plateid)
-    except ValueError:
-        print("Plate ID %s cannot be converted to int, replaced with 0." %
-              plateid)
-        return 0
+    plateid = int(basedir.split('_')[1])
     return plateid
 
 
