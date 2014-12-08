@@ -7,6 +7,13 @@ from skimage import io
 import matplotlib.pyplot as plt
 import subprocess as sp
 
+def string2tuple(string_tuple):
+    # TODO add docstring
+    string_values = string_tuple.split(', ')
+    coords = (int(string_values[0][1:]), string_values[1][1:-2])
+    return coords
+
+
 # start mongodb daemon
 sp.Popen(["mongod", "--dbpath", "./testdata/mongodb", "--port", "27020",
           "--smallfiles"])
@@ -34,9 +41,11 @@ for doc in cursor:
     images.append(image)
     titles.append(' '.join([key, gene_name]))
 
-# unpickle dataframe, show first 5 rows
-test_data = pd.read_pickle('./testdata/data_test.pickle')
+# read dataframe from CSV, show first 5 rows
+test_data = pd.read_csv('./testdata/data_test.csv', index_col=0,
+                         converters={0: string2tuple})
 print test_data.head()
+
 
 # display all images
 fig, axes = plt.subplots(2, 4)
