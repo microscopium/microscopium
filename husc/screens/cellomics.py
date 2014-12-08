@@ -42,7 +42,6 @@ def cellomics_semantic_filename(fn):
     -------
     semantic : collections.OrderedDict {string: string}
         A dictionary mapping the different components of the filename.
-        NOTE: the 'plate' key is converted to an int.
 
     Examples
     --------
