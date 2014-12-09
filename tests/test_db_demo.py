@@ -4,6 +4,8 @@
 from pymongo import MongoClient
 import pandas as pd
 from skimage import io
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import subprocess as sp
 import time
