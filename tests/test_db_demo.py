@@ -4,9 +4,6 @@
 from pymongo import MongoClient
 import pandas as pd
 from skimage import io
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
 import subprocess as sp
 import time
 import os
@@ -51,14 +48,3 @@ for doc in cursor:
 test_data = pd.read_csv(os.path.join(abspath, 'testdata/data_test.csv'), index_col=0,
                          converters={0: string2tuple})
 print test_data.head()
-
-
-# display all images
-fig, axes = plt.subplots(2, 4)
-
-for ax in axes.ravel():
-    ax.imshow(images.pop())
-    ax.set_title(titles.pop())
-    ax.axis('off')
-
-plt.show()
