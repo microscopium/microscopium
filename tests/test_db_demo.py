@@ -1,11 +1,14 @@
-"""Temporary file to demonstrate the sample dataset.
-"""
+'''Temporary file to demonstrate the sample dataset.
+'''
 
 from pymongo import MongoClient
 import pandas as pd
 from skimage import io
 import matplotlib.pyplot as plt
 import subprocess as sp
+import os
+
+abspath = os.path.dirname(__file__)
 
 def string2tuple(string_tuple):
     # TODO add docstring
@@ -15,8 +18,8 @@ def string2tuple(string_tuple):
 
 
 # start mongodb daemon
-sp.Popen(["mongod", "--dbpath", "./testdata/mongodb", "--port", "27020",
-          "--smallfiles"])
+sp.Popen(['mongod', '--dbpath', os.path.join(abspath, 'testdata/mongodb'), '--port', '27020',
+          '--smallfiles'])
 
 client = MongoClient('localhost', 27020)
 db = client['myofusion_test']
@@ -24,8 +27,8 @@ collection = db.wells_test
 
 # import documents if collection is empty
 if db.wells_test.find({}).count() == 0:
-    sp.Popen(["mongoimport", "-host", "localhost:27020", "-d",
-              "myofusion_test", "-c", "wells_test", "wells_test.json"])
+    sp.Popen(['mongoimport', '-host', 'localhost:27020', '-d',
+              'myofusion_test', '-c', 'wells_test', os.path.join(abspath, 'testdata/wells_test.json')])
 
 #  parse image filename and id and gene name
 cursor = collection.find({})
@@ -36,13 +39,13 @@ for doc in cursor:
     key = doc['_id']
     gene_name = doc['gene_name']
     image_fn = doc['filename']
-    image_fn = './testdata/images/' + image_fn.split('/')[5]
+    image_fn = os.path.join(abspath, 'testdata/images/') + image_fn.split('/')[5]
     image = io.imread(image_fn)
     images.append(image)
     titles.append(' '.join([key, gene_name]))
 
 # read dataframe from CSV, show first 5 rows
-test_data = pd.read_csv('./testdata/data_test.csv', index_col=0,
+test_data = pd.read_csv(os.path.join(abspath, 'testdata/data_test.csv'), index_col=0,
                          converters={0: string2tuple})
 print test_data.head()
 
