@@ -6,6 +6,7 @@ import pandas as pd
 from skimage import io
 import matplotlib.pyplot as plt
 import subprocess as sp
+import time
 import os
 
 abspath = os.path.dirname(__file__)
@@ -18,17 +19,17 @@ def string2tuple(string_tuple):
 
 
 # start mongodb daemon
-sp.Popen(['mongod', '--dbpath', os.path.join(abspath, 'testdata/mongodb'), '--port', '27020',
-          '--smallfiles'])
 
-client = MongoClient('localhost', 27020)
+client = MongoClient('localhost', 27017)
 db = client['myofusion_test']
 collection = db.wells_test
 
 # import documents if collection is empty
+# wait two seconds to allow collection to import
 if db.wells_test.find({}).count() == 0:
-    sp.Popen(['mongoimport', '-host', 'localhost:27020', '-d',
+    sp.Popen(['mongoimport', '-host', 'localhost:27017', '-d',
               'myofusion_test', '-c', 'wells_test', os.path.join(abspath, 'testdata/wells_test.json')])
+    time.sleep(2)
 
 #  parse image filename and id and gene name
 cursor = collection.find({})
