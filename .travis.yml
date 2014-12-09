@@ -18,9 +18,16 @@ before_install:
     - pip install pytest pytest-cov
     - pip install coveralls
 
+before_script:
+    - wait 15
+    - mongo mydb_test --eval 'db.addUser("travis", "test");'
+
 script:
     - python setup.py develop
     - py.test
 
 after_success:
     - coveralls
+
+services:
+    mongodb
