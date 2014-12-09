@@ -19,7 +19,7 @@ before_install:
     - pip install coveralls
 
 before_script:
-    - wait 15
+    - sleep 15
     - mongo mydb_test --eval 'db.addUser("travis", "test");'
 
 script:
