@@ -38,10 +38,10 @@ def sq_to_dist(i, j, n):
     Examples
     --------
     >>> sq_to_dist(1, 2, 3)
-    2
+    1
 
     """
-    index = i*n + j - i*(i+1)/2 - i - 1
+    index = n*j - j*(j+1)/2 + i - 1 - j
     return index
 
 def mongo_group_by(collection, group_by):
