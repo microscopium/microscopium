@@ -60,8 +60,9 @@ def mongo_group_by(collection, group_by):
         Field to group collection by.
     Returns
     -------
-    query_dict : dict
-        Query dictionary.
+    query_dict : dict { string : list of tuple }
+        Query dictionary mapping the specified group_by field to a list of
+        (plate, well) co-ordinates.
     """
     mongo_query = collection.aggregate([{
             '$group' : {
@@ -91,7 +92,7 @@ def mongo_group_by(collection, group_by):
 
 
 def gene_distance_score(X, collection, metric='euclidean'):
-    """Find intra/extra gene distance scores between samples.
+    """Find intra/inter gene distance scores between samples.
 
     Parameters
     ----------
