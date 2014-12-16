@@ -3,7 +3,8 @@
 
 import os
 import collections as coll
-
+from husc.preprocess import group_by_channel, rescale_from_11bits
+from skimage import io
 import numpy as np
 
 def get_img_loc(code):
@@ -28,6 +29,74 @@ def get_img_loc(code):
     """
     img_loc = [code[:3], int(code[4:6]), int(code[-1])]
     return img_loc
+
+
+def run_snail_sitch(fns):
+    """Run right, anti-clockwise spiral/snail stitching of 25 Cellomics TIFs.
+    """
+    # TODO finish docstring
+    # TODO generalise to left snail and other field sizes.
+    right = [[16, 15, 14, 13, 12],
+             [17, 4, 3, 2, 11],
+             [18, 5, 0, 1, 10],
+             [19, 6, 7, 8, 9],
+             [20, 21, 22, 23, 24]]
+
+    stitched_image = np.array([])
+    for i in range(0, 5):
+        stitched_row = np.array([])
+        print stitched_image.shape
+        for j in range(0, 5):
+            print fns[right[i][j]]
+            image = io.imread('./well/' + fns[right[i][j]])
+            stitched_row = concatenate(stitched_row, image, 0)
+        stitched_image = concatenate(stitched_image, stitched_row, 1)
+
+    return stitched_image
+
+
+def concatenate(arr1, arr2, axis=0):
+    """concatenate that doesn't complain when arr1 is null.
+    """
+    # TODO write docstring
+    if arr1.shape[0] == 0:
+        return arr2
+    else:
+        return np.concatenate((arr1, arr2), axis=axis)
+
+
+def make_wellchannel2file_dict(fns):
+    """Return a dictionary mapping well co-ordinates to filenames
+    """
+    # TODO finish docstring
+    wellchannel2file = coll.defaultdict(list)
+    for fn in fns:
+        file_info = cellomics_semantic_filename(fn)
+        tuple = (file_info['well'], file_info['channel'])
+        wellchannel2file[tuple].append(fn)
+    return wellchannel2file
+
+
+def get_by_ext(dirname, extension, sort=True):
+    """Return list of files in directory with specified extension
+
+    Parameters
+    ----------
+    dirname : string
+        A directory containing files.
+    """
+    # TODO finish docstring
+    fns = os.listdir(dirname)
+    print fns
+    fns_ext = []
+    for fn in fns:
+        if fn.endswith('.' + extension):
+            fns_ext.append(fn)
+    if sort:
+        fns_ext.sort()
+        return fns_ext
+    else:
+        return fns_ext
 
 
 def cellomics_semantic_filename(fn):
