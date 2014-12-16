@@ -3,7 +3,6 @@
 
 import os
 import collections as coll
-from husc.preprocess import group_by_channel, rescale_from_11bits
 from skimage import io
 import numpy as np
 
