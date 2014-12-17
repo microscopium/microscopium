@@ -7,7 +7,7 @@ from skimage import io
 import numpy as np
 
 
-def run_snail_sitch(fns):
+def run_snail_stitch(fns):
     """Run right, anti-clockwise spiral/snail stitching of 25 Cellomics TIFs.
     """
     # TODO finish docstring
