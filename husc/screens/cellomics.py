@@ -11,7 +11,7 @@ def run_snail_stitch(fns):
     """Run right, anti-clockwise spiral/snail stitching of 25 Cellomics TIFs.
     """
     # TODO finish docstring
-    # TODO generalise to left snail and other field sizes.
+    # TODO generalise to other directions and other field sizes.
     right = [[16, 15, 14, 13, 12],
              [17, 4, 3, 2, 11],
              [18, 5, 0, 1, 10],
@@ -24,10 +24,9 @@ def run_snail_stitch(fns):
         print stitched_image.shape
         for j in range(0, 5):
             print fns[right[i][j]]
-            image = io.imread('./well/' + fns[right[i][j]])
-            stitched_row = concatenate(stitched_row, image, 0)
-        stitched_image = concatenate(stitched_image, stitched_row, 1)
-
+            image = io.imread(fns[right[i][j]])
+            stitched_row = concatenate(stitched_row, image, 1)
+        stitched_image = concatenate(stitched_image, stitched_row, 0)
     return stitched_image
 
 
@@ -68,7 +67,7 @@ def get_by_ext(dirname, extension, sort=True):
     for fn in fns:
         if fn.endswith('.' + extension):
             fns_ext.append(fn)
-    if sort:
+    if sort is True:
         fns_ext.sort()
         return fns_ext
     else:
