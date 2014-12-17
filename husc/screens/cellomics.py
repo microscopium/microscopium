@@ -6,29 +6,6 @@ import collections as coll
 from skimage import io
 import numpy as np
 
-def get_img_loc(code):
-    """Convert well-field-channel string to list of values.
-
-    Parameters
-    ----------
-    code : string
-        well-field-channel string from Cellomics filename
-        e.g. 'A01f00d0' is well co-ordinate A01, field 0, channel 0
-
-    Returns
-    -------
-    img_loc : list [string, int, int]
-        List containing the well co-ordinate, field and image channel
-        respectively.
-
-    Examples
-    --------
-    >>> get_img_loc('A01f00d0')
-    ['A01', 0, 0]
-    """
-    img_loc = [code[:3], int(code[4:6]), int(code[-1])]
-    return img_loc
-
 
 def run_snail_sitch(fns):
     """Run right, anti-clockwise spiral/snail stitching of 25 Cellomics TIFs.
@@ -121,11 +98,11 @@ def cellomics_semantic_filename(fn):
     keys = ['directory', 'prefix', 'plate', 'well', 'field', 'channel', 'suffix']
     directory, fn = os.path.split(fn)
     filename, suffix = fn.split('.')[0], '.'.join(fn.split('.')[1:])
-    filename_split = filename.split('_')
-    prefix = filename_split[0]
-    plate = int(filename_split[1])
-    code = filename_split[2]
-    values = [directory, prefix, plate] + get_img_loc(code) + [suffix]
+    prefix, plate, code = filename.split('_')
+    well = code[:3]
+    field = int(code[4:6])
+    channel = int(code[-1])
+    values = [directory, prefix, int(plate), well, field, channel, suffix]
     semantic = coll.OrderedDict(zip(keys, values))
     return semantic
 
