@@ -26,6 +26,9 @@ if db.wells_test.find({}).count() == 0:
 test_data = pd.read_csv(os.path.join(abspath, 'testdata/data_test.csv'),
                         index_col=0, converters={0: string2tuple})
 
+test_distance = pd.read_csv(os.path.join(abspath, 'testdata/distance_test.csv'),
+                            header=None)
+
 def test_mongo_group_by():
     expected = set({'Mbnl1': [(2490700, 'L13'), (2490702, 'L13')],
                 'Nudt3': [(2490702, 'L04'), (2490701, 'L04')],
@@ -37,8 +40,7 @@ def test_mongo_group_by():
 def test_gene_distance_score():
     expected_intra = []
     for i in range(0, 4):
-        gene_pair = test_data.ix[2*i:2*i+2].values
-        expected_intra.append(np.linalg.norm(gene_pair[0] - gene_pair[1]))
+        expected_intra.append(test_distance[2*i][2*i+1])
     intra, inter = metrics.gene_distance_score(test_data, collection)
     np.testing.assert_array_almost_equal(expected_intra, intra, decimal=4)
 
