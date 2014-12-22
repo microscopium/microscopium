@@ -8,22 +8,20 @@ import numpy as np
 
 
 def run_snail_stitch(fns):
-    """Run right, anti-clockwise spiral/snail stitching of 25 Cellomics TIFs.
+    """Run right, clockwise spiral/snail stitching of 25 Cellomics TIFs.
     """
     # TODO finish docstring
     # TODO generalise to other directions and other field sizes.
-    right = [[16, 15, 14, 13, 12],
-             [17, 4, 3, 2, 11],
-             [18, 5, 0, 1, 10],
-             [19, 6, 7, 8, 9],
-             [20, 21, 22, 23, 24]]
+    right = [[20, 21, 22, 23, 24],
+            [19, 6, 7, 8, 9],
+            [18, 5, 0, 1, 10],
+            [17, 4, 3, 2, 11],
+            [16, 15, 14, 13, 12]]
 
     stitched_image = np.array([])
     for i in range(0, 5):
         stitched_row = np.array([])
-        print stitched_image.shape
         for j in range(0, 5):
-            print fns[right[i][j]]
             image = io.imread(fns[right[i][j]])
             stitched_row = concatenate(stitched_row, image, 1)
         stitched_image = concatenate(stitched_image, stitched_row, 0)
