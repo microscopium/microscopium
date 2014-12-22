@@ -5,6 +5,34 @@ import os
 import collections as coll
 from skimage import io
 import numpy as np
+import re
+
+
+def batch_snail_sitch(dict, dir):
+    """Run snail stitch over a dictionary of filenames and output to dir.
+    """
+    # TODO finish docstring
+    for key, value in dict.iteritems():
+        fn0 = value[0]
+        fn0_fn, fn_ext = os.path.splitext(fn0)
+        new_fn = [re.sub('f\d{2}', '', fn0_fn), '_stitched', fn_ext]
+        new_fn = ''.join(new_fn)
+        stitched_image = run_snail_stitch(value)
+        print stitched_image.shape
+        io.imsave(dir + new_fn, rescale_12bit(stitched_image))
+
+
+def rescale_12bit(image, bit='8'):
+    """Rescale a 12bit image.
+    """
+    ## TODO docstring
+    if bit == '8':
+        scale_image = np.round((image/4095.) * 255).astype(np.uint8)
+    elif bit == '16':
+        scale_image = np.round((image/4095.) * 65535).astype(np.uint16)
+    else:
+        scale_image = np.round(image/4095.).astype(np.float)
+    return scale_image
 
 
 def run_snail_stitch(fns):
@@ -60,7 +88,6 @@ def get_by_ext(dirname, extension, sort=True):
     """
     # TODO finish docstring
     fns = os.listdir(dirname)
-    print fns
     fns_ext = []
     for fn in fns:
         if fn.endswith('.' + extension):
