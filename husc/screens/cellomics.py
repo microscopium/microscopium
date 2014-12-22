@@ -40,30 +40,38 @@ def run_snail_stitch(fns):
     """
     # TODO finish docstring
     # TODO generalise to other directions and other field sizes.
+    fns.sort()
     right = [[20, 21, 22, 23, 24],
-            [19, 6, 7, 8, 9],
-            [18, 5, 0, 1, 10],
-            [17, 4, 3, 2, 11],
-            [16, 15, 14, 13, 12]]
+             [19, 6, 7, 8, 9],
+             [18, 5, 0, 1, 10],
+             [17, 4, 3, 2, 11],
+             [16, 15, 14, 13, 12]]
 
     stitched_image = np.array([])
     for i in range(0, 5):
         stitched_row = np.array([])
         for j in range(0, 5):
             image = io.imread(fns[right[i][j]])
-            stitched_row = concatenate(stitched_row, image, 1)
-        stitched_image = concatenate(stitched_image, stitched_row, 0)
+            stitched_row = concatenate(stitched_row, image)
+        print stitched_row.shape
+        stitched_image = stack(stitched_image, stitched_row)
     return stitched_image
 
+def stack(arr1, arr2):
+    if arr1.shape[0] == 0:
+        return arr2
+    else:
+        return np.vstack((arr1, arr2))
 
-def concatenate(arr1, arr2, axis=0):
+
+def concatenate(arr1, arr2):
     """concatenate that doesn't complain when arr1 is null.
     """
     # TODO write docstring
     if arr1.shape[0] == 0:
         return arr2
     else:
-        return np.concatenate((arr1, arr2), axis=axis)
+        return np.concatenate((arr1, arr2), 1)
 
 
 def make_wellchannel2file_dict(fns):
