@@ -7,6 +7,11 @@ from skimage import io
 import numpy as np
 import re
 
+def listdir_fullpath(d):
+    """Extended os.listdir that lists the full directory instead of just the
+    filename.
+    """
+    return [os.path.join(d, f) for f in os.listdir(d)]
 
 def batch_snail_sitch(dict, dir):
     """Run snail stitch over a dictionary of filenames and output to dir.
@@ -14,12 +19,12 @@ def batch_snail_sitch(dict, dir):
     # TODO finish docstring
     for key, value in dict.iteritems():
         fn0 = value[0]
+        fn0 = os.path.split(fn0)[1]
         fn0_fn, fn_ext = os.path.splitext(fn0)
-        new_fn = [re.sub('f\d{2}', '', fn0_fn), '_stitched', fn_ext]
+        new_fn = [fn0_fn, '_stitched', fn_ext]
         new_fn = ''.join(new_fn)
         stitched_image = run_snail_stitch(value)
-        print stitched_image.shape
-        io.imsave(dir + new_fn, rescale_12bit(stitched_image))
+        io.imsave(os.path.join(dir, new_fn), rescale_12bit(stitched_image))
 
 
 def rescale_12bit(image, bit='8'):
@@ -53,9 +58,9 @@ def run_snail_stitch(fns):
         for j in range(0, 5):
             image = io.imread(fns[right[i][j]])
             stitched_row = concatenate(stitched_row, image)
-        print stitched_row.shape
         stitched_image = stack(stitched_image, stitched_row)
     return stitched_image
+
 
 def stack(arr1, arr2):
     if arr1.shape[0] == 0:
@@ -80,13 +85,14 @@ def make_wellchannel2file_dict(fns):
     # TODO finish docstring
     wellchannel2file = coll.defaultdict(list)
     for fn in fns:
-        file_info = cellomics_semantic_filename(fn)
+        fn_base = os.path.basename(fn)
+        file_info = cellomics_semantic_filename(fn_base)
         tuple = (file_info['well'], file_info['channel'])
         wellchannel2file[tuple].append(fn)
     return wellchannel2file
 
 
-def get_by_ext(dirname, extension, sort=True):
+def get_by_ext(dirname, extension, full=True, sort=True):
     """Return list of files in directory with specified extension
 
     Parameters
@@ -95,7 +101,10 @@ def get_by_ext(dirname, extension, sort=True):
         A directory containing files.
     """
     # TODO finish docstring
-    fns = os.listdir(dirname)
+    if full is True:
+        fns = listdir_fullpath(dirname)
+    else:
+        fns = os.listdir(dirname)
     fns_ext = []
     for fn in fns:
         if fn.endswith('.' + extension):
