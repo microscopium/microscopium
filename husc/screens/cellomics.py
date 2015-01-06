@@ -7,7 +7,7 @@ from skimage import io
 import numpy as np
 
 
-def listdir_fullpath(dir):
+def listdir_fullpath(path):
     """Extended os.listdir that lists the full directory instead of just the
     filename.
 
@@ -21,11 +21,11 @@ def listdir_fullpath(dir):
     path : list of string
         A list of files in the query directory with their full path.
     """
-    path = [os.path.join(dir, fn) for fn in os.listdir(dir)]
+    path = [os.path.join(path, fn) for fn in os.listdir(path)]
     return path
 
 
-def batch_snail_stitch(dict, dir):
+def batch_snail_stitch(file_dict, path):
     """Run snail stitch over a dictionary of filenames and output to dir.
 
     Parameters
@@ -36,14 +36,14 @@ def batch_snail_stitch(dict, dir):
     dir : string
         The directory to output the files to.
     """
-    for key, value in dict.iteritems():
+    for key, value in file_dict.iteritems():
         fn0 = value[0]
         fn0 = os.path.split(fn0)[1]
         fn0_fn, fn_ext = os.path.splitext(fn0)
         new_fn = [fn0_fn, '_stitched', fn_ext]
         new_fn = ''.join(new_fn)
         stitched_image = run_snail_stitch(value)
-        io.imsave(os.path.join(dir, new_fn), rescale_12bit(stitched_image))
+        io.imsave(os.path.join(path, new_fn), rescale_12bit(stitched_image))
 
 
 def rescale_12bit(image, bit='8'):
@@ -144,12 +144,12 @@ def make_wellchannel2file_dict(fns):
     for fn in fns:
         fn_base = os.path.basename(fn)
         file_info = cellomics_semantic_filename(fn_base)
-        tuple = (file_info['well'], file_info['channel'])
-        wellchannel2file[tuple].append(fn)
+        coord = (file_info['well'], file_info['channel'])
+        wellchannel2file[coord].append(fn)
     return wellchannel2file
 
 
-def get_by_ext(dir, extension, full=True, sort=True):
+def get_by_ext(path, extension, full=True, sort=True):
     """Return list of files in directory with specified extension.
 
     Parameters
@@ -166,9 +166,9 @@ def get_by_ext(dir, extension, full=True, sort=True):
         Default true.
     """
     if full is True:
-        fns = listdir_fullpath(dir)
+        fns = listdir_fullpath(path)
     else:
-        fns = os.listdir(dir)
+        fns = os.listdir(path)
     fns_ext = []
     for fn in fns:
         if fn.endswith('.' + extension):
@@ -235,12 +235,12 @@ def filename2coord(fn):
     return (sem['plate'], sem['well'])
 
 
-def dir2plate(dirname):
+def dir2plate(path):
     """Return a Plate ID from a directory name.
 
     Parameters
     ----------
-    dirname : string
+    path : string
         A directory containing export images from an HCS plate.
 
     Returns
@@ -253,7 +253,7 @@ def dir2plate(dirname):
     >>> dir2plate('MFGTMP_140206180002')
     140206180002
     """
-    basedir = os.path.split(dirname)[1]
+    basedir = os.path.split(path)[1]
     plateid = int(basedir.split('_')[1])
     return plateid
 
