@@ -5,18 +5,37 @@ import os
 import collections as coll
 from skimage import io
 import numpy as np
-import re
 
-def listdir_fullpath(d):
+
+def listdir_fullpath(dir):
     """Extended os.listdir that lists the full directory instead of just the
     filename.
-    """
-    return [os.path.join(d, f) for f in os.listdir(d)]
 
-def batch_snail_sitch(dict, dir):
-    """Run snail stitch over a dictionary of filenames and output to dir.
+    Parameters
+    ----------
+    dir : string
+        The query directory.
+
+    Returns
+    -------
+    path : list of string
+        A list of files in the query directory with their full path.
     """
-    # TODO finish docstring
+    path = [os.path.join(dir, fn) for fn in os.listdir(dir)]
+    return path
+
+
+def batch_snail_stitch(dict, dir):
+    """Run snail stitch over a dictionary of filenames and output to dir.
+
+    Parameters
+    ----------
+    dict : dict
+        A dictionary of (plate, well) co-ordinates mapped to filenames.
+        Dictionary built with ``make_wellchannel2file_dict`` function.
+    dir : string
+        The directory to output the files to.
+    """
     for key, value in dict.iteritems():
         fn0 = value[0]
         fn0 = os.path.split(fn0)[1]
@@ -29,8 +48,21 @@ def batch_snail_sitch(dict, dir):
 
 def rescale_12bit(image, bit='8'):
     """Rescale a 12bit image.
+
+    Cellomics TIFs ar encoded as 12bit TIF files, which generally cannot
+    be viewed in most software. This function rescales the images to either an
+    8 or 16 bit TIF file.
+
+    Parameters
+    ----------
+    image : array, shape (M, N)
+        The image to be rescaled.
+
+    Returns
+    -------
+    scale_image : array, shape (M, N)
+        The rescaled image.
     """
-    ## TODO docstring
     if bit == '8':
         scale_image = np.round((image/4095.) * 255).astype(np.uint8)
     elif bit == '16':
@@ -42,10 +74,21 @@ def rescale_12bit(image, bit='8'):
 
 def run_snail_stitch(fns):
     """Run right, clockwise spiral/snail stitching of 25 Cellomics TIFs.
+
+    Runs clockwise stitching of the images. The spiral begins in the
+    center of the image, moves to the right and circles around in a clockwise
+    manner.
+
+    Parameters
+    ----------
+    fns : list of array, shape (M, N)
+        The list of 25 image files to be stitched together.
+
+    Returns
+    -------
+    stitched_image : array, shape (5*M, 5*N)
+        The stitched image.
     """
-    # TODO finish docstring
-    # TODO generalise to other directions and other field sizes.
-    fns.sort()
     right = [[20, 21, 22, 23, 24],
              [19, 6, 7, 8, 9],
              [18, 5, 0, 1, 10],
@@ -63,6 +106,8 @@ def run_snail_stitch(fns):
 
 
 def stack(arr1, arr2):
+    """No docstring here as this function wil be removed soon.
+    """
     if arr1.shape[0] == 0:
         return arr2
     else:
@@ -70,9 +115,8 @@ def stack(arr1, arr2):
 
 
 def concatenate(arr1, arr2):
-    """concatenate that doesn't complain when arr1 is null.
+    """No docstring here as this function wil be removed soon.
     """
-    # TODO write docstring
     if arr1.shape[0] == 0:
         return arr2
     else:
@@ -80,9 +124,22 @@ def concatenate(arr1, arr2):
 
 
 def make_wellchannel2file_dict(fns):
-    """Return a dictionary mapping well co-ordinates to filenames
+    """Return a dictionary mapping well co-ordinates to filenames.
+
+    Returns a dictionary where key are (plate, well) co-ordinates and
+    values are lists of images corresponding to that plate and well.
+
+    Parameters
+    ----------
+    fns : list of string
+        A list of Cellomics TIF files.
+
+    Returns
+    -------
+    wellchannel2file : dict {tuple : list of string}
+        The dictionary mapping the (plate, well) co-ordinate to
+        a list of files corresponding to that well.
     """
-    # TODO finish docstring
     wellchannel2file = coll.defaultdict(list)
     for fn in fns:
         fn_base = os.path.basename(fn)
@@ -92,19 +149,26 @@ def make_wellchannel2file_dict(fns):
     return wellchannel2file
 
 
-def get_by_ext(dirname, extension, full=True, sort=True):
-    """Return list of files in directory with specified extension
+def get_by_ext(dir, extension, full=True, sort=True):
+    """Return list of files in directory with specified extension.
 
     Parameters
     ----------
-    dirname : string
+    dir : string
         A directory containing files.
+    extension : string
+        Return only files with this extension.
+    full : bool
+        Whether or not to return files with the path included. Default
+        true.
+    sort : bool
+        Whether or not to sort the list of files before returning them.
+        Default true.
     """
-    # TODO finish docstring
     if full is True:
-        fns = listdir_fullpath(dirname)
+        fns = listdir_fullpath(dir)
     else:
-        fns = os.listdir(dirname)
+        fns = os.listdir(dir)
     fns_ext = []
     for fn in fns:
         if fn.endswith('.' + extension):
