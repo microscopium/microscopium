@@ -123,7 +123,7 @@ def concatenate(arr1, arr2):
         return np.concatenate((arr1, arr2), 1)
 
 
-def make_wellchannel2file_dict(fns):
+def make_key2file(fns):
     """Return a dictionary mapping well co-ordinates to filenames.
 
     Returns a dictionary where key are (plate, well) co-ordinates and
@@ -144,12 +144,12 @@ def make_wellchannel2file_dict(fns):
     for fn in fns:
         fn_base = os.path.basename(fn)
         file_info = cellomics_semantic_filename(fn_base)
-        coord = (file_info['well'], file_info['channel'])
+        coord = (file_info['plate'], file_info['well'])
         wellchannel2file[coord].append(fn)
     return wellchannel2file
 
 
-def get_by_ext(path, extension, full=True, sort=True):
+def get_by_ext(path, extension, full=True):
     """Return list of files in directory with specified extension.
 
     Parameters
@@ -165,19 +165,35 @@ def get_by_ext(path, extension, full=True, sort=True):
         Whether or not to sort the list of files before returning them.
         Default true.
     """
-    if full is True:
-        fns = listdir_fullpath(path)
-    else:
-        fns = os.listdir(path)
-    fns_ext = []
-    for fn in fns:
-        if fn.endswith('.' + extension):
-            fns_ext.append(fn)
-    if sort is True:
-        fns_ext.sort()
-        return fns_ext
-    else:
-        return fns_ext
+    fns = []
+    for dirpath, dirnames, filenames in os.walk(path):
+        for filename in [f for f in filenames if f.endswith("." + extension)]:
+            fns.append(os.path.join(dirpath, filename))
+    return fns
+
+
+def channel(fn):
+    """Get channel from Cellomics filename.
+
+    Parameters
+    ----------
+    fn : string
+        A filename from the Cellomics high-content screening system.
+
+    Returns
+    -------
+    channel : int
+        The channel of the filename.
+
+    Examples
+    --------
+    >>> fn = 'MFGTMP_140206180002_A01f00d0.TIF'
+    >>> channel(fn)
+    0
+    """
+    sem = cellomics_semantic_filename(fn)
+    channel = sem['channel']
+    return channel
 
 
 def cellomics_semantic_filename(fn):
