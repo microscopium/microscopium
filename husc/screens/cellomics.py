@@ -42,7 +42,7 @@ def batch_snail_stitch(file_dict, path):
         fn0_fn, fn_ext = os.path.splitext(fn0)
         new_fn = [fn0_fn, '_stitched', fn_ext]
         new_fn = ''.join(new_fn)
-        stitched_image = run_snail_stitch(value)
+        stitched_image = snail_stitch(value)
         io.imsave(os.path.join(path, new_fn), rescale_12bit(stitched_image))
 
 
@@ -72,7 +72,7 @@ def rescale_12bit(image, bit='8'):
     return scale_image
 
 
-def run_snail_stitch(fns):
+def snail_stitch(fns):
     """Run right, clockwise spiral/snail stitching of 25 Cellomics TIFs.
 
     Runs clockwise stitching of the images. The spiral begins in the
@@ -89,38 +89,23 @@ def run_snail_stitch(fns):
     stitched_image : array, shape (5*M, 5*N)
         The stitched image.
     """
-    right = [[20, 21, 22, 23, 24],
+    fns.sort()
+    order = [[20, 21, 22, 23, 24],
              [19, 6, 7, 8, 9],
              [18, 5, 0, 1, 10],
              [17, 4, 3, 2, 11],
              [16, 15, 14, 13, 12]]
 
-    stitched_image = np.array([])
+    image0 = io.imread(fns[0])
+    m = image0.shape[0]
+    n = image0.shape[1]
+    stitched_image = np.zeros((5*m, 5*n))
     for i in range(0, 5):
-        stitched_row = np.array([])
         for j in range(0, 5):
-            image = io.imread(fns[right[i][j]])
-            stitched_row = concatenate(stitched_row, image)
-        stitched_image = stack(stitched_image, stitched_row)
+            index = order[i][j]
+            image = io.imread(fns[index])
+            stitched_image[m*i:m*(i+1), n*j:n*(j+1)] = image
     return stitched_image
-
-
-def stack(arr1, arr2):
-    """No docstring here as this function wil be removed soon.
-    """
-    if arr1.shape[0] == 0:
-        return arr2
-    else:
-        return np.vstack((arr1, arr2))
-
-
-def concatenate(arr1, arr2):
-    """No docstring here as this function wil be removed soon.
-    """
-    if arr1.shape[0] == 0:
-        return arr2
-    else:
-        return np.concatenate((arr1, arr2), 1)
 
 
 def make_key2file(fns):
