@@ -5,6 +5,7 @@ import os
 import collections as coll
 from skimage import io
 import numpy as np
+from cytoolz import groupby
 
 
 def listdir_fullpath(path):
@@ -25,28 +26,62 @@ def listdir_fullpath(path):
     return path
 
 
-def batch_snail_stitch(file_dict, path):
-    """Run snail stitch over a dictionary of filenames and output to dir.
+def batch_stitch_stack(file_dict, output, order=[2, 1, 0], bit=None):
+    """Run snail stitch and concatenate the channels across a set of images.
+
+    This function takes the (plate, well) dictionary built using the
+    ``make_key2file`` function. Images are grouped according to their channel,
+    stitched together and stacked into a single 3-channel image. Images
+    are re-scaled and saved to a user specified output directory. Images
+    are saved to directories according to their plate number.
 
     Parameters
     ----------
-    dict : dict
-        A dictionary of (plate, well) co-ordinates mapped to filenames.
-        Dictionary built with ``make_wellchannel2file_dict`` function.
-    dir : string
-        The directory to output the files to.
+    file_dict : dict { tuple (plate, well) : list of strings }
+        The dictionary mapping the (plate, well) tuple to a list of image
+        files. This dictionary is built using the ``make_key2file`` function.
+    output : string
+        The directory to output the stitched and concatenated images to.
+    order : list of int, optional
+        The order the channels should be in in the final image. Default
+        [0, 1, 2].
+    bit : string, optional
+        If images need to be rescaled, select whether or not to rescale the
+        images. Value should be 8 or 16 for 8 and 16 bit scaling respectively.
     """
-    for key, value in file_dict.iteritems():
-        fn0 = value[0]
+    for fns in file_dict.values():
+        fn0 = fns[0]
+        sem = cellomics_semantic_filename(fns[0])
+        plate = str(sem['plate'])
         fn0 = os.path.split(fn0)[1]
         fn0_fn, fn_ext = os.path.splitext(fn0)
         new_fn = [fn0_fn, '_stitched', fn_ext]
         new_fn = ''.join(new_fn)
-        stitched_image = snail_stitch(value)
-        io.imsave(os.path.join(path, new_fn), rescale_12bit(stitched_image))
+
+        channels = groupby(channel, fns)
+        while len(channels) < 3:
+            channels[len(channels)] = None
+
+        images = []
+        for fns in channels.values():
+            if fns is None:
+                images.append(None)
+            else:
+                image = snail_stitch(fns)
+                images.append(image)
+
+        concat_image = stack_channels(images, order=order)
+
+        if bit is not None:
+            concat_image = rescale_from_12bit(concat_image, bit)
+
+        out_dir = os.path.join(output, plate)
+        if not os.path.exists(out_dir):
+            os.makedirs(out_dir)
+        io.imsave(os.path.join(out_dir, new_fn), concat_image)
 
 
-def rescale_12bit(image, bit='8'):
+def rescale_from_12bit(image, bit=8):
     """Rescale a 12bit image.
 
     Cellomics TIFs ar encoded as 12bit TIF files, which generally cannot
@@ -57,19 +92,56 @@ def rescale_12bit(image, bit='8'):
     ----------
     image : array, shape (M, N)
         The image to be rescaled.
+    bit : int
+        Whether to scale to images to 8 or 16 bits. Value should be
+        8 or 16 respectively.
 
     Returns
     -------
     scale_image : array, shape (M, N)
         The rescaled image.
     """
-    if bit == '8':
+    if bit == 8:
         scale_image = np.round((image/4095.) * 255).astype(np.uint8)
-    elif bit == '16':
+    elif bit == 16:
         scale_image = np.round((image/4095.) * 65535).astype(np.uint16)
     else:
         scale_image = np.round(image/4095.).astype(np.float)
     return scale_image
+
+
+def stack_channels(images, order=[0, 1, 2]):
+    """Stack multiple image files to one single, multi-channel image.
+
+    Parameters
+    ----------
+    images : list of array, shape (M, N)
+        The images to be concatenated. List should contain
+        three images. Entries 'None' are considered to be dummy
+        channels
+    order : list of int, optional
+        The order the channels should be in in the final image.
+
+    Returns
+    -------
+    conat_image : array, shape (M, N, 3)
+        The concatenated, three channel image.
+
+    Examples
+    --------
+    >>> image1 = np.ones((2, 2)) * 1
+    >>> image2 = np.ones((2, 2)) * 2
+    >>> joined = stack_channels((image1, image2, None))
+    >>> joined.shape
+    (2, 2, 3)
+    """
+    m = images[0].shape[0]
+    n = images[0].shape[1]
+    concat_image = np.zeros((m, n, 3))
+    for i in range(0, 3):
+        if images[order[i]] is not None:
+            concat_image[:, :, i] = images[order[i]]
+    return concat_image
 
 
 def snail_stitch(fns):
