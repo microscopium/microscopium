@@ -253,6 +253,30 @@ def channel(fn):
     return channel
 
 
+def column(fn):
+    """Get column from Cellomics filename.
+
+    Parameters
+    ----------
+    fn : string
+        A filename from the Cellomics high-content screening system.
+
+    Returns
+    -------
+    column : int
+        The channel of the filename.
+
+    Examples
+    --------
+    >>> fn = 'MFGTMP_140206180002_A01f00d0.TIF'
+    >>> column(fn)
+    '01'
+    """
+    sem = cellomics_semantic_filename(fn)
+    column = sem['well'][1:]
+    return column
+
+
 def cellomics_semantic_filename(fn):
     """Split a Cellomics filename into its annotated components.
 
@@ -276,7 +300,13 @@ def cellomics_semantic_filename(fn):
     keys = ['directory', 'prefix', 'plate', 'well', 'field', 'channel', 'suffix']
     directory, fn = os.path.split(fn)
     filename, suffix = fn.split('.')[0], '.'.join(fn.split('.')[1:])
-    prefix, plate, code = filename.split('_')
+
+    # ignore '_stitched' tag
+    split_fn = filename.split('_')
+    if len(split_fn) == 4:
+        split_fn = split_fn[:-1]
+
+    prefix, plate, code = split_fn
     well = code[:3]
     field = int(code[4:6])
     channel = int(code[-1])
