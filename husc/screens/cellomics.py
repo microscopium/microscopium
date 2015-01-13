@@ -26,7 +26,7 @@ def listdir_fullpath(path):
     return path
 
 
-def batch_stitch_stack(file_dict, output, order=[2, 1, 0], bit=None):
+def batch_stitch_stack(file_dict, output, order=[0, 1, 2], target_bit_depth=None):
     """Run snail stitch and concatenate the channels across a set of images.
 
     This function takes the (plate, well) dictionary built using the
@@ -43,11 +43,10 @@ def batch_stitch_stack(file_dict, output, order=[2, 1, 0], bit=None):
     output : string
         The directory to output the stitched and concatenated images to.
     order : list of int, optional
-        The order the channels should be in in the final image. Default
-        [0, 1, 2].
-    bit : string, optional
-        If images need to be rescaled, select whether or not to rescale the
-        images. Value should be 8 or 16 for 8 and 16 bit scaling respectively.
+        The order the channels should be in in the final image.
+    target_bit_depth : int in {8, 16}, optional
+        If None (default), perform no rescaling. Otherwise, rescale to occupy
+        the dynamic range of the target bit depth.
     """
     for fns in file_dict.values():
         fn0 = fns[0]
@@ -72,8 +71,8 @@ def batch_stitch_stack(file_dict, output, order=[2, 1, 0], bit=None):
 
         concat_image = stack_channels(images, order=order)
 
-        if bit is not None:
-            concat_image = rescale_from_12bit(concat_image, bit)
+        if target_bit_depth is not None:
+            concat_image = rescale_from_12bit(concat_image, target_bit_depth)
 
         out_dir = os.path.join(output, plate)
         if not os.path.exists(out_dir):
@@ -81,29 +80,33 @@ def batch_stitch_stack(file_dict, output, order=[2, 1, 0], bit=None):
         io.imsave(os.path.join(out_dir, new_fn), concat_image)
 
 
-def rescale_from_12bit(image, bit=8):
+def rescale_from_12bit(image, target_bit_depth=8):
     """Rescale a 12bit image.
 
-    Cellomics TIFs ar encoded as 12bit TIF files, which generally cannot
-    be viewed in most software. This function rescales the images to either an
-    8 or 16 bit TIF file.
+    Cellomics TIFs are encoded as 12bit TIF files. This function rescales the
+    images to a new bit depth of 8 or 16.
 
     Parameters
     ----------
     image : array, shape (M, N)
         The image to be rescaled.
-    bit : int
-        Whether to scale to images to 8 or 16 bits. Value should be
-        8 or 16 respectively.
+    target_bit_depth : int in {8, 16}, optional
+        The bit range to scale the images to.
 
     Returns
     -------
     scale_image : array, shape (M, N)
         The rescaled image.
+
+    Examples
+    --------
+    >>> image = np.array([[0, 2047, 4095]])
+    >>> rescale_from_12bit(image, 8)
+    array([[  0, 127, 255]], dtype=uint8)
     """
-    if bit == 8:
+    if target_bit_depth == 8:
         scale_image = np.round((image/4095.) * 255).astype(np.uint8)
-    elif bit == 16:
+    elif target_bit_depth == 16:
         scale_image = np.round((image/4095.) * 65535).astype(np.uint16)
     else:
         scale_image = np.round(image/4095.).astype(np.float)
