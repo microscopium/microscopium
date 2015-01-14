@@ -27,7 +27,7 @@ def listdir_fullpath(path):
     return path
 
 
-def batch_stitch_stack(file_dict, output, order=[0, 1, 2], target_bit_depth=None, **kwargs):
+def batch_stitch_stack(file_dict, output, order=[0, 1, 2], target_bit_depth=8, **kwargs):
     """Run snail stitch and concatenate the channels across a set of images.
 
     This function takes the (plate, well) dictionary built using the
@@ -53,13 +53,10 @@ def batch_stitch_stack(file_dict, output, order=[0, 1, 2], target_bit_depth=None
         `husc.preprocess.stretchlim`
     """
     for fns in file_dict.values():
-        fn0 = fns[0]
         sem = cellomics_semantic_filename(fns[0])
         plate = str(sem['plate'])
-        fn0 = os.path.split(fn0)[1]
-        fn0_fn, fn_ext = os.path.splitext(fn0)
-        new_fn = [fn0_fn, '_stitched', fn_ext]
-        new_fn = ''.join(new_fn)
+        new_fn = '-'.join([sem['prefix'], plate, sem['well']])
+        new_fn = '.'.join([new_fn, sem['suffix']])
 
         channels = groupby(channel, fns)
         while len(channels) < 3:
