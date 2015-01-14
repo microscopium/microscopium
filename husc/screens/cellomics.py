@@ -40,12 +40,12 @@ def batch_stitch_stack(file_dict, output, order=[0, 1, 2], target_bit_depth=8, *
         new_fn = '-'.join([sem['prefix'], plate, sem['well']])
         new_fn = '.'.join([new_fn, 'jpg'])
 
-        channels = groupby(channel, fns)
+        channels = groupby(get_channel, fns)
         while len(channels) < 3:
-            channels[len(channels)] = None
+            channels.append(None)
 
         images = []
-        for fns in channels.values():
+        for channel, fns in sorted(channels.items()):
             if fns is None:
                 images.append(None)
             else:
@@ -195,7 +195,7 @@ def make_key2file(fns):
     return wellchannel2file
 
 
-def channel(fn):
+def get_channel(fn):
     """Get channel from Cellomics filename.
 
     Parameters
@@ -211,7 +211,7 @@ def channel(fn):
     Examples
     --------
     >>> fn = 'MFGTMP_140206180002_A01f00d0.TIF'
-    >>> channel(fn)
+    >>> get_channel(fn)
     0
     """
     sem = cellomics_semantic_filename(fn)
@@ -219,7 +219,7 @@ def channel(fn):
     return channel
 
 
-def column(fn):
+def get_column(fn):
     """Get column from Cellomics filename.
 
     Parameters
@@ -235,7 +235,7 @@ def column(fn):
     Examples
     --------
     >>> fn = 'MFGTMP_140206180002_A01f00d0.TIF'
-    >>> column(fn)
+    >>> get_column(fn)
     '01'
     """
     sem = cellomics_semantic_filename(fn)
