@@ -9,24 +9,6 @@ from cytoolz import groupby
 from husc.preprocess import stretchlim
 
 
-def listdir_fullpath(path):
-    """Extended os.listdir that lists the full directory instead of just the
-    filename.
-
-    Parameters
-    ----------
-    dir : string
-        The query directory.
-
-    Returns
-    -------
-    path : list of string
-        A list of files in the query directory with their full path.
-    """
-    path = [os.path.join(path, fn) for fn in os.listdir(path)]
-    return path
-
-
 def batch_stitch_stack(file_dict, output, order=[0, 1, 2], target_bit_depth=8, **kwargs):
     """Run snail stitch and concatenate the channels across a set of images.
 
@@ -212,29 +194,6 @@ def make_key2file(fns):
         coord = (file_info['plate'], file_info['well'])
         wellchannel2file[coord].append(fn)
     return wellchannel2file
-
-
-def get_by_ext(path, extension, full=True):
-    """Return list of files in directory with specified extension.
-
-    Parameters
-    ----------
-    dir : string
-        A directory containing files.
-    extension : string
-        Return only files with this extension.
-    full : bool
-        Whether or not to return files with the path included. Default
-        true.
-    sort : bool
-        Whether or not to sort the list of files before returning them.
-        Default true.
-    """
-    fns = []
-    for dirpath, dirnames, filenames in os.walk(path):
-        for filename in [f for f in filenames if f.endswith("." + extension)]:
-            fns.append(os.path.join(dirpath, filename))
-    return fns
 
 
 def channel(fn):
