@@ -6,6 +6,7 @@ import collections as coll
 from skimage import io
 import numpy as np
 from cytoolz import groupby
+from husc.preprocess import stretchlim
 
 
 def listdir_fullpath(path):
@@ -26,7 +27,7 @@ def listdir_fullpath(path):
     return path
 
 
-def batch_stitch_stack(file_dict, output, order=[0, 1, 2], target_bit_depth=None):
+def batch_stitch_stack(file_dict, output, order=[0, 1, 2], target_bit_depth=None, **kwargs):
     """Run snail stitch and concatenate the channels across a set of images.
 
     This function takes the (plate, well) dictionary built using the
@@ -47,6 +48,9 @@ def batch_stitch_stack(file_dict, output, order=[0, 1, 2], target_bit_depth=None
     target_bit_depth : int in {8, 16}, optional
         If None (default), perform no rescaling. Otherwise, rescale to occupy
         the dynamic range of the target bit depth.
+    **kwargs : dict
+        Keyword arguments to be passed to
+        `husc.preprocess.stretchlim`
     """
     for fns in file_dict.values():
         fn0 = fns[0]
@@ -72,7 +76,7 @@ def batch_stitch_stack(file_dict, output, order=[0, 1, 2], target_bit_depth=None
         concat_image = stack_channels(images, order=order)
 
         if target_bit_depth is not None:
-            concat_image = rescale_from_12bit(concat_image, target_bit_depth)
+            concat_image = rescale_from_12bit(concat_image, target_bit_depth, **kwargs)
 
         out_dir = os.path.join(output, plate)
         if not os.path.exists(out_dir):
@@ -80,7 +84,7 @@ def batch_stitch_stack(file_dict, output, order=[0, 1, 2], target_bit_depth=None
         io.imsave(os.path.join(out_dir, new_fn), concat_image)
 
 
-def rescale_from_12bit(image, target_bit_depth=8):
+def rescale_from_12bit(image, target_bit_depth=8, **kwargs):
     """Rescale a 12bit image.
 
     Cellomics TIFs are encoded as 12bit TIF files. This function rescales the
@@ -92,6 +96,9 @@ def rescale_from_12bit(image, target_bit_depth=8):
         The image to be rescaled.
     target_bit_depth : int in {8, 16}, optional
         The bit range to scale the images to.
+    **kwargs : dict
+        Keyword arguments to be passed to
+        `husc.preprocess.stretchlim`
 
     Returns
     -------
@@ -104,12 +111,13 @@ def rescale_from_12bit(image, target_bit_depth=8):
     >>> rescale_from_12bit(image, 8)
     array([[  0, 127, 255]], dtype=uint8)
     """
+    image = stretchlim(image, **kwargs)
     if target_bit_depth == 8:
-        scale_image = np.round((image/4095.) * 255).astype(np.uint8)
+        scale_image = np.round(image * 255).astype(np.uint8)
     elif target_bit_depth == 16:
-        scale_image = np.round((image/4095.) * 65535).astype(np.uint16)
+        scale_image = np.round(image * 65535).astype(np.uint16)
     else:
-        scale_image = np.round(image/4095.).astype(np.float)
+        scale_image = image
     return scale_image
 
 
