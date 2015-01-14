@@ -38,7 +38,7 @@ def batch_stitch_stack(file_dict, output, order=[0, 1, 2], target_bit_depth=8, *
         sem = cellomics_semantic_filename(fns[0])
         plate = str(sem['plate'])
         new_fn = '-'.join([sem['prefix'], plate, sem['well']])
-        new_fn = '.'.join([new_fn, sem['suffix']])
+        new_fn = '.'.join([new_fn, 'jpg'])
 
         channels = groupby(channel, fns)
         while len(channels) < 3:
@@ -50,12 +50,10 @@ def batch_stitch_stack(file_dict, output, order=[0, 1, 2], target_bit_depth=8, *
                 images.append(None)
             else:
                 image = snail_stitch(fns)
+                image = rescale_from_12bit(image, target_bit_depth, **kwargs)
                 images.append(image)
 
         concat_image = stack_channels(images, order=order)
-
-        if target_bit_depth is not None:
-            concat_image = rescale_from_12bit(concat_image, target_bit_depth, **kwargs)
 
         out_dir = os.path.join(output, plate)
         if not os.path.exists(out_dir):
@@ -127,7 +125,8 @@ def stack_channels(images, order=[0, 1, 2]):
     """
     m = images[0].shape[0]
     n = images[0].shape[1]
-    concat_image = np.zeros((m, n, 3))
+    dtype = images[0].dtype
+    concat_image = np.zeros((m, n, 3), dtype=dtype)
     for i in range(0, 3):
         if images[order[i]] is not None:
             concat_image[:, :, i] = images[order[i]]
