@@ -38,11 +38,11 @@ def batch_stitch_stack(file_dict, output, order=[0, 1, 2], target_bit_depth=8, *
         sem = cellomics_semantic_filename(fns[0])
         plate = str(sem['plate'])
         new_fn = '-'.join([sem['prefix'], plate, sem['well']])
-        new_fn = '.'.join([new_fn, 'jpg'])
+        new_fn = '.'.join([new_fn, sem['suffix']])
 
         channels = groupby(get_channel, fns)
         while len(channels) < 3:
-            channels.append(None)
+            channels[np.max(channels.keys()) + 1] = None
 
         images = []
         for channel, fns in sorted(channels.items()):

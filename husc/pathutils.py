@@ -1,34 +1,43 @@
 import os
 from fnmatch import fnmatch
 
-def all_matching_files(path, glob='*.TIF', full=True, sort=True):
-    """Return list of files in directory with specified extension.
-
-    Note: This function recurses all subdirectories.
+def all_matching_files(path, glob='*.tif', case_sensitive=True, full=True, sort=True):
+    """Recurse all subdirectories of path and return all files matching glob.
 
     Parameters
     ----------
     path : string
         A directory containing files.
     glob : string
-        Pattern used to match files. eg. '*.TIF' will return all
+        Pattern used to match files. eg. '*.tif' will return all
         TIF files.
+    case_sensitive : bool, optional
+        Case sensitivity of glob pattern.
     full : bool, optional
         Whether or not to return files with the path included.
     sort : bool, optional
         Whether or not to sort the list of files before returning them.
+
+    Returns
+    -------
+    fns : list of string
+        The list of matched files.
     """
     fns = []
-    if full is True:
-        for dirpath, dirnames, filenames in os.walk(path):
-            for filename in [f for f in filenames if fnmatch(f, glob)]:
-                fns.append(os.path.join(dirpath, filename))
-    else:
-        for dirpath, dirnames, filenames in os.walk(path):
-            for filename in [f for f in filenames if fnmatch(f, glob)]:
-                fns.append(filename)
-
-    if sort is True:
+    for dirpath, dirnames, filenames in os.walk(path):
+        for filename in filenames:
+            if case_sensitive:
+                if fnmatch(filename, glob):
+                    if full:
+                        fns.append(os.path.join(dirpath, filename))
+                    else:
+                        fns.append(filename)
+            else:
+                if fnmatch(filename, glob.lower()) or fnmatch(filename, glob.upper()):
+                    if full:
+                        fns.append(os.path.join(dirpath, filename))
+                    else:
+                        fns.append(filename)
+    if sort:
         fns.sort()
-
     return fns
