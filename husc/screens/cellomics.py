@@ -28,7 +28,7 @@ def batch_stitch_stack(file_dict, output, order=[0, 1, 2], target_bit_depth=8, *
     order : list of int, optional
         The order the channels should be in in the final image.
     target_bit_depth : int in {8, 16}, optional
-        If None (default), perform no rescaling. Otherwise, rescale to occupy
+        If None, perform no rescaling. Otherwise, rescale to occupy
         the dynamic range of the target bit depth.
     **kwargs : dict
         Keyword arguments to be passed to
@@ -186,12 +186,7 @@ def make_key2file(fns):
         The dictionary mapping the (plate, well) co-ordinate to
         a list of files corresponding to that well.
     """
-    wellchannel2file = coll.defaultdict(list)
-    for fn in fns:
-        fn_base = os.path.basename(fn)
-        file_info = cellomics_semantic_filename(fn_base)
-        coord = (file_info['plate'], file_info['well'])
-        wellchannel2file[coord].append(fn)
+    wellchannel2file = groupby(filename2coord, fns)
     return wellchannel2file
 
 
@@ -229,7 +224,7 @@ def get_column(fn):
 
     Returns
     -------
-    column : int
+    column : string
         The channel of the filename.
 
     Examples
@@ -282,7 +277,7 @@ def cellomics_semantic_filename(fn):
 
 
 def filename2coord(fn):
-    """Obtain (plate, well, cell) coordinates from a filename.
+    """Obtain (plate, well) coordinates from a filename.
 
     Parameters
     ----------
