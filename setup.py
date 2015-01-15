@@ -1,16 +1,19 @@
 #from distutils.core import setup
 from setuptools import setup
 
-descr = """husc: HCS unsupervised sample clustering."""
+descr = """
+microscopium: unsupervised sample clustering and dataset exploration
+for high content screens.
+"""
 
-DISTNAME            = 'husc'
+DISTNAME            = 'microscopium'
 DESCRIPTION         = 'Clustering of High Content Screen Images'
 LONG_DESCRIPTION    = descr
 MAINTAINER          = 'Juan Nunez-Iglesias'
 MAINTAINER_EMAIL    = 'juan.n@unimelb.edu.au'
-URL                 = 'https://github.com/jni/husc'
+URL                 = 'https://github.com/microscopium/microscopium'
 LICENSE             = 'BSD 3-clause'
-DOWNLOAD_URL        = 'https://github.com/jni/husc'
+DOWNLOAD_URL        = 'https://github.com/microscopium/microscopium'
 VERSION             = '0.1-dev'
 PYTHON_VERSION      = (2, 7)
 INST_DEPENDENCIES   = {}
@@ -26,7 +29,7 @@ if __name__ == '__main__':
         author=MAINTAINER,
         author_email=MAINTAINER_EMAIL,
         license=LICENSE,
-        packages=['husc', 'husc.screens'],
+        packages=['microscopium', 'microscopium.screens'],
         install_requires=INST_DEPENDENCIES,
-        scripts=["bin/husc"]
+        scripts=["bin/mic"]
     )

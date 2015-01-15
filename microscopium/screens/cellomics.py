@@ -6,7 +6,7 @@ import collections as coll
 from skimage import io
 import numpy as np
 from cytoolz import groupby
-from husc.preprocess import stretchlim
+from ..preprocess import stretchlim
 
 
 def batch_stitch_stack(file_dict, output, order=[0, 1, 2], target_bit_depth=8, **kwargs):
@@ -32,7 +32,7 @@ def batch_stitch_stack(file_dict, output, order=[0, 1, 2], target_bit_depth=8, *
         the dynamic range of the target bit depth.
     **kwargs : dict
         Keyword arguments to be passed to
-        `husc.preprocess.stretchlim`
+        `microscopium.preprocess.stretchlim`
     """
     for fns in file_dict.values():
         sem = cellomics_semantic_filename(fns[0])
@@ -75,7 +75,7 @@ def rescale_from_12bit(image, target_bit_depth=8, **kwargs):
         The bit range to scale the images to.
     **kwargs : dict
         Keyword arguments to be passed to
-        `husc.preprocess.stretchlim`
+        `microscopium.preprocess.stretchlim`
 
     Returns
     -------

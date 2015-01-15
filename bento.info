@@ -1,11 +1,13 @@
-Name: husc
-Author: Juan Nunez-Iglesias <juan.n@unimelb.edu.au>
-Summary: HCS Unsupervised Sample Clustering
+Name: microscopium
+Authors: Juan Nunez-Iglesias <juan.n@unimelb.edu.au>
+         Adrian Hecker <starcalibre@gmail.com>
+Summary: Unsupervised clustering and dataset exploration for high content
+         screens
 
 Library:
-    Packages: husc, husc.screens
+    Packages: microscopium, microscopium.screens
 
-Executable: husc
-    Module: husc.main
+Executable: mic
+    Module: microscopium.main
     Function: main
 
