@@ -2,7 +2,7 @@ import os
 import tempfile
 import numpy as np
 from skimage import io
-from husc import preprocess as pre
+from microscopium import preprocess as pre
 import pytest
 
 

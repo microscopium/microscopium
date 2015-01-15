@@ -1,4 +1,5 @@
-from husc import metrics
+from microscopium import metrics
+import time
 import numpy as np
 import os
 import pandas as pd

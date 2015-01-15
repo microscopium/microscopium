@@ -1,11 +1,11 @@
-husc
-====
+Microscopium
+============
 
-Unsupervised clustering of high content screen samples
+Unsupervised clustering and dataset exploration for high content screens.
 
-[![Build Status](https://travis-ci.org/jni/husc.svg?branch=master)](https://travis-ci.org/jni/husc)
-[![Coverage Status](https://img.shields.io/coveralls/jni/husc.svg)](https://coveralls.io/r/jni/husc?branch=master)
-[![Gitter](https://badges.gitter.im/Join Chat.svg)](https://gitter.im/jni/husc?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+[![Build Status](https://travis-ci.org/jni/microscopium.svg?branch=master)](https://travis-ci.org/jni/microscopium)
+[![Coverage Status](https://img.shields.io/coveralls/jni/microscopium.svg)](https://coveralls.io/r/jni/microscopium?branch=master)
+[![Gitter](https://badges.gitter.im/Join Chat.svg)](https://gitter.im/jni/microscopium?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 # License
 

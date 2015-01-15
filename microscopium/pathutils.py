@@ -31,11 +31,9 @@ def all_matching_files(path, glob='*.tif', case_sensitive=True, full=True, sort=
                 match = fnmatch(filename, glob)
             else:
                 match = (fnmatch(filename, glob.lower()) or
-                fnmatch(filename, glob.upper()))
-
+                         fnmatch(filename, glob.upper()))
             if full:
                 filename = os.path.join(dirpath, filename)
-
             if match:
                 fns.append(filename)
     if sort:
