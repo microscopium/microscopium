@@ -1,6 +1,8 @@
 """Feature computations and other functions for the Marcelle myoblast
 fusion screen.
 """
+from __future__ import absolute_import
+from __future__ import print_function
 
 import os
 import collections as coll
@@ -10,6 +12,8 @@ from scipy import ndimage as nd
 from skimage.filter import threshold_otsu, threshold_adaptive
 
 from .. import features
+from six.moves import map
+from six.moves import zip
 
 
 def feature_vector_from_rgb(image, sample_size=None):
@@ -380,7 +384,7 @@ def populate_db(gene_table_filename, image_filenames, db="myofusion",
             line[idx_plate] = int(line[idx_plate])
             key = (line[idx_plate], line[idx_well])
             doc = dict(zip(column_names, line))
-            if key2doc.has_key(key):
+            if key in key2doc:
                 key2doc[key].update(doc)
             else:
                 key2doc[key] = doc

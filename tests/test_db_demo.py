@@ -1,5 +1,7 @@
 '''Temporary file to demonstrate the sample dataset.
 '''
+from __future__ import absolute_import
+from __future__ import print_function
 
 from pymongo import MongoClient
 import pandas as pd
@@ -35,7 +37,7 @@ cursor = collection.find({})
 titles = []
 images = []
 for doc in cursor:
-    print doc
+    print(doc)
     key = doc['_id']
     gene_name = doc['gene_name']
     image_fn = doc['filename']
@@ -47,4 +49,4 @@ for doc in cursor:
 # read dataframe from CSV, show first 5 rows
 test_data = pd.read_csv(os.path.join(abspath, 'testdata/data_test.csv'), index_col=0,
                          converters={0: string2tuple})
-print test_data.head()
+print(test_data.head())

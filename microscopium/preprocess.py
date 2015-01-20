@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import os
 import functools as fun
 import itertools as it
@@ -11,6 +12,9 @@ from skimage import morphology as skmorph, filter as imfilter
 import skimage.filter.rank as rank
 import skimage
 import cytoolz as tlz
+from six.moves import map
+from six.moves import range
+from six.moves import zip
 
 
 def morphop(im, operation='open', radius='5'):
@@ -163,7 +167,7 @@ def maxes(fns):
         The maximum value of each image examined.
     """
     ims = it.imap(io.imread, fns)
-    maxes = np.array(map(np.max, ims))
+    maxes = np.array(list(map(np.max, ims)))
     return maxes
 
 
@@ -220,7 +224,7 @@ def run_quadrant_stitch(fns, re_string='(.*)_(s[1-4])_(w[1-3]).*',
     fns_out = []
     for fn_pattern, fns in qd.items():
         new_filename = '_'.join(fn_pattern) + '_stitched.tif'
-        ims = map(io.imread, sorted(fns))
+        ims = list(map(io.imread, sorted(fns)))
         im = quadrant_stitch(*ims)
         io.imsave(new_filename, im)
         fns_out.append(new_filename)
@@ -289,8 +293,8 @@ def group_by_channel(fns, re_string='(.*)_(w[1-3]).*',
     re_match = fun.partial(re.match, re_string)
     match_objs = map(re_match, fns)
     fns = [fn for fn, match in zip(fns, match_objs) if match is not None]
-    match_objs = filter(lambda x: x is not None, match_objs)
-    matches = map(lambda x: x.groups(), match_objs)
+    match_objs = [x for x in match_objs if x is not None]
+    matches = [x.groups() for x in match_objs]
     keys = [m[re_channel_group] for m in matches]
     grouped = {}
     for k, fn in zip(keys, fns):
@@ -331,10 +335,10 @@ def group_by_quadrant(fns, re_string='(.*)_(s[1-4])_(w[1-3]).*',
     re_match = fun.partial(re.match, re_string)
     match_objs = map(re_match, fns)
     fns = [fn for fn, match in zip(fns, match_objs) if match is not None]
-    match_objs = filter(lambda x: x is not None, match_objs)
-    matches = map(lambda x: x.groups(), match_objs)
-    keys = map(tuple, [[m[i] for i in range(len(m)) if i != re_quadrant_group]
-                                                        for m in matches])
+    match_objs = [x for x in match_objs if x is not None]
+    matches = [x.groups() for x in match_objs]
+    keys = list(map(tuple, [[m[i] for i in range(len(m))
+                             if i != re_quadrant_group] for m in matches]))
     grouped = {}
     for k, fn in zip(keys, fns):
         grouped.setdefault(k, []).append(fn)
