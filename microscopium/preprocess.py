@@ -291,7 +291,7 @@ def group_by_channel(fns, re_string='(.*)_(w[1-3]).*',
     [('w1', ['image_0_w1.tif', 'image_1_w1.tif']), ('w2', ['image_0_w2.tif', 'image_1_w2.tif']), ('w3', ['image_0_w3.tif', 'image_1_w3.tif'])]
     """
     re_match = fun.partial(re.match, re_string)
-    match_objs = map(re_match, fns)
+    match_objs = list(map(re_match, fns))
     fns = [fn for fn, match in zip(fns, match_objs) if match is not None]
     match_objs = [x for x in match_objs if x is not None]
     matches = [x.groups() for x in match_objs]
@@ -333,7 +333,7 @@ def group_by_quadrant(fns, re_string='(.*)_(s[1-4])_(w[1-3]).*',
     [(('image_0', 'w1'), ['image_0_s1_w1.TIF', 'image_0_s2_w1.TIF', 'image_0_s3_w1.TIF', 'image_0_s4_w1.TIF']), (('image_1', 'w1'), ['image_1_s1_w1.TIF', 'image_1_s2_w1.TIF', 'image_1_s3_w1.TIF', 'image_1_s4_w1.TIF'])]
     """
     re_match = fun.partial(re.match, re_string)
-    match_objs = map(re_match, fns)
+    match_objs = list(map(re_match, fns))
     fns = [fn for fn, match in zip(fns, match_objs) if match is not None]
     match_objs = [x for x in match_objs if x is not None]
     matches = [x.groups() for x in match_objs]
