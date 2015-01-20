@@ -143,7 +143,7 @@ def write_max_masks(fns, offset=0, close_radius=0, erode_radius=0,
     masks = max_mask_iter(fns, offset, close_radius, erode_radius)
     n = 0
     m = 0
-    for fn, mask in it.izip(fns, masks):
+    for fn, mask in zip(fns, masks):
         outfn = basefn(fn) + suffix
         m += 1
         if not mask.all():
@@ -166,7 +166,7 @@ def maxes(fns):
     maxes : 1D array
         The maximum value of each image examined.
     """
-    ims = it.imap(io.imread, fns)
+    ims = map(io.imread, fns)
     maxes = np.array(list(map(np.max, ims)))
     return maxes
 
@@ -493,7 +493,7 @@ def _reduce_with_count(pairwise, iterator, accumulator=None):
     def new_pairwise(a, b):
         (elem1, c1), (elem2, c2) = a, b
         return pairwise(elem1, elem2), c2
-    new_iter = it.izip(iterator, it.count(1))
+    new_iter = zip(iterator, it.count(1))
     new_acc = (0, accumulator)
     return tlz.reduce(new_pairwise, new_iter, new_acc)
 
