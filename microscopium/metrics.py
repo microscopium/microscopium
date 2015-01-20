@@ -1,6 +1,8 @@
+from __future__ import absolute_import, division
 from itertools import combinations
 import numpy as np
 from scipy.spatial.distance import pdist
+from six.moves import map
 
 def sq_to_dist(i, j, n):
     """Convert coordinate of square distance matrix to condensed matrix index.
@@ -42,7 +44,7 @@ def sq_to_dist(i, j, n):
 
     """
     index = n*j - j*(j+1)/2 + i - 1 - j
-    return index
+    return int(index)
 
 def mongo_group_by(collection, group_by):
     """Group MongoDB collection according to specified field.

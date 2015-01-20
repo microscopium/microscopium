@@ -1,6 +1,9 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import os
 import numpy as np
 from PIL import Image
+from six.moves import range
 
 
 def imwrite(ar, fn, bitdepth=None):
@@ -85,9 +88,9 @@ def cat_channels(ims, order=[2, 0, 1]):
     """
     nchannels = len(order)
     while True:
-        channels = [ims.next() for i in range(nchannels)]
-        print len(channels)
-        print [(c.min(), c.max()) for c in channels]
+        channels = [next(ims) for i in range(nchannels)]
+        print(len(channels))
+        print([(c.min(), c.max()) for c in channels])
         try:
             channels_sorted = [channels[j] for j in order]
         except IndexError:

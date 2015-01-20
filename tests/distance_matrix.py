@@ -1,10 +1,13 @@
 """Generate pre-computed distance matrix for Euclidean distance.
 """
+from __future__ import absolute_import
 
 import os
 from numpy import sqrt
 import pandas as pd
 import numpy as np
+from six.moves import range
+from six.moves import zip
 
 abspath = os.path.dirname(__file__)
 

@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+from __future__ import print_function
 #!/bin/env python
 
 # standard library
@@ -15,6 +17,7 @@ from skimage import io, img_as_ubyte
 from . import io as hio
 from . import screens
 from . import preprocess as pre
+from six.moves import map
 
 
 parser = argparse.ArgumentParser(description="Run the HUSC functions.")
@@ -180,7 +183,7 @@ def run_illum(args):
                                           args.use_mask, args.mask_offset,
                                           args.mask_close, args.mask_erode)
     if args.verbose:
-        print 'illumination field:', type(il), il.dtype, il.min(), il.max()
+        print('illumination field:', type(il), il.dtype, il.min(), il.max())
     if args.save_illumination is not None:
         io.imsave(args.save_illumination, il / il.max())
     base_fns = [pre.basefn(fn) for fn in args.images]
@@ -238,10 +241,10 @@ def run_features(args):
     images = it.imap(io.imread, args.images)
     screen_info = screens.d[args.screen]
     index_function, fmap = screen_info['index'], screen_info['fmap']
-    f0, feature_names = fmap(images.next())
+    f0, feature_names = fmap(next(images))
     feature_vectors = [f0] + [fmap(im)[0] for im in images]
     data = pd.DataFrame(np.vstack(feature_vectors),
-                        index=map(index_function, args.images),
+                        index=list(map(index_function, args.images)),
                         columns=feature_names)
     data.to_hdf(args.output, key='data')
     with open(args.output[:-2] + 'filenames.txt', 'w') as fout:

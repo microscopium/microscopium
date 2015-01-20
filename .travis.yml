@@ -1,11 +1,11 @@
 language: python
 python:
-    - "2.7"
+    - 2.7
+    - 3.4
 virtualenv:
-    system_site_packages: true
+    system_site_packages: false
 before_install:
     - export DISPLAY=:99.0
-    - pip install -U setuptools
     - wget http://repo.continuum.io/miniconda/Miniconda-3.7.0-Linux-x86_64.sh -O miniconda.sh
     - bash miniconda.sh -b -p $HOME/miniconda
     - export PATH="$HOME/miniconda/bin:$PATH"
@@ -13,9 +13,10 @@ before_install:
     - conda update -q conda
     - conda info -a
 
-    - conda create -q -n mic-test python=$TRAVIS_PYTHON_VERSION numpy scipy pillow scikit-learn scikit-image cytoolz pandas setuptools pip pymongo matplotlib
+    - conda create -q -n mic-test python=$TRAVIS_PYTHON_VERSION numpy scipy pillow scikit-learn scikit-image cytoolz pandas setuptools pip pymongo matplotlib six
     - source activate mic-test
 
+    - pip install -U setuptools
     - pip install pytest pytest-cov
     - pip install coveralls
 
@@ -28,7 +29,7 @@ script:
     - py.test
 
 after_success:
-    - coveralls
+    - if [[ $TRAVIS_PYTHON_VERSION == 2.7 ]]; then coveralls; fi
 
 services:
     mongodb

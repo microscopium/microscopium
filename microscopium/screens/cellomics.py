@@ -1,5 +1,6 @@
 """Feature computations and other functions for Cellomics screens.
 """
+from __future__ import absolute_import
 
 import os
 import collections as coll
@@ -7,6 +8,8 @@ from skimage import io
 import numpy as np
 from cytoolz import groupby
 from ..preprocess import stretchlim
+from six.moves import range
+from six.moves import zip
 
 
 def batch_stitch_stack(file_dict, output, order=[0, 1, 2], target_bit_depth=8, **kwargs):
@@ -34,7 +37,7 @@ def batch_stitch_stack(file_dict, output, order=[0, 1, 2], target_bit_depth=8, *
         Keyword arguments to be passed to
         `microscopium.preprocess.stretchlim`
     """
-    for fns in file_dict.values():
+    for fns in list(file_dict.values()):
         sem = cellomics_semantic_filename(fns[0])
         plate = str(sem['plate'])
         new_fn = '-'.join([sem['prefix'], plate, sem['well']])
@@ -42,7 +45,7 @@ def batch_stitch_stack(file_dict, output, order=[0, 1, 2], target_bit_depth=8, *
 
         channels = groupby(get_channel, fns)
         while len(channels) < 3:
-            channels[np.max(channels.keys()) + 1] = None
+            channels[np.max(list(channels.keys())) + 1] = None
 
         images = []
         for channel, fns in sorted(channels.items()):
@@ -272,7 +275,7 @@ def cellomics_semantic_filename(fn):
     field = int(code[4:6])
     channel = int(code[-1])
     values = [directory, prefix, int(plate), well, field, channel, suffix]
-    semantic = coll.OrderedDict(zip(keys, values))
+    semantic = coll.OrderedDict(list(zip(keys, values)))
     return semantic
 
 
