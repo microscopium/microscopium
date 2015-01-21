@@ -17,7 +17,6 @@ before_install:
     - conda create -q -n mic-test python=$TRAVIS_PYTHON_VERSION numpy scipy pillow scikit-learn scikit-image cytoolz pandas setuptools pip pymongo matplotlib six
     - source activate mic-test
 
-    - pip install -U setuptools
     - pip install pytest pytest-cov
     - pip install coveralls
 
