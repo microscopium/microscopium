@@ -40,7 +40,7 @@ def sq_to_dist(i, j, n):
     Examples
     --------
     >>> sq_to_dist(1, 2, 3)
-    1
+    2
 
     """
     index = n*j - j*(j+1)/2 + i - j
