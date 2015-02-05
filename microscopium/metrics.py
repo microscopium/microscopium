@@ -43,7 +43,7 @@ def sq_to_dist(i, j, n):
     1
 
     """
-    index = n*j - j*(j+1)/2 + i - 1 - j
+    index = n*j - j*(j+1)/2 + i - j
     return int(index)
 
 def mongo_group_by(collection, group_by):
@@ -133,3 +133,11 @@ def gene_distance_score(X, collection, metric='euclidean'):
     all_intragene_data = distance[all_intragene_index]
     all_intergene_data = distance[all_intergene_index]
     return all_intragene_data, all_intergene_data
+
+
+
+
+
+
+
+
