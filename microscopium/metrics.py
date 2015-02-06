@@ -37,14 +37,33 @@ def sq_to_dist(i, j, n):
         Position of pairwise distance [i, j] in
         condensed distance matrix.
 
+    Reference
+    ---------
+    Explanation for index calculation:
+
+    v = squareform(X)
+    Given a square d-by-d symmetric distance matrix X,
+    v = squareform(X) returns a d * (d-1) / 2 (or ${n choose 2}$) sized vector v.
+    v[{n choose 2}-{n-i choose 2} + (j-i-1)] is the distance between points i and j.
+    If X is non-square or asymmetric, an error is returned.
+
+
     Examples
     --------
-    >>> sq_to_dist(1, 2, 3)
-    2
+    >>>sq_to_dist(0,1,4)
+       0
+    >>>sq_to_dist(0,3,4)
+       2
+    >>>sq_to_dist(1,2,4)
+       3
 
     """
-    index = n*j - j*(j+1)/2 + i - j
+    index =i*n + j - i*(i+1)/2 - i - 1
     return int(index)
+
+
+
+
 
 def mongo_group_by(collection, group_by):
     """Group MongoDB collection according to specified field.
@@ -115,8 +134,12 @@ def gene_distance_score(X, collection, metric='euclidean'):
         An 1D array with inter-gene distances (i.e. distances
         between samples with different gene knocked down).
 
-    """
+     """
+
     gene_dict = mongo_group_by(collection, 'gene_name')
+    nsamples = X.shape[0]
+    npairs = int(nsamples * (nsamples-1)/2)
+
 
     all_intragene_index = []
     for key in gene_dict:
@@ -126,8 +149,7 @@ def gene_distance_score(X, collection, metric='euclidean'):
                 all_intragene_index.append(sq_to_dist(i, j, X.shape[0]))
 
     all_intragene_index.sort()
-    n = sq_to_dist(X.shape[0], X.shape[0], X.shape[0])
-    all_intergene_index = np.setdiff1d(np.arange(n), all_intragene_index,
+    all_intergene_index = np.setdiff1d(np.arange(npairs), all_intragene_index,
                                        assume_unique=True)
     distance = pdist(X, metric)
     all_intragene_data = distance[all_intragene_index]
