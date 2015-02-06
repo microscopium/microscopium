@@ -39,34 +39,33 @@ def sq_to_dist(i, j, n):
 
     Reference
     ---------
-    Explanation for index calculation:
 
-    v = squareform(X)
-    Given a square d-by-d symmetric distance matrix X,
-    v = squareform(X) returns a d * (d-1) / 2 (or ${n choose 2}$) sized vector v.
-    v[{n choose 2}-{n-i choose 2} + (j-i-1)] is the distance between points i and j.
-    If X is non-square or asymmetric, an error is returned.
+    In the scipy.spatial.squareform documentation, it is shown that the
+    index in the condensed array is given by
+    {n choose 2} - {(n - i) choose 2} + (j - i - 1).
+    Some simple arithmetic shows that this can be expanded to the formula below.
+    The documentation can be found in the following link:
+
+    http://docs.scipy.org/doc/scipy-0.14.0/reference/generated/scipy.spatial.distance.squareform.html
 
 
     Examples
     --------
     >>>sq_to_dist(0,1,4)
-       0
+    0
     >>>sq_to_dist(0,3,4)
-       2
+    2
     >>>sq_to_dist(1,2,4)
-       3
+    3
 
     """
-    index =i*n + j - i*(i+1)/2 - i - 1
+    index = i * n + j - i * (i + 1) / 2 - i - 1
     return int(index)
 
 
-
-
-
 def mongo_group_by(collection, group_by):
-    """Group MongoDB collection according to specified field.
+    """
+    Group MongoDB collection according to specified field.
 
     Sends aggregate query to MongoDB collection to group
     all documents by a given field and returns dictionary
@@ -138,10 +137,11 @@ def gene_distance_score(X, collection, metric='euclidean'):
 
     gene_dict = mongo_group_by(collection, 'gene_name')
     nsamples = X.shape[0]
-    npairs = int(nsamples * (nsamples-1)/2)
+    npairs = int(nsamples * (nsamples - 1) / 2)
 
 
     all_intragene_index = []
+
     for key in gene_dict:
         if len(gene_dict[key]) > 1:
             indices = map(X.index.get_loc, gene_dict[key])
