@@ -51,11 +51,11 @@ def sq_to_dist(i, j, n):
 
     Examples
     --------
-    >>>sq_to_dist(0,1,4)
+    >>> sq_to_dist(0,1,4)
     0
-    >>>sq_to_dist(0,3,4)
+    >>> sq_to_dist(0,3,4)
     2
-    >>>sq_to_dist(1,2,4)
+    >>> sq_to_dist(1,2,4)
     3
 
     """
