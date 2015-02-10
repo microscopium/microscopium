@@ -59,9 +59,10 @@ def sq_to_dist(i, j, n):
     3
 
     """
+    if i > j:
+        i, j = j, i
     index = i * n + j - i * (i + 1) / 2 - i - 1
     return int(index)
-
 
 def mongo_group_by(collection, group_by):
     """
