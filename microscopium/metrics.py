@@ -51,11 +51,11 @@ def sq_to_dist(i, j, n):
 
     Examples
     --------
-    >>> sq_to_dist(0,1,4)
+    >>> sq_to_dist(0, 1, 4)
     0
-    >>> sq_to_dist(0,3,4)
+    >>> sq_to_dist(0, 3, 4)
     2
-    >>> sq_to_dist(1,2,4)
+    >>> sq_to_dist(1, 2, 4)
     3
 
     """
@@ -134,15 +134,12 @@ def gene_distance_score(X, collection, metric='euclidean'):
         An 1D array with inter-gene distances (i.e. distances
         between samples with different gene knocked down).
 
-     """
-
+    """
     gene_dict = mongo_group_by(collection, 'gene_name')
     nsamples = X.shape[0]
     npairs = int(nsamples * (nsamples - 1) / 2)
 
-
     all_intragene_index = []
-
     for key in gene_dict:
         if len(gene_dict[key]) > 1:
             indices = map(X.index.get_loc, gene_dict[key])
@@ -156,11 +153,3 @@ def gene_distance_score(X, collection, metric='euclidean'):
     all_intragene_data = distance[all_intragene_index]
     all_intergene_data = distance[all_intergene_index]
     return all_intragene_data, all_intergene_data
-
-
-
-
-
-
-
-
