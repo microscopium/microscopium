@@ -37,17 +37,36 @@ def sq_to_dist(i, j, n):
         Position of pairwise distance [i, j] in
         condensed distance matrix.
 
+    Reference
+    ---------
+
+    In the scipy.spatial.squareform documentation, it is shown that the
+    index in the condensed array is given by
+    {n choose 2} - {(n - i) choose 2} + (j - i - 1).
+    Some simple arithmetic shows that this can be expanded to the formula below.
+    The documentation can be found in the following link:
+
+    http://docs.scipy.org/doc/scipy-0.14.0/reference/generated/scipy.spatial.distance.squareform.html
+
+
     Examples
     --------
-    >>> sq_to_dist(1, 2, 3)
-    1
+    >>> sq_to_dist(0, 1, 4)
+    0
+    >>> sq_to_dist(0, 3, 4)
+    2
+    >>> sq_to_dist(1, 2, 4)
+    3
 
     """
-    index = n*j - j*(j+1)/2 + i - 1 - j
+    if i > j:
+        i, j = j, i
+    index = i * n + j - i * (i + 1) / 2 - i - 1
     return int(index)
 
 def mongo_group_by(collection, group_by):
-    """Group MongoDB collection according to specified field.
+    """
+    Group MongoDB collection according to specified field.
 
     Sends aggregate query to MongoDB collection to group
     all documents by a given field and returns dictionary
@@ -117,6 +136,8 @@ def gene_distance_score(X, collection, metric='euclidean'):
 
     """
     gene_dict = mongo_group_by(collection, 'gene_name')
+    nsamples = X.shape[0]
+    npairs = int(nsamples * (nsamples - 1) / 2)
 
     all_intragene_index = []
     for key in gene_dict:
@@ -126,8 +147,7 @@ def gene_distance_score(X, collection, metric='euclidean'):
                 all_intragene_index.append(sq_to_dist(i, j, X.shape[0]))
 
     all_intragene_index.sort()
-    n = sq_to_dist(X.shape[0], X.shape[0], X.shape[0])
-    all_intergene_index = np.setdiff1d(np.arange(n), all_intragene_index,
+    all_intergene_index = np.setdiff1d(np.arange(npairs), all_intragene_index,
                                        assume_unique=True)
     distance = pdist(X, metric)
     all_intragene_data = distance[all_intragene_index]
