@@ -4,24 +4,24 @@ import numpy as np
 from scipy.spatial.distance import pdist
 from six.moves import map
 
+from __future__ import absolute_import, division
+from itertools import combinations
+import numpy as np
+from scipy.spatial.distance import pdist
+from six.moves import map
+
 def sq_to_dist(i, j, n):
     """Convert coordinate of square distance matrix to condensed matrix index.
-
     The condensed version of a squareform, pairwise distance matrix is
     a linearisation of the upper triangular, non-diagonal coordinates
     of the squareform distance matrix. This function returns the [i, j]-th
     coordinate of the condensed array.
-
     eg. given a squareform matrix,
-
     array([[  0.        ,  10.        ,  22.36067977],
            [ 10.        ,   0.        ,  14.14213562],
            [ 22.36067977,  14.14213562,   0.        ]])
-
     The condensed version of this matrix is:
-
     array([ 10.        ,  22.36067977,  14.14213562])
-
     Parameters
     ----------
     i : int
@@ -30,7 +30,6 @@ def sq_to_dist(i, j, n):
         j-th coordinate.
     n : int
         Dimension n of n*n distance matrix.
-
     Returns
     -------
     index : int
@@ -39,12 +38,12 @@ def sq_to_dist(i, j, n):
 
     Reference
     ---------
-
     In the scipy.spatial.squareform documentation, it is shown that the
     index in the condensed array is given by
     {n choose 2} - {(n - i) choose 2} + (j - i - 1).
     Some simple arithmetic shows that this can be expanded to the formula below.
     The documentation can be found in the following link:
+
 
     http://docs.scipy.org/doc/scipy-0.14.0/reference/generated/scipy.spatial.distance.squareform.html
 
@@ -64,15 +63,14 @@ def sq_to_dist(i, j, n):
     index = i * n + j - i * (i + 1) / 2 - i - 1
     return int(index)
 
+
 def mongo_group_by(collection, group_by):
     """
     Group MongoDB collection according to specified field.
-
     Sends aggregate query to MongoDB collection to group
     all documents by a given field and returns dictionary
     mapping the field to the corresponding (plate, well)
     co-ordinate(s).
-
     Parameters
     ----------
     collection : pymongo collection
@@ -114,17 +112,14 @@ def mongo_group_by(collection, group_by):
 
 def gene_distance_score(X, collection, metric='euclidean'):
     """Find intra/inter gene distance scores between samples.
-
     Parameters
     ----------
     X : Data frame, shape (n_samples, n_features)
         Feature data frame.
-
     metric : string, optional
         Which distance measure to use when calculating distances.
         Must be one of the options allowable in
         scipy.spatial.distance.pdist. Default is euclidean distance.
-
     Returns
     -------
     all_intragene_data : array
@@ -133,16 +128,17 @@ def gene_distance_score(X, collection, metric='euclidean'):
     all_intergene_data : array
         An 1D array with inter-gene distances (i.e. distances
         between samples with different gene knocked down).
+     """
 
-    """
     gene_dict = mongo_group_by(collection, 'gene_name')
     nsamples = X.shape[0]
     npairs = int(nsamples * (nsamples - 1) / 2)
 
     all_intragene_index = []
+
     for key in gene_dict:
         if len(gene_dict[key]) > 1:
-            indices = map(X.index.get_loc, gene_dict[key])
+            indices = (X.index.get_loc(coord) for coord in gene_dict[key] if coord in X.index)
             for i, j in combinations(indices, 2):
                 all_intragene_index.append(sq_to_dist(i, j, X.shape[0]))
 
@@ -153,3 +149,8 @@ def gene_distance_score(X, collection, metric='euclidean'):
     all_intragene_data = distance[all_intragene_index]
     all_intergene_data = distance[all_intergene_index]
     return all_intragene_data, all_intergene_data
+
+
+
+
+
