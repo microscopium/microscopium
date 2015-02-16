@@ -142,7 +142,8 @@ def gene_distance_score(X, collection, metric='euclidean'):
     all_intragene_index = []
     for key in gene_dict:
         if len(gene_dict[key]) > 1:
-            indices = map(X.index.get_loc, gene_dict[key])
+            indices = (X.index.get_loc(coord) for coord in gene_dict[key]
+                       if coord in X.index)
             for i, j in combinations(indices, 2):
                 all_intragene_index.append(sq_to_dist(i, j, X.shape[0]))
 
