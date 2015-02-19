@@ -91,9 +91,9 @@ def mongo_group_by(collection, group_by):
                 '_id': '$' + group_by,
                 'coords': {
                     '$addToSet': {
-                        # add cell_plate_barcode and well for each document
+                        # add plate and well for each document
                         # belonging to the group
-                        'cell_plate_barcode': '$cell_plate_barcode',
+                        'plate': '$plate',
                         'well': '$well'
                     }
                 }
@@ -105,7 +105,7 @@ def mongo_group_by(collection, group_by):
         query_dict[doc['_id']] = []
         for coord in doc['coords']:
             try:
-                new_coord = (coord['cell_plate_barcode'], str(coord['well']))
+                new_coord = (coord['plate'], str(coord['well']))
                 query_dict[doc['_id']].append(new_coord)
             except KeyError:
                 pass
