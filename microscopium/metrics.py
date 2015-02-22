@@ -105,7 +105,7 @@ def mongo_group_by(collection, group_by):
         query_dict[doc['_id']] = []
         for coord in doc['coords']:
             try:
-                new_coord = (coord['plate'], str(coord['well']))
+                new_coord = (int(coord['plate']), str(coord['well']))
                 query_dict[doc['_id']].append(new_coord)
             except KeyError:
                 pass
