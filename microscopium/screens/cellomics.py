@@ -136,7 +136,7 @@ def stack_channels(images, order=[0, 1, 2]):
     return concat_image
 
 
-def snail_stitch(fns):
+def snail_stitch(fns, order=None):
     """Run right, clockwise spiral/snail stitching of 25 Cellomics TIFs.
 
     Runs clockwise stitching of the images. The spiral begins in the
@@ -253,29 +253,29 @@ def cellomics_semantic_filename(fn):
     -------
     semantic : collections.OrderedDict {string: string}
         A dictionary mapping the different components of the filename.
-
-    Examples
-    --------
-    >>> fn = ('MFGTMP_140206180002_A01f00d0.TIF')
-    >>> d = cellomics_semantic_filename(fn)
-    >>> d
-    OrderedDict([('directory', ''), ('prefix', 'MFGTMP'), ('plate', 140206180002), ('well', 'A01'), ('field', 0), ('channel', 0), ('suffix', 'TIF')])
     """
     keys = ['directory', 'prefix', 'plate', 'well', 'field', 'channel', 'suffix']
+
     directory, fn = os.path.split(fn)
-    filename, suffix = fn.split('.')[0], '.'.join(fn.split('.')[1:])
+    split_fn = fn.split('_')
 
-    # ignore '_stitched' tag
-    split_fn = filename.split('_')
-    if len(split_fn) == 4:
-        split_fn = split_fn[:-1]
+    if(split_fn[-1].startswith('stitch')):
+        code = split_fn[-2]
+        plate = split_fn[-3]
+        prefix = '_'.join(split_fn[:-3])
+        suffix = split_fn[-1].split('.')[1]
+    else:
+        code = split_fn[-1].split('.')[0]
+        plate = split_fn[-2]
+        prefix = '_'.join(split_fn[:-2])
+        suffix = split_fn[-1].split('.')[1]
 
-    prefix, plate, code = split_fn
     well = code[:3]
-    field = int(code[4:6])
-    channel = int(code[-1])
-    values = [directory, prefix, int(plate), well, field, channel, suffix]
+    field = code[4:6]
+    channel = code[-1]
+    values = [directory, prefix, int(plate), well, int(field), int(channel), suffix]
     semantic = coll.OrderedDict(list(zip(keys, values)))
+
     return semantic
 
 
