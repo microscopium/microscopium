@@ -147,6 +147,9 @@ def snail_stitch(fns, order=None):
     ----------
     fns : list of array, shape (M, N)
         The list of 25 image files to be stitched together.
+    order : array of int, shape (O, P)
+        The order of the stitching, with each entry referring
+        to the index of
 
     Returns
     -------
@@ -154,18 +157,26 @@ def snail_stitch(fns, order=None):
         The stitched image.
     """
     fns.sort()
-    order = [[20, 21, 22, 23, 24],
-             [19, 6, 7, 8, 9],
-             [18, 5, 0, 1, 10],
-             [17, 4, 3, 2, 11],
-             [16, 15, 14, 13, 12]]
 
+    if order is None:
+        order = [[20, 21, 22, 23, 24],
+                 [19, 6, 7, 8, 9],
+                 [18, 5, 0, 1, 10],
+                 [17, 4, 3, 2, 11],
+                 [16, 15, 14, 13, 12]]
+
+    order = np.array(order)
     image0 = io.imread(fns[0])
+
+    order_m = order.shape[0]
+    order_n = order.shape[1]
+
     m = image0.shape[0]
     n = image0.shape[1]
-    stitched_image = np.zeros((5*m, 5*n))
-    for i in range(0, 5):
-        for j in range(0, 5):
+
+    stitched_image = np.zeros((order_m*m, order_n*n))
+    for i in range(0, order_m):
+        for j in range(0, order_n):
             index = order[i][j]
             image = io.imread(fns[index])
             stitched_image[m*i:m*(i+1), n*j:n*(j+1)] = image
