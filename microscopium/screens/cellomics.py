@@ -10,6 +10,7 @@ from cytoolz import groupby
 from ..preprocess import stretchlim
 from six.moves import range
 from six.moves import zip
+import re
 
 
 def batch_stitch_stack(file_dict, output, order=[0, 1, 2], target_bit_depth=8, **kwargs):
@@ -268,22 +269,15 @@ def cellomics_semantic_filename(fn):
     keys = ['directory', 'prefix', 'plate', 'well', 'field', 'channel', 'suffix']
 
     directory, fn = os.path.split(fn)
-    split_fn = fn.split('_')
+    fn, suffix = fn.split('.')
 
-    if(split_fn[-1].startswith('stitch')):
-        code = split_fn[-2]
-        plate = split_fn[-3]
-        prefix = '_'.join(split_fn[:-3])
-        suffix = split_fn[-1].split('.')[1]
-    else:
-        code = split_fn[-1].split('.')[0]
-        plate = split_fn[-2]
-        prefix = '_'.join(split_fn[:-2])
-        suffix = split_fn[-1].split('.')[1]
+    # strip _stitch tag
+    fn = re.sub(r'_stitch', '', fn)
 
-    well = code[:3]
-    field = code[4:6]
-    channel = code[-1]
+    fn_regex = re.search(r'(\w+)_(\w+)_([A-P]\d+)f(\d+)d(\d+)', fn)
+    prefix, plate, well, field, channel = map(lambda x:
+                                              fn_regex.group(x), range(1, 6))
+
     values = [directory, prefix, int(plate), well, int(field), int(channel), suffix]
     semantic = coll.OrderedDict(list(zip(keys, values)))
 
