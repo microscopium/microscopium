@@ -7,39 +7,24 @@ import pytest
 import tempfile
 
 
-@pytest.fixture
-def image_files_25(request):
-    files = []
-    for i in range(0, 25):
-        image = np.ones((2, 2), np.uint8) * i
-        file_prefix = '%02d' % (i,) + '_'  # filenames must be sortable
-        f, fn = tempfile.mkstemp(prefix=file_prefix, suffix='.png')
-        files.append(fn)
-        io.imsave(fn, image)
+def image_files(num_files):
+    @pytest.fixture
+    def image_files_n(request):
+        files = []
+        for i in range(0, num_files):
+            image = np.ones((2, 2), np.uint8) * i
+            file_prefix = '%02d' % (i,) + '_'  # filenames must be sortable
+            f, fn = tempfile.mkstemp(prefix=file_prefix, suffix='.png')
+            files.append(fn)
+            io.imsave(fn, image)
 
-    def cleanup():
-        for fn in files:
-            os.remove(fn)
-    request.addfinalizer(cleanup)
+        def cleanup():
+            for fn in files:
+                os.remove(fn)
+        request.addfinalizer(cleanup)
 
-    return files
-
-@pytest.fixture
-def image_files_6(request):
-    files = []
-    for i in range(0, 6):
-        image = np.ones((2, 2), np.uint8) * i
-        file_prefix = '%02d' % (i,) + '_'  # filenames must be sortable
-        f, fn = tempfile.mkstemp(prefix=file_prefix, suffix='.png')
-        files.append(fn)
-        io.imsave(fn, image)
-
-    def cleanup():
-        for fn in files:
-            os.remove(fn)
-    request.addfinalizer(cleanup)
-
-    return files
+        return files
+    return image_files_n
 
 
 def test_cellomics_semantic_filename():
@@ -94,6 +79,7 @@ def test_make_key2file():
     assert cellomics.make_key2file(test_fns) == expected
 
 # test 5x5 'clockwise-right' sitching
+image_files_25 = image_files(25)
 def test_snail_stitch(image_files_25):
 
     order = [[20, 21, 22, 23, 24],
@@ -117,6 +103,7 @@ def test_snail_stitch(image_files_25):
     np.testing.assert_array_equal(stitched, expected)
 
 # test 3x2 'half-clockwise-left' stitching
+image_files_6 = image_files(6)
 def test_snail_stitch2(image_files_6):
 
     order = [[2, 3, 4],
