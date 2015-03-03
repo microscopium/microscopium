@@ -138,19 +138,29 @@ def stack_channels(images, order=[0, 1, 2]):
 
 
 def snail_stitch(fns, order=None):
-    """Run right, clockwise spiral/snail stitching of 25 Cellomics TIFs.
+    """Stitch together a list of images according to a specified pattern.
 
-    Runs clockwise stitching of the images. The spiral begins in the
-    center of the image, moves to the right and circles around in a clockwise
-    manner.
+    The order pattern should be an array of integers where each element
+    corresponds to the index of the image in the fns list.
+
+    eg if order = [[20, 21, 22, 23, 24],
+                   [19, 6, 7, 8, 9],
+                   [18, 5, 0, 1, 10],
+                   [17, 4, 3, 2, 11],
+                   [16, 15, 14, 13, 12]]
+
+    This order will stitch together 25 images in a spiral pattern,
+    originating in the center, moving right then spiralling in a clockwise
+    fashion.
 
     Parameters
     ----------
-    fns : list of array, shape (M, N)
-        The list of 25 image files to be stitched together.
-    order : array of int, shape (O, P)
+    fns : list of string
+        The list of the image files to be stitched together. If None,
+        this parameter defaults to the order given above.
+    order : array of int, shape (M, N)
         The order of the stitching, with each entry referring
-        to the index of
+        to the index of file in the fns array.
 
     Returns
     -------
@@ -169,18 +179,15 @@ def snail_stitch(fns, order=None):
     order = np.array(order)
     image0 = io.imread(fns[0])
 
-    order_m = order.shape[0]
-    order_n = order.shape[1]
+    rows, cols = image0.shape[:2]
+    snail_rows, snail_cols = order.shape
 
-    m = image0.shape[0]
-    n = image0.shape[1]
-
-    stitched_image = np.zeros((order_m*m, order_n*n))
-    for i in range(0, order_m):
-        for j in range(0, order_n):
+    stitched_image = np.zeros((rows*snail_rows, cols*snail_cols))
+    for i in range(snail_rows):
+        for j in range(snail_cols):
             index = order[i][j]
             image = io.imread(fns[index])
-            stitched_image[m*i:m*(i+1), n*j:n*(j+1)] = image
+            stitched_image[rows*i:rows*(i+1), cols*j:cols*(j+1)] = image
     return stitched_image
 
 
