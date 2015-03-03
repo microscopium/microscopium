@@ -10,6 +10,7 @@ from cytoolz import groupby
 from ..preprocess import stretchlim
 from six.moves import range
 from six.moves import zip
+import re
 
 
 def batch_stitch_stack(file_dict, output, order=[0, 1, 2], target_bit_depth=8, **kwargs):
@@ -136,17 +137,30 @@ def stack_channels(images, order=[0, 1, 2]):
     return concat_image
 
 
-def snail_stitch(fns):
-    """Run right, clockwise spiral/snail stitching of 25 Cellomics TIFs.
+def snail_stitch(fns, order=None):
+    """Stitch together a list of images according to a specified pattern.
 
-    Runs clockwise stitching of the images. The spiral begins in the
-    center of the image, moves to the right and circles around in a clockwise
-    manner.
+    The order pattern should be an array of integers where each element
+    corresponds to the index of the image in the fns list.
+
+    eg if order = [[20, 21, 22, 23, 24],
+                   [19, 6, 7, 8, 9],
+                   [18, 5, 0, 1, 10],
+                   [17, 4, 3, 2, 11],
+                   [16, 15, 14, 13, 12]]
+
+    This order will stitch together 25 images in a spiral pattern,
+    originating in the center, moving right then spiralling in a clockwise
+    fashion.
 
     Parameters
     ----------
-    fns : list of array, shape (M, N)
-        The list of 25 image files to be stitched together.
+    fns : list of string
+        The list of the image files to be stitched together. If None,
+        this parameter defaults to the order given above.
+    order : array of int, shape (M, N)
+        The order of the stitching, with each entry referring
+        to the index of file in the fns array.
 
     Returns
     -------
@@ -154,21 +168,26 @@ def snail_stitch(fns):
         The stitched image.
     """
     fns.sort()
-    order = [[20, 21, 22, 23, 24],
-             [19, 6, 7, 8, 9],
-             [18, 5, 0, 1, 10],
-             [17, 4, 3, 2, 11],
-             [16, 15, 14, 13, 12]]
 
+    if order is None:
+        order = [[20, 21, 22, 23, 24],
+                 [19, 6, 7, 8, 9],
+                 [18, 5, 0, 1, 10],
+                 [17, 4, 3, 2, 11],
+                 [16, 15, 14, 13, 12]]
+
+    order = np.array(order)
     image0 = io.imread(fns[0])
-    m = image0.shape[0]
-    n = image0.shape[1]
-    stitched_image = np.zeros((5*m, 5*n))
-    for i in range(0, 5):
-        for j in range(0, 5):
+
+    rows, cols = image0.shape[:2]
+    snail_rows, snail_cols = order.shape
+
+    stitched_image = np.zeros((rows*snail_rows, cols*snail_cols))
+    for i in range(snail_rows):
+        for j in range(snail_cols):
             index = order[i][j]
             image = io.imread(fns[index])
-            stitched_image[m*i:m*(i+1), n*j:n*(j+1)] = image
+            stitched_image[rows*i:rows*(i+1), cols*j:cols*(j+1)] = image
     return stitched_image
 
 
@@ -253,29 +272,22 @@ def cellomics_semantic_filename(fn):
     -------
     semantic : collections.OrderedDict {string: string}
         A dictionary mapping the different components of the filename.
-
-    Examples
-    --------
-    >>> fn = ('MFGTMP_140206180002_A01f00d0.TIF')
-    >>> d = cellomics_semantic_filename(fn)
-    >>> d
-    OrderedDict([('directory', ''), ('prefix', 'MFGTMP'), ('plate', 140206180002), ('well', 'A01'), ('field', 0), ('channel', 0), ('suffix', 'TIF')])
     """
     keys = ['directory', 'prefix', 'plate', 'well', 'field', 'channel', 'suffix']
+
     directory, fn = os.path.split(fn)
-    filename, suffix = fn.split('.')[0], '.'.join(fn.split('.')[1:])
+    fn, suffix = fn.split('.')
 
-    # ignore '_stitched' tag
-    split_fn = filename.split('_')
-    if len(split_fn) == 4:
-        split_fn = split_fn[:-1]
+    # strip _stitch tag
+    fn = re.sub(r'_stitch', '', fn)
 
-    prefix, plate, code = split_fn
-    well = code[:3]
-    field = int(code[4:6])
-    channel = int(code[-1])
-    values = [directory, prefix, int(plate), well, field, channel, suffix]
+    fn_regex = re.search(r'(\w+)_(\w+)_([A-P]\d+)f(\d+)d(\d+)', fn)
+    prefix, plate, well, field, channel = map(lambda x:
+                                              fn_regex.group(x), range(1, 6))
+
+    values = [directory, prefix, int(plate), well, int(field), int(channel), suffix]
     semantic = coll.OrderedDict(list(zip(keys, values)))
+
     return semantic
 
 
