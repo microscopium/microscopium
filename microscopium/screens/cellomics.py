@@ -31,10 +31,11 @@ def batch_stitch_stack(file_dict, output, stitch_order=None,
     output : string
         The directory to output the stitched and concatenated images to.
     stitch_order : array of int, shape (M, N)
-        The order of the stitching, with each entry referring
-        to the index of file in the fns array.
+        The order of the stitching.
+        Passed to ``microscopium.cellomics.snail_stitch``
     channel_map : list of int
         The order the channels should be in in the final image.
+        Passed to ``microscopium.cellomics.stack_channels``
     target_bit_depth : int in {8, 16}, optional
         If None, perform no rescaling. Otherwise, rescale to occupy
         the dynamic range of the target bit depth.
