@@ -13,7 +13,8 @@ from six.moves import zip
 import re
 
 
-def batch_stitch_stack(file_dict, output, order=[0, 1, 2], target_bit_depth=8, **kwargs):
+def batch_stitch_stack(file_dict, output, stitch_order=None,
+                       channel_map=[0, 1, 2], target_bit_depth=8, **kwargs):
     """Run snail stitch and concatenate the channels across a set of images.
 
     This function takes the (plate, well) dictionary built using the
@@ -29,7 +30,10 @@ def batch_stitch_stack(file_dict, output, order=[0, 1, 2], target_bit_depth=8, *
         files. This dictionary is built using the ``make_key2file`` function.
     output : string
         The directory to output the stitched and concatenated images to.
-    order : list of int, optional
+    stitch_order : array of int, shape (M, N)
+        The order of the stitching, with each entry referring
+        to the index of file in the fns array.
+    channel_map : list of int
         The order the channels should be in in the final image.
     target_bit_depth : int in {8, 16}, optional
         If None, perform no rescaling. Otherwise, rescale to occupy
@@ -53,11 +57,11 @@ def batch_stitch_stack(file_dict, output, order=[0, 1, 2], target_bit_depth=8, *
             if fns is None:
                 images.append(None)
             else:
-                image = snail_stitch(fns)
+                image = snail_stitch(fns, stitch_order)
                 image = rescale_from_12bit(image, target_bit_depth, **kwargs)
                 images.append(image)
 
-        concat_image = stack_channels(images, order=order)
+        concat_image = stack_channels(images, channel_map)
 
         out_dir = os.path.join(output, plate)
         if not os.path.exists(out_dir):
@@ -102,7 +106,7 @@ def rescale_from_12bit(image, target_bit_depth=8, **kwargs):
     return scale_image
 
 
-def stack_channels(images, order=[0, 1, 2]):
+def stack_channels(images, channel_map):
     """Stack multiple image files to one single, multi-channel image.
 
     Parameters
@@ -111,7 +115,7 @@ def stack_channels(images, order=[0, 1, 2]):
         The images to be concatenated. List should contain
         three images. Entries 'None' are considered to be dummy
         channels
-    order : list of int, optional
+    channel_map : list of int
         The order the channels should be in in the final image.
 
     Returns
@@ -123,7 +127,7 @@ def stack_channels(images, order=[0, 1, 2]):
     --------
     >>> image1 = np.ones((2, 2)) * 1
     >>> image2 = np.ones((2, 2)) * 2
-    >>> joined = stack_channels((image1, image2, None))
+    >>> joined = stack_channels((image1, image2, None), [0, 1, 2])
     >>> joined.shape
     (2, 2, 3)
     """
@@ -132,12 +136,12 @@ def stack_channels(images, order=[0, 1, 2]):
     dtype = images[0].dtype
     concat_image = np.zeros((m, n, 3), dtype=dtype)
     for i in range(0, 3):
-        if images[order[i]] is not None:
-            concat_image[:, :, i] = images[order[i]]
+        if images[channel_map[i]] is not None:
+            concat_image[:, :, i] = images[channel_map[i]]
     return concat_image
 
 
-def snail_stitch(fns, order=None):
+def snail_stitch(fns, stitch_order):
     """Stitch together a list of images according to a specified pattern.
 
     The order pattern should be an array of integers where each element
@@ -158,7 +162,7 @@ def snail_stitch(fns, order=None):
     fns : list of string
         The list of the image files to be stitched together. If None,
         this parameter defaults to the order given above.
-    order : array of int, shape (M, N)
+    stitch_order : array of int, shape (M, N)
         The order of the stitching, with each entry referring
         to the index of file in the fns array.
 
@@ -169,23 +173,23 @@ def snail_stitch(fns, order=None):
     """
     fns.sort()
 
-    if order is None:
-        order = [[20, 21, 22, 23, 24],
+    if stitch_order is None:
+        stitch_order = [[20, 21, 22, 23, 24],
                  [19, 6, 7, 8, 9],
                  [18, 5, 0, 1, 10],
                  [17, 4, 3, 2, 11],
                  [16, 15, 14, 13, 12]]
 
-    order = np.array(order)
+    stitch_order = np.array(stitch_order)
     image0 = io.imread(fns[0])
 
     rows, cols = image0.shape[:2]
-    snail_rows, snail_cols = order.shape
+    snail_rows, snail_cols = stitch_order.shape
 
     stitched_image = np.zeros((rows*snail_rows, cols*snail_cols))
     for i in range(snail_rows):
         for j in range(snail_cols):
-            index = order[i][j]
+            index = stitch_order[i][j]
             image = io.imread(fns[index])
             stitched_image[rows*i:rows*(i+1), cols*j:cols*(j+1)] = image
     return stitched_image
