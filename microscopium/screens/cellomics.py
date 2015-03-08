@@ -14,7 +14,7 @@ import re
 
 
 def batch_stitch_stack(file_dict, output, stitch_order=None,
-                       channel_map=[0, 1, 2], target_bit_depth=8, **kwargs):
+                       channel_order=[0, 1, 2], target_bit_depth=8, **kwargs):
     """Run snail stitch and concatenate the channels across a set of images.
 
     This function takes the (plate, well) dictionary built using the
@@ -32,10 +32,10 @@ def batch_stitch_stack(file_dict, output, stitch_order=None,
         The directory to output the stitched and concatenated images to.
     stitch_order : array of int, shape (M, N)
         The order of the stitching.
-        Passed to ``microscopium.cellomics.snail_stitch``
-    channel_map : list of int
+        Passed to "stitch_order" argument of `snail_stitch`.
+    channel_order : list of int
         The order the channels should be in in the final image.
-        Passed to ``microscopium.cellomics.stack_channels``
+        Passed to "channel_order" argument of `stack_channels`.
     target_bit_depth : int in {8, 16}, optional
         If None, perform no rescaling. Otherwise, rescale to occupy
         the dynamic range of the target bit depth.
@@ -62,12 +62,12 @@ def batch_stitch_stack(file_dict, output, stitch_order=None,
                 image = rescale_from_12bit(image, target_bit_depth, **kwargs)
                 images.append(image)
 
-        concat_image = stack_channels(images, channel_map)
+        stack_image = stack_channels(images, channel_order)
 
         out_dir = os.path.join(output, plate)
         if not os.path.exists(out_dir):
             os.makedirs(out_dir)
-        io.imsave(os.path.join(out_dir, new_fn), concat_image)
+        io.imsave(os.path.join(out_dir, new_fn), stack_image)
 
 
 def rescale_from_12bit(image, target_bit_depth=8, **kwargs):
@@ -83,8 +83,7 @@ def rescale_from_12bit(image, target_bit_depth=8, **kwargs):
     target_bit_depth : int in {8, 16}, optional
         The bit range to scale the images to.
     **kwargs : dict
-        Keyword arguments to be passed to
-        `microscopium.preprocess.stretchlim`
+        Keyword arguments to be passed to `..preprocess.stretchlim`
 
     Returns
     -------
@@ -107,7 +106,7 @@ def rescale_from_12bit(image, target_bit_depth=8, **kwargs):
     return scale_image
 
 
-def stack_channels(images, channel_map):
+def stack_channels(images, channel_order=[0, 1, 2]):
     """Stack multiple image files to one single, multi-channel image.
 
     Parameters
@@ -116,30 +115,30 @@ def stack_channels(images, channel_map):
         The images to be concatenated. List should contain
         three images. Entries 'None' are considered to be dummy
         channels
-    channel_map : list of int
+    channel_order : list of int, optional
         The order the channels should be in in the final image.
 
     Returns
     -------
-    conat_image : array, shape (M, N, 3)
+    stack_image : array, shape (M, N, 3)
         The concatenated, three channel image.
 
     Examples
     --------
     >>> image1 = np.ones((2, 2)) * 1
     >>> image2 = np.ones((2, 2)) * 2
-    >>> joined = stack_channels((image1, image2, None), [0, 1, 2])
+    >>> joined = stack_channels((image1, image2, None))
     >>> joined.shape
     (2, 2, 3)
     """
     m = images[0].shape[0]
     n = images[0].shape[1]
     dtype = images[0].dtype
-    concat_image = np.zeros((m, n, 3), dtype=dtype)
-    for i in range(0, 3):
-        if images[channel_map[i]] is not None:
-            concat_image[:, :, i] = images[channel_map[i]]
-    return concat_image
+    image_order = [images[i] for i in channel_order]
+    image_order = [np.zeros((m, n), dtype=dtype) if image is None else image
+                   for image in image_order]
+    stack_image = np.dstack(image_order)
+    return stack_image
 
 
 def snail_stitch(fns, stitch_order):
