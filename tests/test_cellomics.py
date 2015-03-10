@@ -116,3 +116,9 @@ def test_snail_stitch2(image_files_6):
                          [1, 1, 0, 0, 5, 5]])
 
     np.testing.assert_array_equal(stitched, expected)
+
+
+def test_stack_channel():
+    images = list(map(lambda x: np.ones((2, 2)) * x, range(0, 3)))
+    images_stack = cellomics.stack_channels(images, [2, 0, 1])
+    np.testing.assert_array_equal(images_stack[0, 0], [2, 0, 1])
