@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, division
 import os
 import functools as fun
 import itertools as it
@@ -171,7 +171,7 @@ def maxes(fns):
     return maxes
 
 
-def stretchlim(im, bottom=0.01, top=None, mask=None):
+def stretchlim(im, bottom=0.01, top=None, mask=None, in_place=False):
     """Stretch the image so new image range corresponds to given quantiles.
 
     Parameters
@@ -184,21 +184,28 @@ def stretchlim(im, bottom=0.01, top=None, mask=None):
         The upper quantile. If not provided, it is set to 1 - `bottom`.
     mask : array of bool, shape (M, N, [...,] P), optional
         Only consider intensity values where `mask` is ``True``.
+    in_place : bool, optional
+        If True, modify the input image in-place (only possible if
+        it is a float image).
 
     Returns
     -------
     out : np.ndarray of float
         The stretched image.
     """
+    if in_place and np.issubdtype(im.dtype, np.float):
+        out = im
+    else:
+        out = np.empty(im.shape, np.float32)
+        out[:] = im
     if mask is None:
         mask = np.ones(im.shape, dtype=bool)
     if top is None:
-        top = 1. - bottom
-    im = im.astype(float)
+        top = 1 - bottom
     q0, q1 = quantiles(im[mask], [bottom, top])
-    out = (im - q0) / (q1 - q0)
-    out[out < 0] = 0
-    out[out > 1] = 1
+    out -= q0
+    out /= q1 - q0
+    out = np.clip(out, 0, 1, out=out)
     return out
 
 
