@@ -643,6 +643,7 @@ def _reservoir_sampled_image(ims_iter, random_state=None):
         The sampled "image".
     """
     random = normalise_random_state(random_state)
+    ims_iter = iter(ims_iter)  # ensure iterator and not e.g. list
     sampled = next(ims_iter)
     for k, im in enumerate(ims_iter, start=2):
         to_replace = random.rand(*im.shape) < (1 / k)
