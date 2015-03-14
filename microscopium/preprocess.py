@@ -8,8 +8,8 @@ import numpy as np
 from scipy import ndimage as nd
 from skimage import io
 from scipy.stats.mstats import mquantiles as quantiles
-from skimage import morphology as skmorph, filter as imfilter
-import skimage.filter.rank as rank
+from skimage import morphology as skmorph, filters as imfilter
+import skimage.filters.rank as rank
 import skimage
 import cytoolz as tlz
 from six.moves import map
