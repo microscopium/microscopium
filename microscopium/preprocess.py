@@ -8,13 +8,15 @@ import numpy as np
 from scipy import ndimage as nd
 from skimage import io
 from scipy.stats.mstats import mquantiles as quantiles
-from skimage import morphology as skmorph, filters as imfilter
+from skimage import morphology as skmorph, filters as imfilter, exposure
 import skimage.filters.rank as rank
 import skimage
 import cytoolz as tlz
 from six.moves import map
 from six.moves import range
 from six.moves import zip
+
+from ._util import normalise_random_state
 
 
 def morphop(im, operation='open', radius='5'):
@@ -574,6 +576,79 @@ def find_background_illumination(fns, radius=51, quantile=0.05,
                          'not recognised.' % method)
 
     return illum
+
+
+def correct_multiimage_illumination(im_fns, illum, stretch_quantile=0):
+    """Divide input images pointwise by the illumination field.
+
+    However, where `correct_image_illumination` rescales each individual
+    image to span the full dynamic range of the data type, this one
+    rescales each image such that *all images, collectively,* span the
+    dynamic range. This aims to fix stretching of image noise when there
+    is no signal in the data [1]_.
+
+    Parameters
+    ----------
+    ims : iterable of image filenames, each of shape (M, N, ..., P)
+        The images to be corrected.
+    illum : array, shape (M, N, ..., P)
+        The background illumination field.
+    stretch_quantile : float, optional
+        Clip intensity above and below this quantile. Stretch remaining
+        values to fill dynamic range.
+
+    Returns
+    -------
+    ims_out : iterable of corrected uint8 images
+        The images corrected for background illumination.
+
+    References
+    ----------
+    .. [1] https://github.com/microscopium/microscopium/issues/38
+    """
+    p0 = 100 * stretch_quantile
+    p1 = 100 - p0
+    im_fns = list(im_fns)
+    ims_pass1 = map(io.imread, im_fns)
+    sampled = _reservoir_sampled_image(ims_pass1)
+    corrected = sampled / illum  # don't do in-place, dtype may clash
+    corr_range = np.percentile(corrected, [p0, p1])
+
+    # In second pass, correct every image and adjust exposure
+    ims_pass2 = map(io.imread, im_fns)
+    for im in ims_pass2:
+        corrected = im / illum
+        out = exposure.rescale_intensity(corrected, in_range=corr_range,
+                                         out_range=np.uint8)
+        yield out
+
+
+def _reservoir_sampled_image(ims_iter, random_state=None):
+    """Return an image where each pixel is sampled from a list of images.
+
+    The idea is to get a sample of image intensity throughout a collection
+    of images, to know what the "standard range" is for this type of image.
+
+    Parameters
+    ----------
+    ims_iter : iterator of arrays
+        An iterator over numpy arrays (representing images).
+    random_state : None, int, or numpy RandomState instance, optional
+        An optional random number generator or seed from which to draw
+        samples.
+
+    Returns
+    -------
+    sampled : array, same shape as input
+        The sampled "image".
+    """
+    random = normalise_random_state(random_state)
+    sampled = next(ims_iter)
+    for k, im in enumerate(ims_iter, start=2):
+        to_replace = random.rand(*im.shape) < (1 / k)
+        sampled[to_replace] = im[to_replace]
+    return sampled
+
 
 
 def correct_image_illumination(im, illum, stretch_quantile=0, mask=None):
