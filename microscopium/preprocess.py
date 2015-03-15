@@ -641,6 +641,14 @@ def _reservoir_sampled_image(ims_iter, random_state=None):
     -------
     sampled : array, same shape as input
         The sampled "image".
+
+    Examples
+    --------
+    >>> ims = np.arange(27).reshape((3, 3, 3))
+    >>> _reservoir_sampled_image(iter(ims), 0)
+    array([[ 0,  1,  2],
+           [ 3, 13, 23],
+           [24, 25,  8]])
     """
     random = normalise_random_state(random_state)
     ims_iter = iter(ims_iter)  # ensure iterator and not e.g. list
