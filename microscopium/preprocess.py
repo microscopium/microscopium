@@ -609,6 +609,8 @@ def correct_multiimage_illumination(im_fns, illum, stretch_quantile=0):
     p0 = 100 * stretch_quantile
     p1 = 100 - p0
     im_fns = list(im_fns)
+
+    # in first pass, make a composite image to get global intensity range
     ims_pass1 = map(io.imread, im_fns)
     sampled = _reservoir_sampled_image(ims_pass1)
     corrected = sampled / illum  # don't do in-place, dtype may clash
