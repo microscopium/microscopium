@@ -618,7 +618,7 @@ def correct_multiimage_illumination(im_fns, illum, stretch_quantile=0,
     ims_pass1 = map(io.imread, im_fns)
     sampled = _reservoir_sampled_image(ims_pass1, random_state)
     corrected = sampled / illum  # don't do in-place, dtype may clash
-    corr_range = np.percentile(corrected, [p0, p1])
+    corr_range = tuple(np.percentile(corrected, [p0, p1]))
 
     # In second pass, correct every image and adjust exposure
     ims_pass2 = map(io.imread, im_fns)
