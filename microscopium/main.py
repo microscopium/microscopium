@@ -1,12 +1,10 @@
-from __future__ import absolute_import
-from __future__ import print_function
+from __future__ import absolute_import, division, print_function
 #!/bin/env python
 
 # standard library
 import os
 import sys
 import argparse
-import itertools as it
 
 # dependencies
 import numpy as np
@@ -17,7 +15,7 @@ from skimage import io, img_as_ubyte
 from . import io as hio
 from . import screens
 from . import preprocess as pre
-from six.moves import map
+from six.moves import map, zip
 
 
 parser = argparse.ArgumentParser(description="Run the HUSC functions.")
@@ -219,10 +217,10 @@ def run_cat(args):
     args : argparse.Namespace
         The arguments parsed by the argparse library.
     """
-    ims = it.imap(io.imread, args.images)
+    ims = map(io.imread, args.images)
     ims_out = hio.cat_channels(ims)
     out_fns = [os.path.splitext(fn)[0] + '.chs.tif' for fn in args.images[::3]]
-    for im, fn in it.izip(ims_out, out_fns):
+    for im, fn in zip(ims_out, out_fns):
         try:
             io.imsave(fn, im)
         except ValueError:
@@ -238,7 +236,7 @@ def run_features(args):
     args : argparse.Namespace
         The arguments parsed by the argparse library.
     """
-    images = it.imap(io.imread, args.images)
+    images = map(io.imread, args.images)
     screen_info = screens.d[args.screen]
     index_function, fmap = screen_info['index'], screen_info['fmap']
     f0, feature_names = fmap(next(images))
