@@ -55,14 +55,6 @@ illum.add_argument('-f', '--file-list', type=lambda x: open(x, 'r'),
 illum.add_argument('-o', '--output-suffix',
                    default='.illum.tif', metavar='SUFFIX',
                    help="What suffix to attach to the corrected images.")
-illum.add_argument('-M', '--use-mask', action='store_true',
-                   help="Mask out abnormally bright parts of the image.")
-illum.add_argument('-m', '--mask-offset', metavar='INT', default=0, type=int,
-                  help='Offset the automatic mask threshold by this amount.')
-illum.add_argument('-c', '--mask-close', metavar='RADIUS', default=0, type=int,
-                  help='Perform morphological closing of masks of this radius.')
-illum.add_argument('-e', '--mask-erode', metavar='RADIUS', default=0, type=int,
-                  help='Perform morphological erosion of masks of this radius.')
 illum.add_argument('-l', '--stretchlim', metavar='[0.0-1.0]', type=float,
                    default=0.0, help='Stretch image range before all else.')
 illum.add_argument('-L', '--stretchlim-output', metavar='[0.0-1.0]', type=float,
@@ -76,6 +68,9 @@ illum.add_argument('-s', '--save-illumination', metavar='FN',
                    help='Save the illumination field to a file.')
 illum.add_argument('-v', '--verbose', action='store_true',
                    help='Print runtime information to stdout.')
+illum.add_argument('--method', metavar='STR', default='median',
+                   help='How to collapse filtered images to illumination '
+                        'field. options: median (default), mean.')
 
 
 stitch = subpar.add_parser('stitch', 
@@ -178,23 +173,16 @@ def run_illum(args):
         args.images.extend([fn.rstrip() for fn in args.file_list])
     il = pre.find_background_illumination(args.images, args.radius,
                                           args.quantile, args.stretchlim,
-                                          args.use_mask, args.mask_offset,
-                                          args.mask_close, args.mask_erode)
+                                          args.method)
     if args.verbose:
         print('illumination field:', type(il), il.dtype, il.min(), il.max())
     if args.save_illumination is not None:
         io.imsave(args.save_illumination, il / il.max())
     base_fns = [pre.basefn(fn) for fn in args.images]
     ims_out = [fn + args.output_suffix for fn in base_fns]
-    mask_fns = [fn + '.mask.tif' for fn in base_fns]
-    ims = (io.imread(fn) for fn in args.images)
-    for im, fout, mask_fn in it.izip(ims, ims_out, mask_fns):
-        if os.path.isfile(mask_fn):
-            mask = io.imread(mask_fn).astype(bool)
-        else:
-            mask = np.ones(im.shape, bool)
-        im = pre.correct_image_illumination(im, il,
-                                            args.stretchlim_output, mask)
+    corrected = pre.correct_multiimage_illumination(args.images, il,
+                                                    args.stretchlim_output)
+    for im, fout in zip(corrected, ims_out):
         io.imsave(fout, im)
 
 
