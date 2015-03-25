@@ -173,7 +173,7 @@ def maxes(fns):
     return maxes
 
 
-def stretchlim(im, bottom=0.01, top=None, mask=None, in_place=False):
+def stretchlim(im, bottom=0.001, top=None, mask=None, in_place=False):
     """Stretch the image so new image range corresponds to given quantiles.
 
     Parameters
