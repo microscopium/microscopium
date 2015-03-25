@@ -655,8 +655,8 @@ def _reservoir_sampled_image(ims_iter, random_state=None):
 
     Examples
     --------
-    >>> ims = np.arange(27).reshape((3, 3, 3))
-    >>> _reservoir_sampled_image(iter(ims), 0)
+    >>> ims = iter(np.arange(27).reshape((3, 3, 3)))
+    >>> _reservoir_sampled_image(ims, 0)
     array([[ 0,  1,  2],
            [ 3, 13, 23],
            [24, 25,  8]])
