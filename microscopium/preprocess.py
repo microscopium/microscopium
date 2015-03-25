@@ -635,6 +635,11 @@ def _reservoir_sampled_image(ims_iter, random_state=None):
     The idea is to get a sample of image intensity throughout a collection
     of images, to know what the "standard range" is for this type of image.
 
+    The implementation uses a "reservoir" image to sample while remaining
+    space-efficient, and only needs to hold about four images at one time
+    (the reservoir, the current sample, a random image for sampling, and
+    a thresholded version of the random image).
+
     Parameters
     ----------
     ims_iter : iterator of arrays
