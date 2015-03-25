@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, division
 import os
 import tempfile
 import numpy as np
@@ -66,5 +66,49 @@ def test_illumination_median(image_files):
     np.testing.assert_array_almost_equal(illum, illum_true, decimal=1)
 
 
+def conv(im):
+    return np.round(np.clip(im, 0, np.inf) * 255).astype(np.uint8)
+
+
+@pytest.fixture
+def image_files_noise(request):
+    """Three sham images; one has no signal, one has an intensity artifact."""
+    # for clarity we define images as integer arrays in [0, 11) and
+    # divide by 10 later
+    r = np.random.RandomState(0)
+    shape = (5, 5)
+    # no signal
+    i = conv(0.01 * np.ones(shape, dtype=float) + 0.005 * r.randn(*shape))
+    # normal image
+    j = conv(0.5 * r.rand(*shape))
+    # blown-out corner
+    k = 0.5 * r.rand(*shape)
+    k[3:, 3:] = 1.0
+    k = conv(k)
+    files = []
+    for im in [i, j, k]:
+        f, fn = tempfile.mkstemp(suffix='.png')
+        files.append(fn)
+        io.imsave(fn, im)
+
+    def cleanup():
+        for fn in files:
+            os.remove(fn)
+    request.addfinalizer(cleanup)
+
+    illum = 0.01 * np.ones(shape, dtype=float)
+    return files, illum
+
+
+def test_correct_multiimage_illum(image_files_noise):
+    files, illum = image_files_noise
+    ims = list(pre.correct_multiimage_illumination(files, illum, (2 / 25), 0))
+    i, j, k = ims
+    # 1. check noise is not blown out in i
+    assert not np.any(i > 10)
+    # 2. check blown out corner in k has not suppressed all other values
+    assert np.median(k) > 100
+
+
 if __name__ == '__main__':
-    np.testing.run_module_suite()
+    pytest.main()
