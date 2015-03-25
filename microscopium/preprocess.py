@@ -642,8 +642,8 @@ def _reservoir_sampled_image(ims_iter, random_state=None):
 
     Parameters
     ----------
-    ims_iter : iterator of arrays
-        An iterator over numpy arrays (representing images).
+    ims_iter : iterable of arrays
+        An iterable over numpy arrays (representing images).
     random_state : None, int, or numpy RandomState instance, optional
         An optional random number generator or seed from which to draw
         samples.
