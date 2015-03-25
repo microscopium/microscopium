@@ -541,7 +541,7 @@ def find_background_illumination(fns, radius=51, quantile=0.05,
 
     See Also
     --------
-    ``correct_image_illumination``.
+    `correct_image_illumination`, `correct_multiimage_illumination`.
     """
     # This function follows the "PyToolz" streaming data model to
     # obtain the illumination estimate. First, define each processing
@@ -685,6 +685,10 @@ def correct_image_illumination(im, illum, stretch_quantile=0, mask=None):
     -------
     imc : np.ndarray of float, same shape as `im`
         The corrected image.
+
+    See Also
+    --------
+    `correct_multiimage_illumination`
     """
     if im.dtype != np.float:
         imc = skimage.img_as_float(im)
