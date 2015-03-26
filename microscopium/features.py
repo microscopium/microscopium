@@ -4,7 +4,7 @@ import numpy as np
 from scipy.stats.mstats import mquantiles
 from scipy import ndimage as nd
 from skimage import morphology as skmorph
-from skimage import filter as imfilter, measure, util
+from skimage import filters as imfilter, measure, util
 from sklearn.neighbors import NearestNeighbors
 from six.moves import range
 
