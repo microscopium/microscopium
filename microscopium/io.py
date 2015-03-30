@@ -10,6 +10,9 @@ except ImportError:
     iio = io
 
 
+imread = io.imread
+
+
 def imsave(fn, im, **kwargs):
     """Wrapper around various libraries that haven't got their act together.
 
