@@ -5,6 +5,7 @@ from __future__ import absolute_import, division, print_function
 import os
 import sys
 import argparse
+import ast
 
 # dependencies
 import numpy as np
@@ -14,6 +15,7 @@ from skimage import io, img_as_ubyte
 # local imports
 from . import io as mio
 from . import screens
+from .screens import cellomics
 from . import preprocess as pre
 from six.moves import map, zip
 
@@ -79,22 +81,21 @@ illum.add_argument('--method', metavar='STR', default='median',
                         'field. options: median (default), mean.')
 
 
-stitch = subpar.add_parser('stitch', 
-                            help="Stitch images by quadrant.")
-stitch.add_argument('images', nargs='*', metavar='IM',
-                    help="The input images.")
-stitch.add_argument('-c', '--compress', metavar='INT', type=int, default=1,
-                    help='Use TIFF compression in the range 0 (no compression) '
-                         'to 9 (max compression, slowest) (default 1).')
-
-
-cat = subpar.add_parser('cat',
-                        help="Glue the different image channels together.")
-cat.add_argument('images', nargs='*', metavar='IM',
-                 help="The input images.")
-cat.add_argument('-c', '--compress', metavar='INT', type=int, default=1,
-                 help='Use TIFF compression in the range 0 (no compression) '
-                      'to 9 (max compression, slowest) (default 1).')
+montage = subpar.add_parser('montage',
+                            help='Montage and channel stack images.')
+montage.add_argument('images', nargs='*', metavar='IM',
+                     help="The input images.")
+montage.add_argument('-c', '--compress', metavar='INT', type=int, default=1,
+                     help='Use TIFF compression in the range 0 '
+                          '(no compression) '
+                          'to 9 (max compression, slowest) (default 1).')
+montage.add_argument('-o', '--montage-order', type=ast.literal_eval,
+                     default=cellomics.SPIRAL_CLOCKWISE_RIGHT_25,
+                     help='The shape of the final montage.')
+montage.add_argument('-O', '--channel-order', type=ast.literal_eval,
+                     default=[0, 1, 2],
+                     help='The position of red, green, and blue channels '
+                          'in the stream.')
 
 
 features = subpar.add_parser('features',
@@ -135,10 +136,8 @@ def main():
         run_mask(args)
     elif cmd == 'illum':
         run_illum(args)
-    elif cmd == 'stitch':
-        run_stitch(args)
-    elif cmd == 'cat':
-        run_cat(args)
+    elif cmd == 'montage':
+        run_montage(args)
     elif cmd == 'features':
         run_features(args)
     else:
@@ -198,19 +197,8 @@ def run_illum(args):
         mio.imsave(fout, im, compress=args.compress)
 
 
-def run_stitch(args):
-    """Run stitching.
-
-    Parameters
-    ----------
-    args : argparse.Namespace
-        The arguments parsed by the argparse library.
-    """
-    pre.run_quadrant_stitch(args.images)
-
-
-def run_cat(args):
-    """Run channel concatenation.
+def run_montage(args):
+    """Run montaging and channel concatenation.
 
     Parameters
     ----------
@@ -218,13 +206,20 @@ def run_cat(args):
         The arguments parsed by the argparse library.
     """
     ims = map(io.imread, args.images)
-    ims_out = mio.cat_channels(ims)
-    out_fns = [os.path.splitext(fn)[0] + '.chs.tif' for fn in args.images[::3]]
+    ims_out = pre.montage_stream(ims, montage_order=args.montage_order,
+                                 channel_order=args.channel_order)
+    def out_fn(fn):
+        sem = cellomics.cellomics_semantic_filename(fn)
+        out = ''.join([str(sem[k])
+                       for k in sem if k not in ['field', 'channel']])
+        return out
+    step = np.array(args.montage_order).size * len(args.channel_order)
+    out_fns = [out_fn(fn) for fn in args.images[::step]]
     for im, fn in zip(ims_out, out_fns):
         try:
             mio.imsave(fn, im, compress=args.compress)
         except ValueError:
-            im = img_as_ubyte(pre.stretchlim(im, 0.05, 0.95))
+            im = img_as_ubyte(pre.stretchlim(im, 0.001, 0.999))
             mio.imsave(fn, im, compress=args.compress)
 
 
