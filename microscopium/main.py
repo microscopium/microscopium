@@ -31,6 +31,9 @@ crop.add_argument('-o', '--output-suffix',
                   help="What suffix to attach to the cropped images.")
 crop.add_argument('-O', '--output-dir',
                   help="Directory in which to output the cropped images.")
+crop.add_argument('-c', '--compress', metavar='INT', type=int, default=1,
+                  help='Use TIFF compression in the range 0 (no compression) '
+                       'to 9 (max compression, slowest) (default 1).')
 
 
 mask = subpar.add_parser('mask', help="Estimate a mask over image artifacts.")
@@ -66,6 +69,9 @@ illum.add_argument('-r', '--radius', metavar='INT', type=int, default=51,
                    help='Radius in which to find quantile.')
 illum.add_argument('-s', '--save-illumination', metavar='FN',
                    help='Save the illumination field to a file.')
+illum.add_argument('-c', '--compress', metavar='INT', type=int, default=1,
+                   help='Use TIFF compression in the range 0 (no compression) '
+                        'to 9 (max compression, slowest) (default 1).')
 illum.add_argument('-v', '--verbose', action='store_true',
                    help='Print runtime information to stdout.')
 illum.add_argument('--method', metavar='STR', default='median',
@@ -77,12 +83,18 @@ stitch = subpar.add_parser('stitch',
                             help="Stitch images by quadrant.")
 stitch.add_argument('images', nargs='*', metavar='IM',
                     help="The input images.")
+stitch.add_argument('-c', '--compress', metavar='INT', type=int, default=1,
+                    help='Use TIFF compression in the range 0 (no compression) '
+                         'to 9 (max compression, slowest) (default 1).')
 
 
 cat = subpar.add_parser('cat',
                         help="Glue the different image channels together.")
 cat.add_argument('images', nargs='*', metavar='IM',
                  help="The input images.")
+cat.add_argument('-c', '--compress', metavar='INT', type=int, default=1,
+                 help='Use TIFF compression in the range 0 (no compression) '
+                      'to 9 (max compression, slowest) (default 1).')
 
 
 features = subpar.add_parser('features',
@@ -151,7 +163,7 @@ def run_crop(args):
         fnout = os.path.splitext(imfn)[0] + args.output_suffix
         if args.output_dir is not None:
             fnout = os.path.join(args.output_dir, os.path.split(fnout)[1])
-        mio.imsave(fnout, imout)
+        mio.imsave(fnout, imout, compress=args.compress)
 
 
 def run_mask(args):
@@ -183,7 +195,7 @@ def run_illum(args):
     corrected = pre.correct_multiimage_illumination(args.images, il,
                                                     args.stretchlim_output)
     for im, fout in zip(corrected, ims_out):
-        mio.imsave(fout, im)
+        mio.imsave(fout, im, compress=args.compress)
 
 
 def run_stitch(args):
@@ -210,10 +222,10 @@ def run_cat(args):
     out_fns = [os.path.splitext(fn)[0] + '.chs.tif' for fn in args.images[::3]]
     for im, fn in zip(ims_out, out_fns):
         try:
-            mio.imsave(fn, im)
+            mio.imsave(fn, im, compress=args.compress)
         except ValueError:
             im = img_as_ubyte(pre.stretchlim(im, 0.05, 0.95))
-            mio.imsave(fn, im)
+            mio.imsave(fn, im, compress=args.compress)
 
 
 def run_features(args):
