@@ -15,7 +15,8 @@ import re
 
 
 def batch_stitch_stack(file_dict, output, stitch_order=None,
-                       channel_order=[0, 1, 2], target_bit_depth=8, **kwargs):
+                       channel_order=[0, 1, 2], target_bit_depth=8,
+                       compress=1, **kwargs):
     """Run snail stitch and concatenate the channels across a set of images.
 
     This function takes the (plate, well) dictionary built using the
@@ -40,6 +41,9 @@ def batch_stitch_stack(file_dict, output, stitch_order=None,
     target_bit_depth : int in {8, 16}, optional
         If None, perform no rescaling. Otherwise, rescale to occupy
         the dynamic range of the target bit depth.
+    compress : int in [0, 9], optional
+        Compression level for saved images. 0 = no compression,
+        1 = fast compression, 9 = maximum compression, slowest.
     **kwargs : dict
         Keyword arguments to be passed to
         `microscopium.preprocess.stretchlim`
@@ -68,7 +72,8 @@ def batch_stitch_stack(file_dict, output, stitch_order=None,
         out_dir = os.path.join(output, plate)
         if not os.path.exists(out_dir):
             os.makedirs(out_dir)
-        mio.imsave(os.path.join(out_dir, new_fn), stack_image)
+        mio.imsave(os.path.join(out_dir, new_fn), stack_image,
+                   compress=compress)
 
 
 def rescale_from_12bit(image, target_bit_depth=8, **kwargs):

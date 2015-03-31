@@ -115,7 +115,7 @@ def max_mask_iter(fns, offset=0, close_radius=0, erode_radius=0):
 
 
 def write_max_masks(fns, offset=0, close_radius=0, erode_radius=0,
-                    suffix='.mask.tif'):
+                    suffix='.mask.tif', compress=1):
     """Find a mask for images having a brightness artifact.
 
     This function iterates over a set of images and finds the maximum
@@ -136,6 +136,9 @@ def write_max_masks(fns, offset=0, close_radius=0, erode_radius=0,
         of this radius.
     suffix : string, optional
         Save an image next to the original, with this suffix.
+    compress : int in [0, 9], optional
+        Compression level for saved images. 0 = no compression,
+        1 = fast compression, 9 = maximum compression, slowest.
 
     Returns
     -------
@@ -151,7 +154,7 @@ def write_max_masks(fns, offset=0, close_radius=0, erode_radius=0,
         m += 1
         if not mask.all():
             # we multiply by 255 to make the image easy to look at
-            mio.imsave(outfn, mask.astype(np.uint8) * 255)
+            mio.imsave(outfn, mask.astype(np.uint8) * 255, compress=compress)
             n += 1
     return n, m
 
@@ -213,7 +216,7 @@ def stretchlim(im, bottom=0.001, top=None, mask=None, in_place=False):
 
 
 def run_quadrant_stitch(fns, re_string='(.*)_(s[1-4])_(w[1-3]).*',
-                        re_quadrant_group=1):
+                        re_quadrant_group=1, compress=1):
     """Read images, stitched them, and write out to same directory.
 
     Parameters
@@ -224,6 +227,9 @@ def run_quadrant_stitch(fns, re_string='(.*)_(s[1-4])_(w[1-3]).*',
         The regular expression to match the filename.
     re_quadrant_group : int, optional
         The group from the re.match object that will contain quadrant info.
+    compress : int in [0, 9], optional
+        Compression level for saved images. 0 = no compression,
+        1 = fast compression, 9 = maximum compression, slowest.
 
     Returns
     -------
@@ -236,7 +242,7 @@ def run_quadrant_stitch(fns, re_string='(.*)_(s[1-4])_(w[1-3]).*',
         new_filename = '_'.join(fn_pattern) + '_stitched.tif'
         ims = list(map(io.imread, sorted(fns)))
         im = quadrant_stitch(*ims)
-        mio.imsave(new_filename, im)
+        mio.imsave(new_filename, im, compress=compress)
         fns_out.append(new_filename)
     return fns_out
 
