@@ -12,6 +12,7 @@ from skimage import morphology as skmorph, filters as imfilter, exposure
 import skimage.filters.rank as rank
 import skimage
 import cytoolz as tlz
+from cytoolz import curried
 from six.moves import map
 from six.moves import range
 from six.moves import zip
@@ -677,7 +678,6 @@ def _reservoir_sampled_image(ims_iter, random_state=None):
     return sampled
 
 
-
 def correct_image_illumination(im, illum, stretch_quantile=0, mask=None):
     """Divide input image pointwise by the illumination field.
 
@@ -711,3 +711,140 @@ def correct_image_illumination(im, illum, stretch_quantile=0, mask=None):
     imc = stretchlim(imc, lim, 1-lim, mask)
     return imc
 
+
+def montage(ims, order=None):
+    """Stitch together a list of images according to a specified pattern.
+
+    The order pattern should be an array of integers where each element
+    corresponds to the index of the image in the fns list.
+
+    eg if order = [[20, 21, 22, 23, 24],
+                   [19,  6,  7,  8,  9],
+                   [18,  5,  0,  1, 10],
+                   [17,  4,  3,  2, 11],
+                   [16, 15, 14, 13, 12]]
+
+    This order will stitch together 25 images in a clockwise spiral pattern.
+
+    Parameters
+    ----------
+    ims : iterable of array, shape (M, N[, 3])
+        The list of the image files to be stitched together. If None,
+        this parameter defaults to the order given above.
+    order : array-like of int, shape (P, Q)
+        The order of the stitching, with each entry referring
+        to the index of file in the fns array.
+
+    Returns
+    -------
+    montaged : array, shape (M * P, N * Q[, 3])
+        The stitched image.
+    """
+    if order is None:
+        from .screens import cellomics
+        order = cellomics.SPIRAL_CLOCKWISE_RIGHT_25
+    order = np.array(order)
+
+    # in case stream is passed, take one sip at a time ;)
+    ims = list(ims)
+    rows, cols = ims[0].shape[:2]
+    mrows, mcols = order.shape
+
+    montaged = np.zeros((rows * mrows, cols * mcols) + ims[0].shape[2:],
+                        dtype=ims[0].dtype)
+    for i in range(mrows):
+        for j in range(mcols):
+            montaged[rows*i:rows*(i+1), cols*j:cols*(j+1)] = ims[order[i, j]]
+    return montaged
+
+
+@tlz.curry
+def reorder(index_list, list_to_reorder):
+    """Curried function to reorder a list according to input indices.
+
+    Parameters
+    ----------
+    index_list : list of int
+        The list of indices indicating where to put each element in the
+        input list.
+    list_to_reorder : list
+        The list being reordered.
+
+    Returns
+    -------
+    reordered_list : list
+        The reordered list.
+
+    Examples
+    --------
+    >>> list1 = ['foo', 'bar', 'baz']
+    >>> reorder([2, 0, 1], list1)
+    ['baz', 'foo', 'bar']
+    """
+    return [list_to_reorder[j] for j in index_list]
+
+
+def montage_stream(ims, montage_order=None, channel_order=[0, 1, 2]):
+    """From a sequence of single-channel field images, montage multichannels.
+
+    Suppose the input is a list:
+
+    ```
+    ims = [green1, blue1, red1, green2, blue2, red2]
+    ```
+
+    with channel order:
+
+    ```
+    channel_order = [2, 0, 1]
+    ```
+
+    Then the output will be:
+
+    ```
+    [rgb1, rgb2]
+    ```
+
+    (The order of channels in the list is arbitrary; the default is
+    based on the data for which this software was created.)
+
+    Parameters
+    ----------
+    ims : iterator of array, shape (M, N)
+        A list of images in which consecutive images represent single
+        channels of the same image. (See example.)
+    order : list of int, optional
+        The order in which the channels appear.
+
+    Returns
+    -------
+    montaged_stream : iterator of arrays
+        An iterator of the images composed into multi-channel montages.
+
+    Examples
+    --------
+    >>> images = (i * np.ones((4, 5), dtype=np.uint8) for i in range(24))
+    >>> montaged = list(montage_stream(images, [[0, 1], [2, 3]], [2, 0, 1]))
+    >>> len(montaged)
+    2
+    >>> montaged[0].shape
+    (8, 10, 3)
+    >>> montaged[0][0, 0, :]
+    array([2, 0, 1], dtype=uint8)
+    >>> montaged[0][4, 5, :]
+    array([11,  9, 10], dtype=uint8)
+    >>> montaged[1][4, 5, :]
+    array([23, 21, 22], dtype=uint8)
+    """
+    if montage_order is None:
+        from .screens import cellomics
+        montage_order = cellomics.SPIRAL_CLOCKWISE_RIGHT_25
+    montage_order = np.array(montage_order)
+    ntiles = montage_order.size
+    nchannels = len(channel_order)
+    montage_ = fun.partial(montage, order=montage_order)
+    return tlz.pipe(ims, curried.partition(nchannels),
+                         curried.map(reorder(channel_order)),
+                         curried.map(np.dstack),
+                         curried.partition(ntiles),
+                         curried.map(montage_))

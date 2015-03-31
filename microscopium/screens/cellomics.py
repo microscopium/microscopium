@@ -4,14 +4,24 @@ from __future__ import absolute_import
 
 import os
 import collections as coll
-from skimage import io
 import numpy as np
+from skimage import io
 from cytoolz import groupby
-from ..preprocess import stretchlim
+from .. import preprocess as pre
 from .. import io as mio
 from six.moves import range
 from six.moves import zip
 import re
+
+
+SPIRAL_CLOCKWISE_RIGHT_25 = [[20, 21, 22, 23, 24],
+                             [19,  6,  7,  8,  9],
+                             [18,  5,  0,  1, 10],
+                             [17,  4,  3,  2, 11],
+                             [16, 15, 14, 13, 12]]
+
+SPIRAL_CLOCKWISE_LEFT_6 = [[2, 3, 4],
+                           [1, 0, 5]]
 
 
 def batch_stitch_stack(file_dict, output, stitch_order=None,
@@ -102,7 +112,7 @@ def rescale_from_12bit(image, target_bit_depth=8, **kwargs):
     >>> rescale_from_12bit(image, 8)
     array([[  0, 127, 255]], dtype=uint8)
     """
-    image = stretchlim(image, **kwargs)
+    image = pre.stretchlim(image, **kwargs)
     if target_bit_depth == 8:
         scale_image = np.round(image * 255).astype(np.uint8)
     elif target_bit_depth == 16:
@@ -147,58 +157,8 @@ def stack_channels(images, channel_order=[0, 1, 2]):
     return stack_image
 
 
-def snail_stitch(fns, stitch_order):
-    """Stitch together a list of images according to a specified pattern.
-
-    The order pattern should be an array of integers where each element
-    corresponds to the index of the image in the fns list.
-
-    eg if order = [[20, 21, 22, 23, 24],
-                   [19, 6, 7, 8, 9],
-                   [18, 5, 0, 1, 10],
-                   [17, 4, 3, 2, 11],
-                   [16, 15, 14, 13, 12]]
-
-    This order will stitch together 25 images in a spiral pattern,
-    originating in the center, moving right then spiralling in a clockwise
-    fashion.
-
-    Parameters
-    ----------
-    fns : list of string
-        The list of the image files to be stitched together. If None,
-        this parameter defaults to the order given above.
-    stitch_order : array of int, shape (M, N)
-        The order of the stitching, with each entry referring
-        to the index of file in the fns array.
-
-    Returns
-    -------
-    stitched_image : array, shape (5*M, 5*N)
-        The stitched image.
-    """
-    fns.sort()
-
-    if stitch_order is None:
-        stitch_order = [[20, 21, 22, 23, 24],
-                 [19, 6, 7, 8, 9],
-                 [18, 5, 0, 1, 10],
-                 [17, 4, 3, 2, 11],
-                 [16, 15, 14, 13, 12]]
-
-    stitch_order = np.array(stitch_order)
-    image0 = io.imread(fns[0])
-
-    rows, cols = image0.shape[:2]
-    snail_rows, snail_cols = stitch_order.shape
-
-    stitched_image = np.zeros((rows*snail_rows, cols*snail_cols))
-    for i in range(snail_rows):
-        for j in range(snail_cols):
-            index = stitch_order[i][j]
-            image = io.imread(fns[index])
-            stitched_image[rows*i:rows*(i+1), cols*j:cols*(j+1)] = image
-    return stitched_image
+def snail_stitch(fns, order):
+    return pre.montage(map(io.imread, fns), order)
 
 
 def make_key2file(fns):
