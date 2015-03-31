@@ -8,6 +8,7 @@ from skimage import io
 import numpy as np
 from cytoolz import groupby
 from ..preprocess import stretchlim
+from .. import io as mio
 from six.moves import range
 from six.moves import zip
 import re
@@ -67,7 +68,7 @@ def batch_stitch_stack(file_dict, output, stitch_order=None,
         out_dir = os.path.join(output, plate)
         if not os.path.exists(out_dir):
             os.makedirs(out_dir)
-        io.imsave(os.path.join(out_dir, new_fn), stack_image)
+        mio.imsave(os.path.join(out_dir, new_fn), stack_image)
 
 
 def rescale_from_12bit(image, target_bit_depth=8, **kwargs):

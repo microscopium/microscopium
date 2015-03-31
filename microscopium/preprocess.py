@@ -17,6 +17,7 @@ from six.moves import range
 from six.moves import zip
 
 from ._util import normalise_random_state
+from . import io as mio
 
 
 def morphop(im, operation='open', radius='5'):
@@ -150,7 +151,7 @@ def write_max_masks(fns, offset=0, close_radius=0, erode_radius=0,
         m += 1
         if not mask.all():
             # we multiply by 255 to make the image easy to look at
-            io.imsave(outfn, mask.astype(np.uint8) * 255)
+            mio.imsave(outfn, mask.astype(np.uint8) * 255)
             n += 1
     return n, m
 
@@ -235,7 +236,7 @@ def run_quadrant_stitch(fns, re_string='(.*)_(s[1-4])_(w[1-3]).*',
         new_filename = '_'.join(fn_pattern) + '_stitched.tif'
         ims = list(map(io.imread, sorted(fns)))
         im = quadrant_stitch(*ims)
-        io.imsave(new_filename, im)
+        mio.imsave(new_filename, im)
         fns_out.append(new_filename)
     return fns_out
 

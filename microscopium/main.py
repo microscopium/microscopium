@@ -12,7 +12,7 @@ import pandas as pd
 from skimage import io, img_as_ubyte
 
 # local imports
-from . import io as hio
+from . import io as mio
 from . import screens
 from . import preprocess as pre
 from six.moves import map, zip
@@ -151,7 +151,7 @@ def run_crop(args):
         fnout = os.path.splitext(imfn)[0] + args.output_suffix
         if args.output_dir is not None:
             fnout = os.path.join(args.output_dir, os.path.split(fnout)[1])
-        io.imsave(fnout, imout)
+        mio.imsave(fnout, imout)
 
 
 def run_mask(args):
@@ -177,13 +177,13 @@ def run_illum(args):
     if args.verbose:
         print('illumination field:', type(il), il.dtype, il.min(), il.max())
     if args.save_illumination is not None:
-        io.imsave(args.save_illumination, il / il.max())
+        mio.imsave(args.save_illumination, il / il.max())
     base_fns = [pre.basefn(fn) for fn in args.images]
     ims_out = [fn + args.output_suffix for fn in base_fns]
     corrected = pre.correct_multiimage_illumination(args.images, il,
                                                     args.stretchlim_output)
     for im, fout in zip(corrected, ims_out):
-        io.imsave(fout, im)
+        mio.imsave(fout, im)
 
 
 def run_stitch(args):
@@ -206,14 +206,14 @@ def run_cat(args):
         The arguments parsed by the argparse library.
     """
     ims = map(io.imread, args.images)
-    ims_out = hio.cat_channels(ims)
+    ims_out = mio.cat_channels(ims)
     out_fns = [os.path.splitext(fn)[0] + '.chs.tif' for fn in args.images[::3]]
     for im, fn in zip(ims_out, out_fns):
         try:
-            io.imsave(fn, im)
+            mio.imsave(fn, im)
         except ValueError:
             im = img_as_ubyte(pre.stretchlim(im, 0.05, 0.95))
-            io.imsave(fn, im)
+            mio.imsave(fn, im)
 
 
 def run_features(args):
