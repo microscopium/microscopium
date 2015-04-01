@@ -210,8 +210,9 @@ def run_montage(args):
                                  channel_order=args.channel_order)
     def out_fn(fn):
         sem = cellomics.cellomics_semantic_filename(fn)
-        out = ''.join([str(sem[k])
-                       for k in sem if k not in ['field', 'channel']])
+        out = '_'.join([str(sem[k])
+                        for k in sem
+                        if k not in ['field', 'channel', 'suffix']]) + '.tif'
         return out
     step = np.array(args.montage_order).size * len(args.channel_order)
     out_fns = [out_fn(fn) for fn in args.images[::step]]
