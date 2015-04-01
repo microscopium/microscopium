@@ -246,7 +246,7 @@ def cellomics_semantic_filename(fn):
     keys = ['directory', 'prefix', 'plate', 'well', 'field', 'channel', 'suffix']
 
     directory, fn = os.path.split(fn)
-    fn, suffix = fn.split('.')
+    fn, suffix = fn.rsplit('.', 1)
 
     # strip _stitch tag
     fn = re.sub(r'_stitch', '', fn)
