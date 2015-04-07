@@ -7,6 +7,7 @@ import collections as coll
 import numpy as np
 from skimage import io
 from cytoolz import groupby
+from ..preprocess import stack_channels
 from .. import preprocess as pre
 from .. import io as mio
 from six.moves import range
@@ -120,41 +121,6 @@ def rescale_from_12bit(image, target_bit_depth=8, **kwargs):
     else:
         scale_image = image
     return scale_image
-
-
-def stack_channels(images, channel_order=[0, 1, 2]):
-    """Stack multiple image files to one single, multi-channel image.
-
-    Parameters
-    ----------
-    images : list of array, shape (M, N)
-        The images to be concatenated. List should contain
-        three images. Entries 'None' are considered to be dummy
-        channels
-    channel_order : list of int, optional
-        The order the channels should be in in the final image.
-
-    Returns
-    -------
-    stack_image : array, shape (M, N, 3)
-        The concatenated, three channel image.
-
-    Examples
-    --------
-    >>> image1 = np.ones((2, 2)) * 1
-    >>> image2 = np.ones((2, 2)) * 2
-    >>> joined = stack_channels((image1, image2, None))
-    >>> joined.shape
-    (2, 2, 3)
-    """
-    m = images[0].shape[0]
-    n = images[0].shape[1]
-    dtype = images[0].dtype
-    image_order = [images[i] for i in channel_order]
-    image_order = [np.zeros((m, n), dtype=dtype) if image is None else image
-                   for image in image_order]
-    stack_image = np.dstack(image_order)
-    return stack_image
 
 
 def snail_stitch(fns, order):

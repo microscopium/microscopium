@@ -794,6 +794,57 @@ def reorder(index_list, list_to_reorder):
     return [list_to_reorder[j] for j in index_list]
 
 
+@tlz.curry
+def stack_channels(images, order=[0, 1, 2]):
+    """Stack multiple image files to one single, multi-channel image.
+
+    Parameters
+    ----------
+    images : list of array, shape (M, N)
+        The images to be concatenated. List should contain
+        three images. Entries 'None' are considered to be dummy
+        channels
+    channel_order : list of int, optional
+        The order the channels should be in in the final image.
+
+    Returns
+    -------
+    stack_image : array, shape (M, N, 3)
+        The concatenated, three channel image.
+
+    Examples
+    --------
+    >>> image1 = np.ones((2, 2), dtype=int) * 1
+    >>> image2 = np.ones((2, 2), dtype=int) * 2
+    >>> joined = stack_channels((None, image1, image2))
+    >>> joined.shape
+    (2, 2, 3)
+    >>> joined[0, 0]
+    array([0, 1, 2])
+    >>> joined = stack_channels((image1, image2), order=[None, 0, 1])
+    >>> joined.shape
+    (2, 2, 3)
+    >>> joined[0, 0]
+    array([0, 1, 2])
+    """
+    # ensure we support iterators
+    images = list(tlz.take(len(order), images))
+
+    # ensure we grab an image and not `None`
+    def is_array(obj): return isinstance(obj, np.ndarray)
+    image_prototype = next(filter(is_array, images))
+
+    # A `None` in `order` implies no image at that position
+    ordered_ims = [images[i] if i is not None else None for i in order]
+    ordered_ims = [np.zeros_like(image_prototype) if image is None else image
+                   for image in ordered_ims]
+
+    # stack images with np.dstack, but if only a single channel is passed,
+    # don't add an extra dimension
+    stack_image = np.squeeze(np.dstack(ordered_ims))
+    return stack_image
+
+
 def montage_stream(ims, montage_order=None, channel_order=[0, 1, 2]):
     """From a sequence of single-channel field images, montage multichannels.
 
@@ -849,7 +900,6 @@ def montage_stream(ims, montage_order=None, channel_order=[0, 1, 2]):
     nchannels = len(channel_order)
     montage_ = fun.partial(montage, order=montage_order)
     return tlz.pipe(ims, curried.partition(nchannels),
-                         curried.map(reorder(channel_order)),
-                         curried.map(np.dstack),
+                         curried.map(stack_channels(order=channel_order)),
                          curried.partition(ntiles),
                          curried.map(montage_))
