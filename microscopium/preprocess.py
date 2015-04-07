@@ -13,9 +13,7 @@ import skimage.filters.rank as rank
 import skimage
 import cytoolz as tlz
 from cytoolz import curried
-from six.moves import map
-from six.moves import range
-from six.moves import zip
+from six.moves import map, range, zip, filter
 
 from ._util import normalise_random_state
 from . import io as mio
