@@ -791,30 +791,25 @@ def montage_stream(ims, montage_order=None, channel_order=[0, 1, 2]):
     Suppose the input is a list:
 
     ```
-    ims = [green1, blue1, red1, green2, blue2, red2]
+    ims = [green1a, blue1a, red1a, green1b, blue1b, red1b,
+           green2a, blue2a, red2a, green2b, blue2b, red2b]
     ```
 
-    with channel order:
+    with channel order ``[2, 0, 1]`` and montage order ``[1, 0]``, then
+    the output will be:
 
     ```
-    channel_order = [2, 0, 1]
+    [rgb1_ba, rgb2_ba]
     ```
-
-    Then the output will be:
-
-    ```
-    [rgb1, rgb2]
-    ```
-
-    (The order of channels in the list is arbitrary; the default is
-    based on the data for which this software was created.)
 
     Parameters
     ----------
     ims : iterator of array, shape (M, N)
         A list of images in which consecutive images represent single
         channels of the same image. (See example.)
-    order : list of int, optional
+    montage_order : array-like of int, optional
+        The order of the montage images (in 1D or 2D).
+    channel_order : list of int, optional
         The order in which the channels appear.
 
     Returns
