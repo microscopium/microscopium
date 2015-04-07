@@ -744,7 +744,7 @@ def montage(ims, order=None):
     if order is None:
         from .screens import cellomics
         order = cellomics.SPIRAL_CLOCKWISE_RIGHT_25
-    order = np.array(order)
+    order = np.atleast_2d(order)
 
     # in case stream is passed, take one sip at a time ;)
     ims = list(ims)
