@@ -747,7 +747,7 @@ def montage(ims, order=None):
     order = np.atleast_2d(order)
 
     # in case stream is passed, take one sip at a time ;)
-    ims = list(ims)
+    ims = list(tlz.take(order.size, ims))
     rows, cols = ims[0].shape[:2]
     mrows, mcols = order.shape
 
