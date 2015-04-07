@@ -748,7 +748,7 @@ def montage(ims, order=None):
     >>> order = [1, 0]
     >>> montage(ims, order)
     array([[2, 2, 0, 0],
-           [2, 2, 0, 0]], uint8)
+           [2, 2, 0, 0]], dtype=uint8)
     """
     if order is None:
         from .screens import cellomics
