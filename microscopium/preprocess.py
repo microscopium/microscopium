@@ -740,6 +740,15 @@ def montage(ims, order=None):
     -------
     montaged : array, shape (M * P, N * Q[, 3])
         The stitched image.
+
+    Examples
+    --------
+    >>> ims = [np.zeros((2, 2), dtype=np.uint8),
+    ...        2 * np.ones((2, 2), dtype=np.uint8)]
+    >>> order = [1, 0]
+    >>> montage(ims, order)
+    array([[2, 2, 0, 0],
+           [2, 2, 0, 0]], uint8)
     """
     if order is None:
         from .screens import cellomics
