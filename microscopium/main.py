@@ -96,6 +96,11 @@ montage.add_argument('-O', '--channel-order', type=ast.literal_eval,
                      default=[0, 1, 2],
                      help='The position of red, green, and blue channels '
                           'in the stream.')
+montage.add_argument('-s', '--suffix', default='.montage.tif',
+                     help='The suffix for saved images after conversion.')
+montage.add_argument('-d', '--output-dir', default=None,
+                     help='The output directory for the images. Defaults to '
+                          'the input directory.')
 
 
 features = subpar.add_parser('features',
@@ -210,9 +215,13 @@ def run_montage(args):
                                  channel_order=args.channel_order)
     def out_fn(fn):
         sem = cellomics.cellomics_semantic_filename(fn)
-        out = '_'.join([str(sem[k])
-                        for k in sem
-                        if k not in ['field', 'channel', 'suffix']]) + '.tif'
+        out_fn = '_'.join([str(sem[k])
+                           for k in sem
+                           if k not in ['field', 'channel', 'suffix']
+                           and sem[k] != ''])
+        outdir = (args.output_dir if args.output_dir is not None
+                  else sem['directory'])
+        out = os.path.join(outdir, out_fn) + args.suffix
         return out
     step = np.array(args.montage_order).size * len(args.channel_order)
     out_fns = [out_fn(fn) for fn in args.images[::step]]
