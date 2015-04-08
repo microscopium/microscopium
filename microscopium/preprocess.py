@@ -840,6 +840,8 @@ def stack_channels(images, order=[0, 1, 2]):
     # stack images with np.dstack, but if only a single channel is passed,
     # don't add an extra dimension
     stack_image = np.squeeze(np.dstack(ordered_ims))
+    while ordered_ims:
+        del ordered_ims[-1]
     return stack_image
 
 
