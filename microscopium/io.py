@@ -1,8 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
-import numpy as np
 import six
-from six.moves import range
 from skimage import io
 try:
     import imageio as iio
