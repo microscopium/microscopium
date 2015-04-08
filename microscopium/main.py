@@ -224,7 +224,7 @@ def run_montage(args):
         out = os.path.join(outdir, out_fn) + args.suffix
         return out
     step = np.array(args.montage_order).size * len(args.channel_order)
-    out_fns = [out_fn(fn) for fn in args.images[::step]]
+    out_fns = (out_fn(fn) for fn in args.images[::step])
     for im, fn in zip(ims_out, out_fns):
         try:
             mio.imsave(fn, im, compress=args.compress)
