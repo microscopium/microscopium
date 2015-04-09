@@ -1,8 +1,8 @@
 import os
 import numpy as np
-from skimage import io
 from collections import OrderedDict
 from microscopium.screens import cellomics
+from microscopium import io as mio
 import pytest
 import tempfile
 
@@ -16,7 +16,7 @@ def image_files(num_files):
             file_prefix = '%02d' % (i,) + '_'  # filenames must be sortable
             f, fn = tempfile.mkstemp(prefix=file_prefix, suffix='.png')
             files.append(fn)
-            io.imsave(fn, image)
+            mio.imsave(fn, image)
 
         def cleanup():
             for fn in files:

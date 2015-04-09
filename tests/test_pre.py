@@ -2,8 +2,8 @@ from __future__ import absolute_import, division
 import os
 import tempfile
 import numpy as np
-from skimage import io
 from microscopium import preprocess as pre
+from microscopium import io as mio
 import pytest
 
 
@@ -30,7 +30,7 @@ def image_files(request):
     for im in [i, j, k]:
         f, fn = tempfile.mkstemp(suffix='.png')
         files.append(fn)
-        io.imsave(fn, im)
+        mio.imsave(fn, im)
 
     def cleanup():
         for fn in files:
@@ -89,7 +89,7 @@ def image_files_noise(request):
     for im in [i, j, k]:
         f, fn = tempfile.mkstemp(suffix='.png')
         files.append(fn)
-        io.imsave(fn, im)
+        mio.imsave(fn, im)
 
     def cleanup():
         for fn in files:

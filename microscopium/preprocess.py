@@ -12,11 +12,11 @@ from skimage import morphology as skmorph, filters as imfilter, exposure
 import skimage.filters.rank as rank
 import skimage
 import cytoolz as tlz
-from six.moves import map
-from six.moves import range
-from six.moves import zip
+from cytoolz import curried
+from six.moves import map, range, zip, filter
 
 from ._util import normalise_random_state
+from . import io as mio
 
 
 def morphop(im, operation='open', radius='5'):
@@ -114,7 +114,7 @@ def max_mask_iter(fns, offset=0, close_radius=0, erode_radius=0):
 
 
 def write_max_masks(fns, offset=0, close_radius=0, erode_radius=0,
-                    suffix='.mask.tif'):
+                    suffix='.mask.tif', compress=1):
     """Find a mask for images having a brightness artifact.
 
     This function iterates over a set of images and finds the maximum
@@ -135,6 +135,9 @@ def write_max_masks(fns, offset=0, close_radius=0, erode_radius=0,
         of this radius.
     suffix : string, optional
         Save an image next to the original, with this suffix.
+    compress : int in [0, 9], optional
+        Compression level for saved images. 0 = no compression,
+        1 = fast compression, 9 = maximum compression, slowest.
 
     Returns
     -------
@@ -150,7 +153,7 @@ def write_max_masks(fns, offset=0, close_radius=0, erode_radius=0,
         m += 1
         if not mask.all():
             # we multiply by 255 to make the image easy to look at
-            io.imsave(outfn, mask.astype(np.uint8) * 255)
+            mio.imsave(outfn, mask.astype(np.uint8) * 255, compress=compress)
             n += 1
     return n, m
 
@@ -212,7 +215,7 @@ def stretchlim(im, bottom=0.001, top=None, mask=None, in_place=False):
 
 
 def run_quadrant_stitch(fns, re_string='(.*)_(s[1-4])_(w[1-3]).*',
-                        re_quadrant_group=1):
+                        re_quadrant_group=1, compress=1):
     """Read images, stitched them, and write out to same directory.
 
     Parameters
@@ -223,6 +226,9 @@ def run_quadrant_stitch(fns, re_string='(.*)_(s[1-4])_(w[1-3]).*',
         The regular expression to match the filename.
     re_quadrant_group : int, optional
         The group from the re.match object that will contain quadrant info.
+    compress : int in [0, 9], optional
+        Compression level for saved images. 0 = no compression,
+        1 = fast compression, 9 = maximum compression, slowest.
 
     Returns
     -------
@@ -235,7 +241,7 @@ def run_quadrant_stitch(fns, re_string='(.*)_(s[1-4])_(w[1-3]).*',
         new_filename = '_'.join(fn_pattern) + '_stitched.tif'
         ims = list(map(io.imread, sorted(fns)))
         im = quadrant_stitch(*ims)
-        io.imsave(new_filename, im)
+        mio.imsave(new_filename, im, compress=compress)
         fns_out.append(new_filename)
     return fns_out
 
@@ -624,8 +630,9 @@ def correct_multiimage_illumination(im_fns, illum, stretch_quantile=0,
     ims_pass2 = map(io.imread, im_fns)
     for im in ims_pass2:
         corrected = im / illum
-        out = exposure.rescale_intensity(corrected, in_range=corr_range,
-                                         out_range=np.uint8)
+        rescaled = exposure.rescale_intensity(corrected, in_range=corr_range,
+                                              out_range=np.uint8)
+        out = np.round(rescaled, out=np.empty(rescaled.shape, np.uint8))
         yield out
 
 
@@ -670,7 +677,6 @@ def _reservoir_sampled_image(ims_iter, random_state=None):
     return sampled
 
 
-
 def correct_image_illumination(im, illum, stretch_quantile=0, mask=None):
     """Divide input image pointwise by the illumination field.
 
@@ -704,3 +710,196 @@ def correct_image_illumination(im, illum, stretch_quantile=0, mask=None):
     imc = stretchlim(imc, lim, 1-lim, mask)
     return imc
 
+
+def montage(ims, order=None):
+    """Stitch together a list of images according to a specified pattern.
+
+    The order pattern should be an array of integers where each element
+    corresponds to the index of the image in the fns list.
+
+    eg if order = [[20, 21, 22, 23, 24],
+                   [19,  6,  7,  8,  9],
+                   [18,  5,  0,  1, 10],
+                   [17,  4,  3,  2, 11],
+                   [16, 15, 14, 13, 12]]
+
+    This order will stitch together 25 images in a clockwise spiral pattern.
+
+    Parameters
+    ----------
+    ims : iterable of array, shape (M, N[, 3])
+        The list of the image files to be stitched together. If None,
+        this parameter defaults to the order given above.
+    order : array-like of int, shape (P, Q)
+        The order of the stitching, with each entry referring
+        to the index of file in the fns array.
+
+    Returns
+    -------
+    montaged : array, shape (M * P, N * Q[, 3])
+        The stitched image.
+
+    Examples
+    --------
+    >>> ims = [np.zeros((2, 2), dtype=np.uint8),
+    ...        2 * np.ones((2, 2), dtype=np.uint8)]
+    >>> order = [1, 0]
+    >>> montage(ims, order)
+    array([[2, 2, 0, 0],
+           [2, 2, 0, 0]], dtype=uint8)
+    """
+    if order is None:
+        from .screens import cellomics
+        order = cellomics.SPIRAL_CLOCKWISE_RIGHT_25
+    order = np.atleast_2d(order)
+
+    # in case stream is passed, take one sip at a time ;)
+    ims = list(tlz.take(order.size, ims))
+    rows, cols = ims[0].shape[:2]
+    mrows, mcols = order.shape
+
+    montaged = np.zeros((rows * mrows, cols * mcols) + ims[0].shape[2:],
+                        dtype=ims[0].dtype)
+    for i in range(mrows):
+        for j in range(mcols):
+            montaged[rows*i:rows*(i+1), cols*j:cols*(j+1)] = ims[order[i, j]]
+    return montaged
+
+
+@tlz.curry
+def reorder(index_list, list_to_reorder):
+    """Curried function to reorder a list according to input indices.
+
+    Parameters
+    ----------
+    index_list : list of int
+        The list of indices indicating where to put each element in the
+        input list.
+    list_to_reorder : list
+        The list being reordered.
+
+    Returns
+    -------
+    reordered_list : list
+        The reordered list.
+
+    Examples
+    --------
+    >>> list1 = ['foo', 'bar', 'baz']
+    >>> reorder([2, 0, 1], list1)
+    ['baz', 'foo', 'bar']
+    """
+    return [list_to_reorder[j] for j in index_list]
+
+
+@tlz.curry
+def stack_channels(images, order=[0, 1, 2]):
+    """Stack multiple image files to one single, multi-channel image.
+
+    Parameters
+    ----------
+    images : list of array, shape (M, N)
+        The images to be concatenated. List should contain
+        three images. Entries 'None' are considered to be dummy
+        channels
+    channel_order : list of int, optional
+        The order the channels should be in in the final image.
+
+    Returns
+    -------
+    stack_image : array, shape (M, N, 3)
+        The concatenated, three channel image.
+
+    Examples
+    --------
+    >>> image1 = np.ones((2, 2), dtype=int) * 1
+    >>> image2 = np.ones((2, 2), dtype=int) * 2
+    >>> joined = stack_channels((None, image1, image2))
+    >>> joined.shape
+    (2, 2, 3)
+    >>> joined[0, 0]
+    array([0, 1, 2])
+    >>> joined = stack_channels((image1, image2), order=[None, 0, 1])
+    >>> joined.shape
+    (2, 2, 3)
+    >>> joined[0, 0]
+    array([0, 1, 2])
+    """
+    # ensure we support iterators
+    images = list(tlz.take(len(order), images))
+
+    # ensure we grab an image and not `None`
+    def is_array(obj): return isinstance(obj, np.ndarray)
+    image_prototype = next(filter(is_array, images))
+
+    # A `None` in `order` implies no image at that position
+    ordered_ims = [images[i] if i is not None else None for i in order]
+    ordered_ims = [np.zeros_like(image_prototype) if image is None else image
+                   for image in ordered_ims]
+
+    # stack images with np.dstack, but if only a single channel is passed,
+    # don't add an extra dimension
+    stack_image = np.squeeze(np.dstack(ordered_ims))
+    while ordered_ims:
+        del ordered_ims[-1]
+    return stack_image
+
+
+def montage_stream(ims, montage_order=None, channel_order=[0, 1, 2]):
+    """From a sequence of single-channel field images, montage multichannels.
+
+    Suppose the input is a list:
+
+    ```
+    ims = [green1a, blue1a, red1a, green1b, blue1b, red1b,
+           green2a, blue2a, red2a, green2b, blue2b, red2b]
+    ```
+
+    with channel order ``[2, 0, 1]`` and montage order ``[1, 0]``, then
+    the output will be:
+
+    ```
+    [rgb1_ba, rgb2_ba]
+    ```
+
+    Parameters
+    ----------
+    ims : iterator of array, shape (M, N)
+        A list of images in which consecutive images represent single
+        channels of the same image. (See example.)
+    montage_order : array-like of int, optional
+        The order of the montage images (in 1D or 2D).
+    channel_order : list of int, optional
+        The order in which the channels appear.
+
+    Returns
+    -------
+    montaged_stream : iterator of arrays
+        An iterator of the images composed into multi-channel montages.
+
+    Examples
+    --------
+    >>> images = (i * np.ones((4, 5), dtype=np.uint8) for i in range(24))
+    >>> montaged = list(montage_stream(images, [[0, 1], [2, 3]], [2, 0, 1]))
+    >>> len(montaged)
+    2
+    >>> montaged[0].shape
+    (8, 10, 3)
+    >>> montaged[0][0, 0, :]
+    array([2, 0, 1], dtype=uint8)
+    >>> montaged[0][4, 5, :]
+    array([11,  9, 10], dtype=uint8)
+    >>> montaged[1][4, 5, :]
+    array([23, 21, 22], dtype=uint8)
+    """
+    if montage_order is None:
+        from .screens import cellomics
+        montage_order = cellomics.SPIRAL_CLOCKWISE_RIGHT_25
+    montage_order = np.array(montage_order)
+    ntiles = montage_order.size
+    nchannels = len(channel_order)
+    montage_ = fun.partial(montage, order=montage_order)
+    return tlz.pipe(ims, curried.partition(nchannels),
+                         curried.map(stack_channels(order=channel_order)),
+                         curried.partition(ntiles),
+                         curried.map(montage_))

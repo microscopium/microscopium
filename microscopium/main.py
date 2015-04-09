@@ -5,6 +5,7 @@ from __future__ import absolute_import, division, print_function
 import os
 import sys
 import argparse
+import ast
 
 # dependencies
 import numpy as np
@@ -12,8 +13,9 @@ import pandas as pd
 from skimage import io, img_as_ubyte
 
 # local imports
-from . import io as hio
+from . import io as mio
 from . import screens
+from .screens import cellomics
 from . import preprocess as pre
 from six.moves import map, zip
 
@@ -31,6 +33,9 @@ crop.add_argument('-o', '--output-suffix',
                   help="What suffix to attach to the cropped images.")
 crop.add_argument('-O', '--output-dir',
                   help="Directory in which to output the cropped images.")
+crop.add_argument('-c', '--compress', metavar='INT', type=int, default=1,
+                  help='Use TIFF compression in the range 0 (no compression) '
+                       'to 9 (max compression, slowest) (default 1).')
 
 
 mask = subpar.add_parser('mask', help="Estimate a mask over image artifacts.")
@@ -66,6 +71,9 @@ illum.add_argument('-r', '--radius', metavar='INT', type=int, default=51,
                    help='Radius in which to find quantile.')
 illum.add_argument('-s', '--save-illumination', metavar='FN',
                    help='Save the illumination field to a file.')
+illum.add_argument('-c', '--compress', metavar='INT', type=int, default=1,
+                   help='Use TIFF compression in the range 0 (no compression) '
+                        'to 9 (max compression, slowest) (default 1).')
 illum.add_argument('-v', '--verbose', action='store_true',
                    help='Print runtime information to stdout.')
 illum.add_argument('--method', metavar='STR', default='median',
@@ -73,16 +81,26 @@ illum.add_argument('--method', metavar='STR', default='median',
                         'field. options: median (default), mean.')
 
 
-stitch = subpar.add_parser('stitch', 
-                            help="Stitch images by quadrant.")
-stitch.add_argument('images', nargs='*', metavar='IM',
-                    help="The input images.")
-
-
-cat = subpar.add_parser('cat',
-                        help="Glue the different image channels together.")
-cat.add_argument('images', nargs='*', metavar='IM',
-                 help="The input images.")
+montage = subpar.add_parser('montage',
+                            help='Montage and channel stack images.')
+montage.add_argument('images', nargs='*', metavar='IM',
+                     help="The input images.")
+montage.add_argument('-c', '--compress', metavar='INT', type=int, default=1,
+                     help='Use TIFF compression in the range 0 '
+                          '(no compression) '
+                          'to 9 (max compression, slowest) (default 1).')
+montage.add_argument('-o', '--montage-order', type=ast.literal_eval,
+                     default=cellomics.SPIRAL_CLOCKWISE_RIGHT_25,
+                     help='The shape of the final montage.')
+montage.add_argument('-O', '--channel-order', type=ast.literal_eval,
+                     default=[0, 1, 2],
+                     help='The position of red, green, and blue channels '
+                          'in the stream.')
+montage.add_argument('-s', '--suffix', default='.montage.tif',
+                     help='The suffix for saved images after conversion.')
+montage.add_argument('-d', '--output-dir', default=None,
+                     help='The output directory for the images. Defaults to '
+                          'the input directory.')
 
 
 features = subpar.add_parser('features',
@@ -123,10 +141,8 @@ def main():
         run_mask(args)
     elif cmd == 'illum':
         run_illum(args)
-    elif cmd == 'stitch':
-        run_stitch(args)
-    elif cmd == 'cat':
-        run_cat(args)
+    elif cmd == 'montage':
+        run_montage(args)
     elif cmd == 'features':
         run_features(args)
     else:
@@ -151,7 +167,7 @@ def run_crop(args):
         fnout = os.path.splitext(imfn)[0] + args.output_suffix
         if args.output_dir is not None:
             fnout = os.path.join(args.output_dir, os.path.split(fnout)[1])
-        io.imsave(fnout, imout)
+        mio.imsave(fnout, imout, compress=args.compress)
 
 
 def run_mask(args):
@@ -177,28 +193,17 @@ def run_illum(args):
     if args.verbose:
         print('illumination field:', type(il), il.dtype, il.min(), il.max())
     if args.save_illumination is not None:
-        io.imsave(args.save_illumination, il / il.max())
+        mio.imsave(args.save_illumination, il / il.max())
     base_fns = [pre.basefn(fn) for fn in args.images]
     ims_out = [fn + args.output_suffix for fn in base_fns]
     corrected = pre.correct_multiimage_illumination(args.images, il,
                                                     args.stretchlim_output)
     for im, fout in zip(corrected, ims_out):
-        io.imsave(fout, im)
+        mio.imsave(fout, im, compress=args.compress)
 
 
-def run_stitch(args):
-    """Run stitching.
-
-    Parameters
-    ----------
-    args : argparse.Namespace
-        The arguments parsed by the argparse library.
-    """
-    pre.run_quadrant_stitch(args.images)
-
-
-def run_cat(args):
-    """Run channel concatenation.
+def run_montage(args):
+    """Run montaging and channel concatenation.
 
     Parameters
     ----------
@@ -206,14 +211,26 @@ def run_cat(args):
         The arguments parsed by the argparse library.
     """
     ims = map(io.imread, args.images)
-    ims_out = hio.cat_channels(ims)
-    out_fns = [os.path.splitext(fn)[0] + '.chs.tif' for fn in args.images[::3]]
+    ims_out = pre.montage_stream(ims, montage_order=args.montage_order,
+                                 channel_order=args.channel_order)
+    def out_fn(fn):
+        sem = cellomics.cellomics_semantic_filename(fn)
+        out_fn = '_'.join([str(sem[k])
+                           for k in sem
+                           if k not in ['field', 'channel', 'suffix']
+                           and sem[k] != ''])
+        outdir = (args.output_dir if args.output_dir is not None
+                  else sem['directory'])
+        out = os.path.join(outdir, out_fn) + args.suffix
+        return out
+    step = np.array(args.montage_order).size * len(args.channel_order)
+    out_fns = (out_fn(fn) for fn in args.images[::step])
     for im, fn in zip(ims_out, out_fns):
         try:
-            io.imsave(fn, im)
+            mio.imsave(fn, im, compress=args.compress)
         except ValueError:
-            im = img_as_ubyte(pre.stretchlim(im, 0.05, 0.95))
-            io.imsave(fn, im)
+            im = img_as_ubyte(pre.stretchlim(im, 0.001, 0.999))
+            mio.imsave(fn, im, compress=args.compress)
 
 
 def run_features(args):

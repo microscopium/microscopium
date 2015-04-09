@@ -9,7 +9,7 @@ import collections as coll
 
 import numpy as np
 from scipy import ndimage as nd
-from skimage.filter import threshold_otsu, threshold_adaptive
+from skimage.filters import threshold_otsu, threshold_adaptive
 
 from .. import features
 from six.moves import map

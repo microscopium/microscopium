@@ -1,101 +1,45 @@
 from __future__ import absolute_import
 from __future__ import print_function
-import os
-import numpy as np
-from PIL import Image
-from six.moves import range
+import six
+from skimage import io
+try:
+    import imageio as iio
+except ImportError:
+    iio = io
 
 
-def imwrite(ar, fn, bitdepth=None):
-    """Write a np.ndarray 2D volume to a .png or .tif image
+imread = io.imread
+
+
+def imsave(fn, im, **kwargs):
+    """Wrapper around various libraries that haven't got their act together.
+
+    For TIFF, uses scikit-image's wrapper around tifffile.py. For other
+    formats, uses imageio.
 
     Parameters
     ----------
-    ar : numpy ndarray, shape (M, N)
-        The volume to be written to disk.
     fn : string
-        The file name to which to write the volume.
-    bitdepth : {8, 16, 32}, optional
-        The bits per pixel.
-
-    Returns
-    -------
-    None : None
-        No value is returned.
+        The filename to save to.
+    im : array, shape (M, N[, 3])
+        The image to save.
+    kwargs : dict, optional
+        Keyword arguments to the save function. Format dependent. For example,
+        JPEG images take a ``quality`` (int) argument in [1, 95], while
+        TIFF images take a ``compress`` (int) argument in [0, 9].
 
     Notes
     -----
-    The syntax `imwrite(fn, ar)` is also supported.
+    The ``fn`` and ``im`` arguments can be swapped -- the function will
+    determine which to use by testing for string types.
     """
-    if type(fn) == np.ndarray and type(ar) == str:
-        ar, fn = fn, ar
-    fn = os.path.expanduser(fn)
-    if 0 <= ar.max() <= 1 and ar.dtype == np.double:
-        bitdepth = 16 if bitdepth is None else bitdepth
-        imdtype = np.uint16 if bitdepth == 16 else np.uint8
-        ar = ((2**bitdepth-1)*ar).astype(imdtype)
-    if 1 < ar.max() < 256 and (bitdepth == None or bitdepth == 8):
-        mode = 'L'
-        mode_base = 'L'
-        ar = ar.astype(np.uint8)
-    elif 256 <= np.max(ar) < 2**16 and (bitdepth == None or \
-                                                bitdepth == 16):
-        mode = 'I;16'
-        mode_base = 'I'
-        ar = ar.astype(np.uint16)
+    if isinstance(im, six.string_types):
+        fn, im = im, fn
+    if fn.endswith('.tif'):
+        io.imsave(fn, im, plugin='tifffile', **kwargs)
     else:
-        mode = 'RGBA'
-        mode_base = 'RGBA'
-        ar = ar.astype(np.uint32)
-    im = Image.new(mode_base, ar.T.shape)
-    im.fromstring(ar.tostring(), 'raw', mode)
-    im.save(fn)
+        iio.imsave(fn, im, **kwargs)
 
+imwrite = imsave
 
-imsave = imwrite
-
-
-def cat_channels(ims, order=[2, 0, 1]):
-    """From a sequence of single-channel images, produce multichannels.
-
-    Suppose the input is a list:
-
-    ```
-    ims = [green1, blue1, red1, green2, blue2, red2]
-    ```
-
-    Then the output will be:
-
-    ```
-    [rgb1, rgb2]
-    ```
-
-    (The order of channels in the list is arbitrary; the default is
-    based on the data for which this software was created.)
-
-    Parameters
-    ----------
-    ims : list of arrays
-        A list of images in which consecutive images represent single
-        channels of the same image. (See example.)
-    order : list of int, optional
-        The order in which the channels appear.
-
-    Returns
-    -------
-    multi : iterator of arrays
-        A list of the images composed into multi-channel images.
-    """
-    nchannels = len(order)
-    while True:
-        channels = [next(ims) for i in range(nchannels)]
-        print(len(channels))
-        print([(c.min(), c.max()) for c in channels])
-        try:
-            channels_sorted = [channels[j] for j in order]
-        except IndexError:
-            raise StopIteration()
-        channel_im = np.concatenate([c[..., np.newaxis] for
-                                     c in channels_sorted], axis=-1)
-        yield channel_im
 
