@@ -7,6 +7,7 @@ from skimage import morphology as skmorph
 from skimage import filters as imfilter, measure, util
 from sklearn.neighbors import NearestNeighbors
 from six.moves import range
+import cytoolz as tz
 
 
 def normalize_vectors(v):
@@ -275,3 +276,39 @@ def nuclei_per_cell_histogram(nuc_im, cell_im, max_value=10):
     fs /= total
     return fs, names
 
+
+@tz.curry
+def default_feature_map(image, channels=[0, 1, 2], channel_names=None,
+                        sample_size=None):
+    """Compute a feature vector from a multi-channel image.
+
+    Parameters
+    ----------
+    image : array, shape (M, N, 3)
+        The input image.
+    channels : list of int, optional
+        Which channels to use for feature computation
+    channel_names : list of string, optional
+        The channel names corresponding to ``channels``.
+    sample_size : int, optional
+        For features based on quantiles, sample this many objects
+        rather than computing full distribution. This can considerably
+        speed up computation with little cost to feature accuracy.
+
+    Returns
+    -------
+    fs : 1D array of float
+        The features of the image.
+    names : list of string
+        The feature names.
+    """
+    all_fs, all_names = [], []
+    images = [np.array(image[..., i]) for i in channels]
+    if channel_names is None:
+        channel_names = ['chan{}'.format(i) for i in channels]
+    for im, prefix in zip(images, channel_names):
+        fs, names = intensity_object_features(im, sample_size=sample_size)
+        names = [prefix + '-' + name for name in names]
+        all_fs.append(fs)
+        all_names.extend(names)
+    return np.concatenate(all_fs), all_names
