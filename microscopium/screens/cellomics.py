@@ -10,6 +10,7 @@ from cytoolz import groupby
 from ..preprocess import stack_channels
 from .. import preprocess as pre
 from .. import io as mio
+from .. import features as feat
 from six.moves import range
 from six.moves import zip
 import re
@@ -212,16 +213,17 @@ def cellomics_semantic_filename(fn):
     keys = ['directory', 'prefix', 'plate', 'well', 'field', 'channel', 'suffix']
 
     directory, fn = os.path.split(fn)
-    fn, suffix = fn.rsplit('.', 1)
+    fn, suffix = fn.split('.', 1)
 
     # strip _stitch tag
     fn = re.sub(r'_stitch', '', fn)
 
-    fn_regex = re.search(r'(\w+)_(\w+)_([A-P]\d+)f(\d+)d(\d+)', fn)
+    fn_regex = re.search(r'(\w+)_(\w+)_([A-P]\d+)f?(\d+)?d?(\d+)?', fn)
     prefix, plate, well, field, channel = map(lambda x:
                                               fn_regex.group(x), range(1, 6))
-
-    values = [directory, prefix, int(plate), well, int(field), int(channel), suffix]
+    def int_or_none(n): return int(n) if n is not None else None
+    values = [directory, prefix, int(plate), well,
+              int_or_none(field), int_or_none(channel), suffix]
     semantic = coll.OrderedDict(list(zip(keys, values)))
 
     return semantic
@@ -271,6 +273,9 @@ def dir2plate(path):
     basedir = os.path.split(path)[1]
     plateid = int(basedir.split('_')[1])
     return plateid
+
+
+feature_map = feat.default_feature_map
 
 
 if __name__ == '__main__':
