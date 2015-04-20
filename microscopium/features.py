@@ -12,6 +12,8 @@ from six.moves import range
 def normalize_vectors(v):
     """Interpret a matrix as a row of vectors, and divide each by its norm.
 
+    0-vectors are left changed.
+
     Parameters
     ----------
     v : array of float, shape (M, N)
@@ -21,10 +23,18 @@ def normalize_vectors(v):
     -------
     v1 : array of float, shape (M, N)
         The vectors divided by their norm.
+
+    Examples
+    --------
+    >>> vs = np.array([[2., 0.], [0., 4.], [0., 0.]])
+    >>> normalize_vectors(vs)
+    array([[ 1.,  0.],
+           [ 0.,  1.],
+           [ 0.,  0.]])
     """
     v_norm = np.sqrt((v ** 2).sum(axis=1))
+    v_norm[v_norm == 0] = 1.  # ignore 0-vectors for division
     v1 = v / v_norm[..., np.newaxis]
-    v1[np.isnan(v1)] = 0
     return v1
 
 
