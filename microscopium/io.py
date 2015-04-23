@@ -1,5 +1,9 @@
 from __future__ import absolute_import
 from __future__ import print_function
+import os
+import h5py
+from contextlib import contextmanager
+from tempfile import NamedTemporaryFile
 import six
 from skimage import io
 try:
@@ -43,3 +47,65 @@ def imsave(fn, im, **kwargs):
 imwrite = imsave
 
 
+@contextmanager
+def temporary_file(suffix='', directory=None):
+    """Yield a writeable temporary filename that is deleted on context exit.
+
+    Parameters
+    ----------
+    suffix : string, optional
+        Ensure the filename ends with this suffix. Useful to specify
+        file extensions. (You must include the '.' yourself.)
+    directory : string, optional
+        Location in the filesystem in which to write the temporary file.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from skimage import io
+    >>> with temporary_file('.tif') as tempfile:
+    ...     im = np.zeros((5, 5), np.uint8)
+    ...     io.imsave(tempfile, im)
+    ...     assert np.all(io.imread(tempfile) == im)
+    ...     name = tempfile
+    >>> import os
+    >>> assert not os.path.isfile(name)
+    """
+    tempfile_stream = NamedTemporaryFile(suffix=suffix, dir=directory,
+                                         delete=False)
+    tempfile = tempfile_stream.name
+    tempfile_stream.close()
+    yield tempfile
+    os.remove(tempfile)
+
+
+@contextmanager
+def temporary_hdf5_dataset(shape, dtype, chunks=None, directory=None):
+    """Yield a temporary HDF5 dataset for on-disk array storage.
+
+    Parameters
+    ----------
+    shape : tuple of int
+        The shape of the dataset.
+    dtype : string
+        Specification of data type. Must correspond to a numpy data
+        type.
+    chunks : tuple of int or True, optional
+        The chunk size for storing the dataset.
+    directory : string, optional
+        The directory for the file containing the dataset.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> shape = (4, 5)
+    >>> ar = np.random.rand(*shape)
+    >>> with temporary_hdf5_dataset(shape, 'float32') as dset:
+    ...     dset[:] = ar
+    ...     np.testing.assert_allclose(dset, ar)
+    """
+    with temporary_file('.hdf5', directory) as hdf5_filename:
+        f = h5py.File(hdf5_filename)
+        dset = f.create_dataset('temp', shape, dtype, chunks=chunks)
+        yield dset
+        f.close()  # no need to delete the dataset, file will be deleted.
