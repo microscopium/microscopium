@@ -6,17 +6,21 @@ import os
 import sys
 import argparse
 import ast
+import itertools
+import json
 
 # dependencies
 import numpy as np
-import pandas as pd
 from skimage import io, img_as_ubyte
+import toolz as tz
 
 # local imports
 from . import io as mio
 from . import screens
 from .screens import cellomics
 from . import preprocess as pre
+from . import cluster
+from .io import temporary_hdf5_dataset
 from six.moves import map, zip
 
 
@@ -233,13 +237,22 @@ def run_features(args):
     screen_info = screens.d[args.screen]
     index_function, fmap = screen_info['index'], screen_info['fmap']
     f0, feature_names = fmap(next(images))
-    feature_vectors = [f0] + [fmap(im)[0] for im in images]
-    data = pd.DataFrame(np.vstack(feature_vectors),
-                        index=list(map(index_function, args.images)),
-                        columns=feature_names)
-    data.to_hdf(args.output, key='data')
-    with open(args.output[:-2] + 'filenames.txt', 'w') as fout:
-        fout.writelines((fn + '\n' for fn in args.images))
+    feature_vectors = tz.cons(f0, (fmap(im)[0] for im in images))
+    online_scaler = cluster.OnlineStandardScaler()
+    nimages, nfeatures = len(args.images), len(f0)
+    with temporary_hdf5_dataset((nimages, nfeatures), 'float') as dset:
+        for i, (fn, v) in enumerate(zip(args.images, feature_vectors)):
+            out = json.dumps({'_id': index_function(fn),
+                              'feature_vector': list(v)})
+            sys.stdout.write(out + '\n')
+            dset[i] = v
+            online_scaler.add_sample(v)
+        scaler = online_scaler.standard_scaler()
+        for fn, v in zip(args.images, dset):
+            v_std = scaler.transform(v)
+            out = json.dumps({'_id': index_function(fn),
+                              'feature_vector_std': list(v_std)})
+            sys.stdout.write(out + '\n')
 
 
 if __name__ == '__main__':

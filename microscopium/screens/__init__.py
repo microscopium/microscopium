@@ -3,9 +3,9 @@ from . import myofusion, cellomics
 
 __all__ = ['myofusion', 'cellomics']
 
-d = {'myofusion': {'index': myofusion.filename2coord,
+d = {'myofusion': {'index': myofusion.filename2id,
                    'fmap':  myofusion.feature_map},
-     'cellomics': {'index': cellomics.filename2coord,
+     'cellomics': {'index': cellomics.filename2id,
                    'fmap':  cellomics.feature_map}
     }
 

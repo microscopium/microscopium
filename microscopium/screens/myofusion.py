@@ -137,6 +137,30 @@ def filename2coord(fn):
     return (sem['plate'], sem['well'])
 
 
+def filename2id(fn):
+    """Get a mongo ID, string representation of (plate, well), from filename.
+
+    Parameters
+    ----------
+    fn : string
+        Filename of a standard Cellomics screen image.
+
+    Returns
+    -------
+    id_ : string
+        The mongo ID.
+
+    Examples
+    --------
+    >>> fn = ('MYORES-p1-j01-110210_02490688_53caa10e-ac15-4166-9b9d-'
+    ...       '4b1167f3b9c6_C04_s1_w1.TIF')
+    >>> filename2id(fn)
+    '2490688-C04'
+    """
+    id_ = key2mongo(filename2coord(fn))
+    return id_
+
+
 def dir2plate(dirname):
     """Return a Plate ID from a directory name.
     

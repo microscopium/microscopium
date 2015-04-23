@@ -252,6 +252,30 @@ def filename2coord(fn):
     return (sem['plate'], sem['well'])
 
 
+def filename2id(fn):
+    """Get a mongo ID, string representation of (plate, well), from filename.
+
+    Parameters
+    ----------
+    fn : string
+        Filename of a standard Cellomics screen image.
+
+    Returns
+    -------
+    id_ : string
+        The mongo ID.
+
+    Examples
+    --------
+    >>> fn = 'MFGTMP_140206180002_A01f00d0.TIF'
+    >>> filename2id(fn)
+    '140206180002-A01'
+    """
+    from .myofusion import key2mongo
+    id_ = key2mongo(filename2coord(fn))
+    return id_
+
+
 def dir2plate(path):
     """Return a Plate ID from a directory name.
 
