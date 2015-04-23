@@ -252,6 +252,8 @@ def run_features(args):
                                               batch_size=args.pca_batch_size)
     nimages, nfeatures = len(args.images), len(f0)
     with temporary_hdf5_dataset((nimages, nfeatures), 'float') as dset:
+        # First pass: compute the features, compute the mean and SD,
+        # compute the PCA
         for i, (idx, v) in enumerate(zip(indices, feature_vectors)):
             out = json.dumps({'_id': idx,
                               'feature_vector': list(v)})
@@ -259,6 +261,7 @@ def run_features(args):
             dset[i] = v
             online_scaler.add_sample(v)
             online_pca.add_sample(v)
+        # Second pass: standardise the feature vectors, compute PCA-transform
         scaler = online_scaler.standard_scaler()
         for i, (idx, v) in enumerate(zip(indices, dset)):
             v_std = scaler.transform(v)
@@ -269,6 +272,8 @@ def run_features(args):
                               'pca_vector': list(v_pca)})
             sys.stdout.write(out + '\n')
             online_pca.transform(v)
+        # Third pass: Compute the nearest neighbors graph.
+        # THIS ANNOYINGLY INSTANTIATES FULL ARRAY; NEED TO USE NUMPY.MEMMAP
         ng = neighbors.kneighbors_graph(dset, args.num_neighbours,
                                         include_self=False, mode='distance')
         for idx, row in zip(indices, ng):
