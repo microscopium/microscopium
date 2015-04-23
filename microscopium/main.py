@@ -225,6 +225,11 @@ features.add_argument('-s', '--screen', default='cellomics',
                       help="The name of the screen being run. Feature maps "
                            "appropriate for the screen should be in the "
                            "'screens' package.")
+features.add_argument('-c', '--n-components', type=int, default=2,
+                      help='The number of components to compute for PCA.')
+features.add_argument('-b', '--pca-batch-size', type=int, default=384,
+                      help='The number of samples needed for each step of the '
+                           'incremental PCA.')
 def run_features(args):
     """Run image feature computation.
 
@@ -239,6 +244,8 @@ def run_features(args):
     f0, feature_names = fmap(next(images))
     feature_vectors = tz.cons(f0, (fmap(im)[0] for im in images))
     online_scaler = cluster.OnlineStandardScaler()
+    online_pca = cluster.OnlineIncrementalPCA(n_components=args.n_components,
+                                              batch_size=args.pca_batch_size)
     nimages, nfeatures = len(args.images), len(f0)
     with temporary_hdf5_dataset((nimages, nfeatures), 'float') as dset:
         for i, (fn, v) in enumerate(zip(args.images, feature_vectors)):
@@ -247,12 +254,16 @@ def run_features(args):
             sys.stdout.write(out + '\n')
             dset[i] = v
             online_scaler.add_sample(v)
+            online_pca.add_sample(v)
         scaler = online_scaler.standard_scaler()
         for fn, v in zip(args.images, dset):
             v_std = scaler.transform(v)
+            v_pca = online_pca.transform(v)
             out = json.dumps({'_id': index_function(fn),
-                              'feature_vector_std': list(v_std)})
+                              'feature_vector_std': list(v_std),
+                              'pca_vector': list(v_pca)})
             sys.stdout.write(out + '\n')
+            online_pca.transform(v)
 
 
 if __name__ == '__main__':
