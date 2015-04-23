@@ -4,6 +4,7 @@ from sklearn.cluster import DBSCAN, MiniBatchKMeans
 from sklearn.ensemble import RandomTreesEmbedding
 from sklearn.manifold import MDS
 from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import IncrementalPCA
 
 def rt_embedding(X, n_estimators=100, max_depth=10, n_jobs=-1):
     """Embed data matrix X in a random forest.
@@ -224,3 +225,61 @@ class OnlineStandardScaler(object):
         var[var <= 0] = 1  # ignore variables with zero variance
         s.std_ = np.sqrt(var)
         return s
+
+
+class OnlineIncrementalPCA(object):
+    """Object to stream over a dataset and perform incremental PCA.
+
+    Parameters
+    ----------
+    n_components : int, optional
+        The number of PCA components to keep.
+    whiten : bool, optional
+        Whether to whiten the input. A good idea when input scales
+        vary widely.
+    batch_size : int, optional
+        The batch_size to use for the computation. (Streamed elements
+        are accumulated until this batch size is reached.)
+    """
+    def __init__(self, n_components=None, whiten=True, batch_size=None):
+        self.ipca = IncrementalPCA(n_components=n_components, whiten=whiten,
+                                   copy=True, batch_size=batch_size)
+        self.current_batch = []
+        self.batch_size = batch_size
+
+    def add_sample(self, v):
+        """Add a new sample to the model being learned.
+
+        These samples are "stocked up" until the current stock matches
+        the IPCA batch size (set at creation time). If the total number
+        of samples doesn't divide cleanly into the batch size, the
+        remainder of the samples will not be fit. (But that should be
+        fine, really!)
+
+        Parameters
+        ----------
+        v : array of float
+            The sample to add to the fit.
+        """
+        self.current_batch.append(np.squeeze(v))
+        if len(self.current_batch) >= self.batch_size:
+            self.ipca.partial_fit(np.array(self.current_batch))
+            del self.current_batch
+            self.current_batch = []
+
+    def transform(self, v):
+        """Transform `v` from the full space to the decomposed space...
+
+        ... according to the current IPCA model.
+
+        Parameters
+        ----------
+        v : array of float
+            The vector to transform.
+
+        Returns
+        -------
+        comp : array of float
+            The vector in the IPCA's reduced/rotated space.
+        """
+        return np.squeeze(self.ipca.transform(np.atleast_2d(v)))
