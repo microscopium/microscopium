@@ -6,13 +6,13 @@ import os
 import sys
 import argparse
 import ast
-import itertools
 import json
 
 # dependencies
 import numpy as np
 from skimage import io, img_as_ubyte
 import toolz as tz
+from sklearn import neighbors
 
 # local imports
 from . import io as mio
@@ -230,6 +230,9 @@ features.add_argument('-c', '--n-components', type=int, default=2,
 features.add_argument('-b', '--pca-batch-size', type=int, default=384,
                       help='The number of samples needed for each step of the '
                            'incremental PCA.')
+features.add_argument('-n', '--num-neighbours', type=int, default=25,
+                      help='The number of nearest neighbours to output '
+                           'per sample.')
 def run_features(args):
     """Run image feature computation.
 
@@ -241,6 +244,7 @@ def run_features(args):
     images = map(io.imread, args.images)
     screen_info = screens.d[args.screen]
     index_function, fmap = screen_info['index'], screen_info['fmap']
+    indices = list(map(index_function, args.images))
     f0, feature_names = fmap(next(images))
     feature_vectors = tz.cons(f0, (fmap(im)[0] for im in images))
     online_scaler = cluster.OnlineStandardScaler()
@@ -248,22 +252,29 @@ def run_features(args):
                                               batch_size=args.pca_batch_size)
     nimages, nfeatures = len(args.images), len(f0)
     with temporary_hdf5_dataset((nimages, nfeatures), 'float') as dset:
-        for i, (fn, v) in enumerate(zip(args.images, feature_vectors)):
-            out = json.dumps({'_id': index_function(fn),
+        for i, (idx, v) in enumerate(zip(indices, feature_vectors)):
+            out = json.dumps({'_id': idx,
                               'feature_vector': list(v)})
             sys.stdout.write(out + '\n')
             dset[i] = v
             online_scaler.add_sample(v)
             online_pca.add_sample(v)
         scaler = online_scaler.standard_scaler()
-        for fn, v in zip(args.images, dset):
+        for i, (idx, v) in enumerate(zip(indices, dset)):
             v_std = scaler.transform(v)
             v_pca = online_pca.transform(v)
-            out = json.dumps({'_id': index_function(fn),
+            dset[i] = v_std
+            out = json.dumps({'_id': idx,
                               'feature_vector_std': list(v_std),
                               'pca_vector': list(v_pca)})
             sys.stdout.write(out + '\n')
             online_pca.transform(v)
+        ng = neighbors.kneighbors_graph(dset, args.num_neighbours,
+                                        include_self=False, mode='distance')
+        for idx, row in zip(indices, ng):
+            out = json.dumps({'_id': idx,
+                              'neighbours': [indices[i] for i in row.indices]})
+            sys.stdout.write(out + '\n')
 
 
 if __name__ == '__main__':
