@@ -24,7 +24,7 @@ from .io import temporary_hdf5_dataset
 from six.moves import map, zip
 
 
-parser = argparse.ArgumentParser(description="Run the HUSC functions.")
+parser = argparse.ArgumentParser(description="Run the microscopium functions.")
 subpar = parser.add_subparsers()
 
 
@@ -238,6 +238,8 @@ features.add_argument('-S', '--sample-size', type=int, default=None,
                            'sample this many objects.')
 features.add_argument('--random-seed', type=int, default=None,
                       help='Set random seed, for testing and debugging only.')
+features.add_argument('-e', '--emitter', default='json',
+                      help='Format to output features during computation.')
 def run_features(args):
     """Run image feature computation.
 
@@ -257,13 +259,12 @@ def run_features(args):
     online_pca = cluster.OnlineIncrementalPCA(n_components=args.n_components,
                                               batch_size=args.pca_batch_size)
     nimages, nfeatures = len(args.images), len(f0)
+    emit = mio.emitter_function(args.emitter)
     with temporary_hdf5_dataset((nimages, nfeatures), 'float') as dset:
         # First pass: compute the features, compute the mean and SD,
         # compute the PCA
         for i, (idx, v) in enumerate(zip(indices, feature_vectors)):
-            out = json.dumps({'_id': idx,
-                              'feature_vector': list(v)})
-            sys.stdout.write(out + '\n')
+            emit({'_id': idx, 'feature_vector': list(v)})
             dset[i] = v
             online_scaler.add_sample(v)
             online_pca.add_sample(v)
@@ -273,19 +274,16 @@ def run_features(args):
             v_std = scaler.transform(v)
             v_pca = online_pca.transform(v)
             dset[i] = v_std
-            out = json.dumps({'_id': idx,
-                              'feature_vector_std': list(v_std),
+            emit({'_id': idx, 'feature_vector_std': list(v_std),
                               'pca_vector': list(v_pca)})
-            sys.stdout.write(out + '\n')
             online_pca.transform(v)
         # Third pass: Compute the nearest neighbors graph.
-        # THIS ANNOYINGLY INSTANTIATES FULL ARRAY; NEED TO USE NUMPY.MEMMAP
+        # THIS ANNOYINGLY INSTANTIATES FULL ARRAY -- no out-of-core
+        # solution that I'm aware of...
         ng = neighbors.kneighbors_graph(dset, args.num_neighbours,
                                         include_self=False, mode='distance')
         for idx, row in zip(indices, ng):
-            out = json.dumps({'_id': idx,
-                              'neighbours': [indices[i] for i in row.indices]})
-            sys.stdout.write(out + '\n')
+            emit({'_id': idx, 'neighbours': [indices[i] for i in row.indices]})
 
 
 if __name__ == '__main__':

@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 from __future__ import print_function
 import os
+import sys
 import h5py
 from contextlib import contextmanager
 from tempfile import NamedTemporaryFile
@@ -11,6 +12,8 @@ try:
 except ImportError:
     iio = io
 
+
+### Image IO
 
 imread = io.imread
 
@@ -46,6 +49,8 @@ def imsave(fn, im, **kwargs):
 
 imwrite = imsave
 
+
+### Temporary files
 
 @contextmanager
 def temporary_file(suffix='', directory=None):
@@ -109,3 +114,35 @@ def temporary_hdf5_dataset(shape, dtype, chunks=None, directory=None):
         dset = f.create_dataset('temp', shape, dtype, chunks=chunks)
         yield dset
         f.close()  # no need to delete the dataset, file will be deleted.
+
+
+def emitter_function(kind='json', out_stream=sys.stdout):
+    """Return a function that 'emits' data to an output stream.
+
+    Parameters
+    ----------
+    kind : {'json', 'null'}, optional
+        How to output the given data.
+    out_stream : buffer, optional
+        Where to output the data. Must support the Python buffer interface.
+
+    Returns
+    -------
+    emit : function, takes dict as input
+        An emitter function to write out features.
+    """
+    if kind == 'null':
+        def null(*args, **kwargs): pass
+        return null
+    if kind == 'json':
+        try:
+            import ujson as json
+        except ImportError:
+            import json
+
+        def emit(d):
+            out = json.dumps(d) + '\n'
+            out_stream.write(out)
+        return emit
+    raise ValueError('Unknown emitter type: %s. '
+                     'Valid types are "null" and "json".' % kind)
