@@ -2,6 +2,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 import os
 import sys
+import numpy as np
 import h5py
 from contextlib import contextmanager
 from tempfile import NamedTemporaryFile
@@ -102,7 +103,6 @@ def temporary_hdf5_dataset(shape, dtype, chunks=None, directory=None):
 
     Examples
     --------
-    >>> import numpy as np
     >>> shape = (4, 5)
     >>> ar = np.random.rand(*shape)
     >>> with temporary_hdf5_dataset(shape, 'float32') as dset:
@@ -114,6 +114,29 @@ def temporary_hdf5_dataset(shape, dtype, chunks=None, directory=None):
         dset = f.create_dataset('temp', shape, dtype, chunks=chunks)
         yield dset
         f.close()  # no need to delete the dataset, file will be deleted.
+
+
+@contextmanager
+def temporary_memmap(shape, dtype, directory=None):
+    """Yield a temporary numpy memory-mapped array.
+
+    Parameters
+    ----------
+    shape : tuple of int
+        The shape of the memory map.
+    dtype : numpy dtype
+        Specification of the array data type.
+    directory : string, optional
+        Location in which to create the temporary file.
+
+    Yields
+    ------
+    ar : numpy.memmapped array
+        The numpy memmap.
+    """
+    with temporary_file('.memmap', directory) as fname:
+        mmap = np.memmap(fname, dtype=dtype, mode='w', shape=shape)
+        yield mmap
 
 
 def emitter_function(kind='json', out_stream=sys.stdout):
@@ -146,3 +169,45 @@ def emitter_function(kind='json', out_stream=sys.stdout):
         return emit
     raise ValueError('Unknown emitter type: %s. '
                      'Valid types are "null" and "json".' % kind)
+
+
+@contextmanager
+def feature_container(shape, dtype=np.float, in_memory=True,
+                      out_of_core='HDF5', directory=None):
+    """Yield a numpy-array compatible container to store feature maps.
+
+    Parameters
+    ----------
+    shape : tuple of int
+        The desired shape of the container.
+    dtype : numpy dtype specification, optional
+        The data type of the container.
+    in_memory : bool, optional
+        Whether the container should be in memory (ie, a numpy array) or
+        on-disk (e.g. numpy.memmap, HDF5, or bcolz)
+    out_of_core : {'memmap', 'HDF5'}, optional
+        When ``in_memory`` is False, use this format.
+    directory : string, optional
+        Location for temporary files if ``in_memory`` is ``False``.
+
+    Yields
+    ------
+    ar : array-like
+        A container with the desired characteristics.
+
+    Notes
+    -----
+    It is a stupid limitation of numpy memmaps that they cannot be any
+    bigger than 2GB. This severely limits their utility but I'm leaving
+    the implementation in for posterity.
+    """
+    if in_memory:
+        ar = np.empty(shape, dtype)
+        yield ar
+        del ar
+    elif out_of_core == 'memmap':
+        with temporary_memmap(shape, dtype) as mmap:
+            yield mmap
+    elif out_of_core.lower() == 'hdf5':
+        with temporary_hdf5_dataset(shape, dtype) as hdf5:
+            yield hdf5
