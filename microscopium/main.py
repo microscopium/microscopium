@@ -233,6 +233,11 @@ features.add_argument('-b', '--pca-batch-size', type=int, default=384,
 features.add_argument('-n', '--num-neighbours', type=int, default=25,
                       help='The number of nearest neighbours to output '
                            'per sample.')
+features.add_argument('-S', '--sample-size', type=int, default=None,
+                      help='For feature computations that depend on objects, '
+                           'sample this many objects.')
+features.add_argument('--random-seed', type=int, default=None,
+                      help='Set random seed, for testing and debugging only.')
 def run_features(args):
     """Run image feature computation.
 
@@ -244,6 +249,7 @@ def run_features(args):
     images = map(io.imread, args.images)
     screen_info = screens.d[args.screen]
     index_function, fmap = screen_info['index'], screen_info['fmap']
+    fmap = tz.partial(fmap, sample_size=args.sample_size)
     indices = list(map(index_function, args.images))
     f0, feature_names = fmap(next(images))
     feature_vectors = tz.cons(f0, (fmap(im)[0] for im in images))
