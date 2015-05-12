@@ -251,7 +251,8 @@ def run_features(args):
     images = map(io.imread, args.images)
     screen_info = screens.d[args.screen]
     index_function, fmap = screen_info['index'], screen_info['fmap']
-    fmap = tz.partial(fmap, sample_size=args.sample_size)
+    fmap = tz.partial(fmap, sample_size=args.sample_size,
+                            random_seed=args.random_seed)
     indices = list(map(index_function, args.images))
     f0, feature_names = fmap(next(images))
     feature_vectors = tz.cons(f0, (fmap(im)[0] for im in images))

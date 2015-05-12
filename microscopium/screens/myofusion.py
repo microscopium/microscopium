@@ -16,7 +16,7 @@ from six.moves import map
 from six.moves import zip
 
 
-def feature_vector_from_rgb(image, sample_size=None):
+def feature_vector_from_rgb(image, sample_size=None, random_seed=None):
     """Compute a feature vector from the composite images.
 
     The channels are assumed to be in the following order:
@@ -32,6 +32,8 @@ def feature_vector_from_rgb(image, sample_size=None):
         For features based on quantiles, sample this many objects
         rather than computing full distribution. This can considerably
         speed up computation with little cost to feature accuracy.
+    random_seed : int or numpy.RandomState, optional
+        A random seed to fix the sampling.
 
     Returns
     -------
@@ -46,7 +48,8 @@ def feature_vector_from_rgb(image, sample_size=None):
     prefixes = ['mcf', 'cells', 'nuclei']
     for im, prefix in zip(ims, prefixes):
         fs, names = features.intensity_object_features(im,
-                                                       sample_size=sample_size)
+                                                       sample_size=sample_size,
+                                                       random_seed=random_seed)
         names = [prefix + '-' + name for name in names]
         all_fs.append(fs)
         all_names.extend(names)
