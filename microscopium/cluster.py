@@ -263,7 +263,12 @@ class OnlineIncrementalPCA(object):
         """
         self.current_batch.append(np.squeeze(v))
         if len(self.current_batch) >= self.batch_size:
-            self.ipca.partial_fit(np.array(self.current_batch))
+            self.flush()
+
+    def flush(self):
+        """Force a partial fit of the current batch."""
+        if len(self.current_batch) > 0:
+            self.ipca.partial_fit(np.atleast_2d(self.current_batch))
             del self.current_batch
             self.current_batch = []
 
