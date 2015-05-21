@@ -271,7 +271,7 @@ def filename2id(fn):
     >>> filename2id(fn)
     '140206180002-A01'
     """
-    from .myofusion import key2mongo
+    from .myores import key2mongo
     id_ = key2mongo(filename2coord(fn))
     return id_
 

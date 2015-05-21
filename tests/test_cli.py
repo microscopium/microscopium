@@ -39,7 +39,7 @@ def test_features(env):
         np.testing.assert_allclose(current, expected, atol=1e-3, rtol=1e-3)
     images = glob.glob(os.path.join(env['images'], '*.tif'))
     mic = sh.Command(env['bin'])
-    out = mic.features(*images, S=20, n=2, s='myofusion', b=8,
+    out = mic.features(*images, S=20, n=2, s='myores', b=8,
                        random_seed=0, _env=env['env'])
     fin = open(os.path.join(env['testdata'], 'emitted-features.json'))
     for line, reference in zip(out.split('\n'), fin):

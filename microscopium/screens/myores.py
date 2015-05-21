@@ -377,7 +377,7 @@ def mongo2key(mongo_id):
     return tuple(tup)
 
 
-def populate_db(gene_table_filename, image_filenames, db="myofusion",
+def populate_db(gene_table_filename, image_filenames, db="myores",
                 coll_name="wells", host='localhost', port=27017):
     """Populate a MongoDB database with gene entries from the screen.
 

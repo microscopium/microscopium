@@ -22,14 +22,15 @@ def string2tuple(string_tuple):
 # start mongodb daemon
 
 client = MongoClient('localhost', 27017)
-db = client['myofusion_test']
+db = client['myores_test']
 collection = db.wells_test
 
 # import documents if collection is empty
 # wait two seconds to allow collection to import
 if db.wells_test.find({}).count() == 0:
     sp.Popen(['mongoimport', '-host', 'localhost:27017', '-d',
-              'myofusion_test', '-c', 'wells_test', os.path.join(abspath, 'testdata/wells_test.json')])
+              'myores_test', '-c', 'wells_test',
+              os.path.join(abspath, 'testdata/wells_test.json')])
     time.sleep(2)
 
 #  parse image filename and id and gene name
