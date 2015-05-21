@@ -287,4 +287,6 @@ class OnlineIncrementalPCA(object):
         comp : array of float, shape ([M,] P)
             The vector/matrix in the IPCA's reduced/rotated space.
         """
+        if len(self.current_batch) > 0:
+            self.flush()
         return np.squeeze(self.ipca.transform(np.atleast_2d(v)))
