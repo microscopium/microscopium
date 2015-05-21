@@ -274,12 +274,12 @@ class OnlineIncrementalPCA(object):
 
         Parameters
         ----------
-        v : array of float
-            The vector to transform.
+        v : array of float, shape ([M,] N)
+            The vector (1D) or matrix (nsamples x nfeatures) to transform.
 
         Returns
         -------
-        comp : array of float
-            The vector in the IPCA's reduced/rotated space.
+        comp : array of float, shape ([M,] P)
+            The vector/matrix in the IPCA's reduced/rotated space.
         """
         return np.squeeze(self.ipca.transform(np.atleast_2d(v)))
