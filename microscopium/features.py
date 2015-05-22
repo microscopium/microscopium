@@ -7,10 +7,14 @@ from skimage import morphology as skmorph
 from skimage import filters as imfilter, measure, util
 from sklearn.neighbors import NearestNeighbors
 from six.moves import range
+import cytoolz as tz
+from ._util import normalise_random_state
 
 
 def normalize_vectors(v):
     """Interpret a matrix as a row of vectors, and divide each by its norm.
+
+    0-vectors are left changed.
 
     Parameters
     ----------
@@ -21,10 +25,18 @@ def normalize_vectors(v):
     -------
     v1 : array of float, shape (M, N)
         The vectors divided by their norm.
+
+    Examples
+    --------
+    >>> vs = np.array([[2., 0.], [0., 4.], [0., 0.]])
+    >>> normalize_vectors(vs)
+    array([[ 1.,  0.],
+           [ 0.,  1.],
+           [ 0.,  0.]])
     """
     v_norm = np.sqrt((v ** 2).sum(axis=1))
+    v_norm[v_norm == 0] = 1.  # ignore 0-vectors for division
     v1 = v / v_norm[..., np.newaxis]
-    v1[np.isnan(v1)] = 0
     return v1
 
 
@@ -102,7 +114,8 @@ def nearest_neighbors(lab_im, n=3, quantiles=[0.05, 0.25, 0.5, 0.75, 0.95]):
 
 # threshold and labeling number of objects, statistics about object size and
 # shape
-def intensity_object_features(im, adaptive_t_radius=51, sample_size=None):
+def intensity_object_features(im, adaptive_t_radius=51, sample_size=None,
+                              random_seed=None):
     """Segment objects based on intensity threshold and compute properties.
 
     Parameters
@@ -114,6 +127,9 @@ def intensity_object_features(im, adaptive_t_radius=51, sample_size=None):
     sample_size : int, optional
         Sample this many objects randomly, rather than measuring all
         objects.
+    random_seed: int, or numpy RandomState instance, optional
+        An optional random number generator or seed from which to draw
+        samples.
 
     Returns
     -------
@@ -123,16 +139,18 @@ def intensity_object_features(im, adaptive_t_radius=51, sample_size=None):
         The list of feature names.
     """
     tim1 = im > imfilter.threshold_otsu(im)
-    f1, names1 = object_features(tim1, im, sample_size=sample_size)
+    f1, names1 = object_features(tim1, im, sample_size=sample_size,
+                                 random_seed=random_seed)
     names1 = ['otsu-threshold-' + name for name in names1]
     tim2 = imfilter.threshold_adaptive(im, adaptive_t_radius)
-    f2, names2 = object_features(tim2, im, sample_size=sample_size)
+    f2, names2 = object_features(tim2, im, sample_size=sample_size,
+                                 random_seed=random_seed)
     names2 = ['adaptive-threshold-' + name for name in names2]
     f = np.concatenate([f1, f2])
     return f, names1 + names2
 
 
-def object_features(bin_im, im, erode=2, sample_size=None):
+def object_features(bin_im, im, erode=2, sample_size=None, random_seed=None):
     """Compute features about objects in a binary image.
 
     Parameters
@@ -146,6 +164,9 @@ def object_features(bin_im, im, erode=2, sample_size=None):
     sample_size : int, optional
         Sample this many objects randomly, rather than measuring all
         objects.
+    random_seed: int, or numpy RandomState instance, optional
+        An optional random number generator or seed from which to draw
+        samples.
 
     Returns
     -------
@@ -154,6 +175,7 @@ def object_features(bin_im, im, erode=2, sample_size=None):
     names : list of string
         The names of each feature.
     """
+    random = normalise_random_state(random_seed)
     selem = skmorph.disk(erode)
     if erode > 0:
         bin_im = nd.binary_opening(bin_im, selem)
@@ -162,7 +184,7 @@ def object_features(bin_im, im, erode=2, sample_size=None):
         sample_size = n_objs
         sample_indices = np.arange(n_objs)
     else:
-        sample_indices = np.random.randint(0, n_objs, size=sample_size)
+        sample_indices = random.randint(0, n_objs, size=sample_size)
     prop_names = ['area', 'eccentricity', 'euler_number', 'extent',
                   'min_intensity', 'mean_intensity', 'max_intensity',
                   'solidity']
@@ -265,3 +287,43 @@ def nuclei_per_cell_histogram(nuc_im, cell_im, max_value=10):
     fs /= total
     return fs, names
 
+
+@tz.curry
+def default_feature_map(image, channels=[0, 1, 2], channel_names=None,
+                        sample_size=None, random_seed=None):
+    """Compute a feature vector from a multi-channel image.
+
+    Parameters
+    ----------
+    image : array, shape (M, N, 3)
+        The input image.
+    channels : list of int, optional
+        Which channels to use for feature computation
+    channel_names : list of string, optional
+        The channel names corresponding to ``channels``.
+    sample_size : int, optional
+        For features based on quantiles, sample this many objects
+        rather than computing full distribution. This can considerably
+        speed up computation with little cost to feature accuracy.
+    random_seed: int, or numpy RandomState instance, optional
+        An optional random number generator or seed from which to draw
+        samples.
+
+    Returns
+    -------
+    fs : 1D array of float
+        The features of the image.
+    names : list of string
+        The feature names.
+    """
+    all_fs, all_names = [], []
+    images = [np.array(image[..., i]) for i in channels]
+    if channel_names is None:
+        channel_names = ['chan{}'.format(i) for i in channels]
+    for im, prefix in zip(images, channel_names):
+        fs, names = intensity_object_features(im, sample_size=sample_size,
+                                              random_seed=random_seed)
+        names = [prefix + '-' + name for name in names]
+        all_fs.append(fs)
+        all_names.extend(names)
+    return np.concatenate(all_fs), all_names

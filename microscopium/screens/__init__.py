@@ -1,8 +1,11 @@
 from __future__ import absolute_import
-from . import myofusion
+from . import myores, cellomics
 
-__all__ = ['myofusion']
+__all__ = ['myores', 'cellomics']
 
-d = {'myofusion': {'index': myofusion.filename2coord,
-                   'fmap':  myofusion.feature_map}}
+d = {'myores': {'index': myores.filename2id,
+                   'fmap':  myores.feature_map},
+     'cellomics': {'index': cellomics.filename2id,
+                   'fmap':  cellomics.feature_map}
+    }
 

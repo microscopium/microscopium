@@ -16,7 +16,7 @@ from six.moves import map
 from six.moves import zip
 
 
-def feature_vector_from_rgb(image, sample_size=None):
+def feature_vector_from_rgb(image, sample_size=None, random_seed=None):
     """Compute a feature vector from the composite images.
 
     The channels are assumed to be in the following order:
@@ -32,6 +32,8 @@ def feature_vector_from_rgb(image, sample_size=None):
         For features based on quantiles, sample this many objects
         rather than computing full distribution. This can considerably
         speed up computation with little cost to feature accuracy.
+    random_seed : int or numpy.RandomState, optional
+        A random seed to fix the sampling.
 
     Returns
     -------
@@ -46,7 +48,8 @@ def feature_vector_from_rgb(image, sample_size=None):
     prefixes = ['mcf', 'cells', 'nuclei']
     for im, prefix in zip(ims, prefixes):
         fs, names = features.intensity_object_features(im,
-                                                       sample_size=sample_size)
+                                                       sample_size=sample_size,
+                                                       random_seed=random_seed)
         names = [prefix + '-' + name for name in names]
         all_fs.append(fs)
         all_names.extend(names)
@@ -135,6 +138,30 @@ def filename2coord(fn):
     """
     sem = myores_semantic_filename(fn)
     return (sem['plate'], sem['well'])
+
+
+def filename2id(fn):
+    """Get a mongo ID, string representation of (plate, well), from filename.
+
+    Parameters
+    ----------
+    fn : string
+        Filename of a standard Cellomics screen image.
+
+    Returns
+    -------
+    id_ : string
+        The mongo ID.
+
+    Examples
+    --------
+    >>> fn = ('MYORES-p1-j01-110210_02490688_53caa10e-ac15-4166-9b9d-'
+    ...       '4b1167f3b9c6_C04_s1_w1.TIF')
+    >>> filename2id(fn)
+    '2490688-C04'
+    """
+    id_ = key2mongo(filename2coord(fn))
+    return id_
 
 
 def dir2plate(dirname):
@@ -350,7 +377,7 @@ def mongo2key(mongo_id):
     return tuple(tup)
 
 
-def populate_db(gene_table_filename, image_filenames, db="myofusion",
+def populate_db(gene_table_filename, image_filenames, db="myores",
                 coll_name="wells", host='localhost', port=27017):
     """Populate a MongoDB database with gene entries from the screen.
 

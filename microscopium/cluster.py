@@ -3,6 +3,8 @@ import numpy as np
 from sklearn.cluster import DBSCAN, MiniBatchKMeans
 from sklearn.ensemble import RandomTreesEmbedding
 from sklearn.manifold import MDS
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import IncrementalPCA
 
 def rt_embedding(X, n_estimators=100, max_depth=10, n_jobs=-1):
     """Embed data matrix X in a random forest.
@@ -161,3 +163,130 @@ def mds_mapping(X, n_components=2, max_iter=500, n_jobs=-1,
 
     return mds_embedding, X_transformed
 
+
+class OnlineStandardScaler(object):
+    """Object to stream over a dataset and compute its mean and variance. [1]
+
+    References
+    ----------
+    .. [1] http://en.wikipedia.org/w/index.php?title=Algorithms_for_calculating_variance&oldid=656759266#Online_algorithm
+    """
+    def __init__(self):
+        self._n = 0
+        self.add_sample = self._add_first_sample
+        self._online_mean = None
+        self._online_sq_mean = None
+
+    def add_sample(self, x):
+        """Add a sample to the computation of the mean and variance.
+
+        Parameters
+        ----------
+        x : array-like
+            A sample vector. Must be of the same dimensionality as
+            previous samples
+
+        Notes
+        -----
+        This is defined as a stub that gets dynamically replaced on
+        instantiation first, and then after addition of the first
+        sample, to avoid checking whether the object is empty every
+        time a sample is added.
+        """
+        pass
+
+    def _add_first_sample(self, x):
+        self._online_mean = np.array(x, dtype=np.float)
+        self._online_sq_mean = np.zeros_like(self._online_mean)
+        self._n += 1
+        self.add_sample = self._add_sample
+
+    def _add_sample(self, x):
+        x = np.asanyarray(x)
+        self._n += 1
+        mean, sq_mean, n = self._online_mean, self._online_sq_mean, self._n
+        delta = x - mean
+        mean += delta / n
+        sq_mean += delta * (x - mean)
+
+    def mean(self):
+        """Return the current mean."""
+        return np.array(self._online_mean, copy=True)
+
+    def var(self):
+        """Return the current variance."""
+        return self._online_sq_mean / self._n
+
+    def standard_scaler(self):
+        """Return a sklearn.preprocessing.StandardScaler"""
+        s = StandardScaler()
+        s.mean_ = self.mean()
+        var = self.var()
+        var[var <= 0] = 1  # ignore variables with zero variance
+        s.std_ = np.sqrt(var)
+        return s
+
+
+class OnlineIncrementalPCA(object):
+    """Object to stream over a dataset and perform incremental PCA.
+
+    Parameters
+    ----------
+    n_components : int, optional
+        The number of PCA components to keep.
+    whiten : bool, optional
+        Whether to whiten the input. A good idea when input scales
+        vary widely.
+    batch_size : int, optional
+        The batch_size to use for the computation. (Streamed elements
+        are accumulated until this batch size is reached.)
+    """
+    def __init__(self, n_components=None, whiten=True, batch_size=None):
+        self.ipca = IncrementalPCA(n_components=n_components, whiten=whiten,
+                                   copy=True, batch_size=batch_size)
+        self.current_batch = []
+        self.batch_size = batch_size
+
+    def add_sample(self, v):
+        """Add a new sample to the model being learned.
+
+        These samples are "stocked up" until the current stock matches
+        the IPCA batch size (set at creation time). If the total number
+        of samples doesn't divide cleanly into the batch size, the
+        remainder of the samples will not be fit. (But that should be
+        fine, really!)
+
+        Parameters
+        ----------
+        v : array of float
+            The sample to add to the fit.
+        """
+        self.current_batch.append(np.squeeze(v))
+        if len(self.current_batch) >= self.batch_size:
+            self.flush()
+
+    def flush(self):
+        """Force a partial fit of the current batch."""
+        if len(self.current_batch) > 0:
+            self.ipca.partial_fit(np.atleast_2d(self.current_batch))
+            del self.current_batch
+            self.current_batch = []
+
+    def transform(self, v):
+        """Transform `v` from the full space to the decomposed space...
+
+        ... according to the current IPCA model.
+
+        Parameters
+        ----------
+        v : array of float, shape ([M,] N)
+            The vector (1D) or matrix (nsamples x nfeatures) to transform.
+
+        Returns
+        -------
+        comp : array of float, shape ([M,] P)
+            The vector/matrix in the IPCA's reduced/rotated space.
+        """
+        if len(self.current_batch) > 0:
+            self.flush()
+        return np.squeeze(self.ipca.transform(np.atleast_2d(v)))
