@@ -585,7 +585,7 @@ def find_background_illumination(fns, radius=51, quantile=0.05,
 
 
 def correct_multiimage_illumination(im_fns, illum, stretch_quantile=0,
-                                    random_state=None):
+                                    random_state=None, out_fn=None):
     """Divide input images pointwise by the illumination field.
 
     However, where `correct_image_illumination` rescales each individual
@@ -606,6 +606,10 @@ def correct_multiimage_illumination(im_fns, illum, stretch_quantile=0,
     random_state : None, int, or numpy RandomState instance, optional
         An optional random number generator or seed, passed directly to
         `_reservoir_sampled_image`.
+    out_fn : string, optional
+        Output filename. If given, save the reservoir sampled image to this
+        file. This image can be used e.g. to determine a globally-appropriate
+        value for image thresholding.
 
     Returns
     -------
@@ -625,6 +629,11 @@ def correct_multiimage_illumination(im_fns, illum, stretch_quantile=0,
     sampled = _reservoir_sampled_image(ims_pass1, random_state)
     corrected = sampled / illum  # don't do in-place, dtype may clash
     corr_range = tuple(np.percentile(corrected, [p0, p1]))
+    if out_fn is not None:
+        rescaled = exposure.rescale_intensity(corrected, in_range=corr_range,
+                                              out_range=np.uint8)
+        out = np.round(rescaled).astype(np.uint8)
+        mio.imsave(out_fn, out)
 
     # In second pass, correct every image and adjust exposure
     ims_pass2 = map(io.imread, im_fns)
