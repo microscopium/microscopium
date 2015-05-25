@@ -16,7 +16,8 @@ from six.moves import map
 from six.moves import zip
 
 
-def feature_vector_from_rgb(image, sample_size=None, random_seed=None):
+def feature_vector_from_rgb(image, sample_size=None, random_seed=None,
+                            **kwargs):
     """Compute a feature vector from the composite images.
 
     The channels are assumed to be in the following order:
@@ -34,6 +35,10 @@ def feature_vector_from_rgb(image, sample_size=None, random_seed=None):
         speed up computation with little cost to feature accuracy.
     random_seed : int or numpy.RandomState, optional
         A random seed to fix the sampling.
+
+    Other parameters
+    ----------------
+    (``**kwargs`` to accept parameters meant for other feature maps.)
 
     Returns
     -------
