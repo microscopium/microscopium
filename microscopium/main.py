@@ -10,7 +10,7 @@ import json
 
 # dependencies
 import numpy as np
-from skimage import io, img_as_ubyte
+from skimage import io, img_as_ubyte, filters
 import toolz as tz
 from sklearn import neighbors
 
@@ -240,6 +240,8 @@ features.add_argument('--random-seed', type=int, default=None,
                       help='Set random seed, for testing and debugging only.')
 features.add_argument('-e', '--emitter', default='json',
                       help='Format to output features during computation.')
+features.add_argument('-t', '--threshold-image',
+                      help="Threshold images using this image's intensity.")
 def run_features(args):
     """Run image feature computation.
 
@@ -251,7 +253,11 @@ def run_features(args):
     images = map(io.imread, args.images)
     screen_info = screens.d[args.screen]
     index_function, fmap = screen_info['index'], screen_info['fmap']
-    fmap = tz.partial(fmap, sample_size=args.sample_size,
+    if args.threshold_image is not None:
+        tim = mio.imread(args.threshold_image)
+        args.threshold_image = filters.threshold_isodata(tim)
+    fmap = tz.partial(fmap, threshold=args.threshold_image,
+                            sample_size=args.sample_size,
                             random_seed=args.random_seed)
     indices = list(map(index_function, args.images))
     f0, feature_names = fmap(next(images))
