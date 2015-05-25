@@ -114,14 +114,19 @@ def nearest_neighbors(lab_im, n=3, quantiles=[0.05, 0.25, 0.5, 0.75, 0.95]):
 
 # threshold and labeling number of objects, statistics about object size and
 # shape
-def intensity_object_features(im, adaptive_t_radius=51, sample_size=None,
-                              random_seed=None):
+def intensity_object_features(im, threshold=None, adaptive_t_radius=51,
+                              sample_size=None, random_seed=None):
     """Segment objects based on intensity threshold and compute properties.
 
     Parameters
     ----------
     im : 2D np.ndarray of float or uint8.
         The input image.
+    threshold : float, optional
+        A threshold for the image to determine objects: connected pixels
+        above this threshold will be considered objects. If ``None``
+        (default), the threshold will be automatically determined with
+        both Otsu's method and a locally adaptive threshold.
     adaptive_t_radius : int, optional
         The radius to calculate background with adaptive threshold.
     sample_size : int, optional
@@ -138,16 +143,22 @@ def intensity_object_features(im, adaptive_t_radius=51, sample_size=None,
     names : list of string
         The list of feature names.
     """
-    tim1 = im > imfilter.threshold_otsu(im)
-    f1, names1 = object_features(tim1, im, sample_size=sample_size,
-                                 random_seed=random_seed)
-    names1 = ['otsu-threshold-' + name for name in names1]
-    tim2 = imfilter.threshold_adaptive(im, adaptive_t_radius)
-    f2, names2 = object_features(tim2, im, sample_size=sample_size,
-                                 random_seed=random_seed)
-    names2 = ['adaptive-threshold-' + name for name in names2]
-    f = np.concatenate([f1, f2])
-    return f, names1 + names2
+    if threshold is None:
+        tim1 = im > imfilter.threshold_otsu(im)
+        f1, names1 = object_features(tim1, im, sample_size=sample_size,
+                                     random_seed=random_seed)
+        names1 = ['otsu-threshold-' + name for name in names1]
+        tim2 = imfilter.threshold_adaptive(im, adaptive_t_radius)
+        f2, names2 = object_features(tim2, im, sample_size=sample_size,
+                                     random_seed=random_seed)
+        names2 = ['adaptive-threshold-' + name for name in names2]
+        f = np.concatenate([f1, f2])
+        names = names1 + names2
+    else:
+        tim = im > threshold
+        f, names = object_features(tim, im, sample_size=sample_size,
+                                   random_seed=random_seed)
+    return f, names
 
 
 def object_features(bin_im, im, erode=2, sample_size=None, random_seed=None):
