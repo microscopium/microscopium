@@ -300,7 +300,8 @@ def nuclei_per_cell_histogram(nuc_im, cell_im, max_value=10):
 
 
 @tz.curry
-def default_feature_map(image, channels=[0, 1, 2], channel_names=None,
+def default_feature_map(image, threshold=None,
+                        channels=[0, 1, 2], channel_names=None,
                         sample_size=None, random_seed=None):
     """Compute a feature vector from a multi-channel image.
 
@@ -308,6 +309,8 @@ def default_feature_map(image, channels=[0, 1, 2], channel_names=None,
     ----------
     image : array, shape (M, N, 3)
         The input image.
+    threshold : tuple of float, shape (3,), optional
+        The intensity threshold for object detection on each channel.
     channels : list of int, optional
         Which channels to use for feature computation
     channel_names : list of string, optional
@@ -332,7 +335,8 @@ def default_feature_map(image, channels=[0, 1, 2], channel_names=None,
     if channel_names is None:
         channel_names = ['chan{}'.format(i) for i in channels]
     for im, prefix in zip(images, channel_names):
-        fs, names = intensity_object_features(im, sample_size=sample_size,
+        fs, names = intensity_object_features(im, threshold=threshold,
+                                              sample_size=sample_size,
                                               random_seed=random_seed)
         names = [prefix + '-' + name for name in names]
         all_fs.append(fs)

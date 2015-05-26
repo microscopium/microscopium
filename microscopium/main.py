@@ -240,8 +240,9 @@ features.add_argument('--random-seed', type=int, default=None,
                       help='Set random seed, for testing and debugging only.')
 features.add_argument('-e', '--emitter', default='json',
                       help='Format to output features during computation.')
-features.add_argument('-t', '--threshold-image',
-                      help="Threshold images using this image's intensity.")
+features.add_argument('-G', '--global-threshold', action='store_true',
+                      help='Use sampled intensity from all images to obtain '
+                           'a global threshold.')
 def run_features(args):
     """Run image feature computation.
 
@@ -250,13 +251,18 @@ def run_features(args):
     args : argparse.Namespace
         The arguments parsed by the argparse library.
     """
+    if args.global_threshold:
+        images = map(io.imread, args.images)
+        thresholds = pre.global_threshold(images, args.random_seed)
+    else:
+        thresholds = None
     images = map(io.imread, args.images)
     screen_info = screens.d[args.screen]
     index_function, fmap = screen_info['index'], screen_info['fmap']
     if args.threshold_image is not None:
         tim = mio.imread(args.threshold_image)
         args.threshold_image = filters.threshold_isodata(tim)
-    fmap = tz.partial(fmap, threshold=args.threshold_image,
+    fmap = tz.partial(fmap, threshold=thresholds,
                             sample_size=args.sample_size,
                             random_seed=args.random_seed)
     indices = list(map(index_function, args.images))
