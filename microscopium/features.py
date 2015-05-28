@@ -251,11 +251,11 @@ def fraction_positive(bin_im, positive_im, erode=2, overlap_thresh=0.9,
     Examples
     --------
     >>> bin_im = np.array([[1, 1, 0],
-                           [0, 0, 0],
-                           [1, 1, 1]], dtype=bool)
+    ...                    [0, 0, 0],
+    ...                    [1, 1, 1]], dtype=bool)
     >>> pos_im = np.array([[1, 0, 0],
-                           [0, 1, 1],
-                           [0, 1, 1]], dtype=bool)
+    ...                    [0, 1, 1],
+    ...                    [0, 1, 1]], dtype=bool)
     >>> f = fraction_positive(bin_im, pos_im, erode=0, overlap_thresh=0.6)
     >>> f[0]
     array([ 0.5])

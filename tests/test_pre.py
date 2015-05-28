@@ -101,17 +101,12 @@ def image_files_noise(request):
 def test_correct_multiimage_illum(image_files_noise):
     files, illum = image_files_noise
     with mio.temporary_file('.tif') as out_fn:
-        ims = pre.correct_multiimage_illumination(files, illum, (2 / 25), 0,
-                                                  out_fn=out_fn)
+        ims = pre.correct_multiimage_illumination(files, illum, (2 / 25), 0)
         i, j, k = list(ims)
         # 1. check noise is not blown out in i
         assert not np.any(i > 10)
         # 2. check blown out corner in k has not suppressed all other values
         assert np.median(k) > 100
-        # 3. check output sampled image is as expected
-        sampled = mio.imread(out_fn)
-        assert np.round(np.mean(sampled)) == 70.0
-        assert np.median(sampled) == 36
 
 
 if __name__ == '__main__':

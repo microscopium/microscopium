@@ -15,7 +15,7 @@ def assert_close(current, expected):
     np.testing.assert_allclose(current, expected, atol=1e-3, rtol=1e-3)
 
 
-def test_reference_feature_json(output, reference_file):
+def check_reference_feature_json(output, reference_file):
     """Compare JSON to a reference using knowledge about its contents.
 
     Parameters
@@ -72,7 +72,7 @@ def test_features(env):
     out = mic.features(*images, S=20, n=2, s='myores', b=8,
                        random_seed=0, _env=env['env'])
     ref = open(os.path.join(env['testdata'], 'emitted-features.json'))
-    test_reference_feature_json(out.split('\n'), ref)
+    check_reference_feature_json(out.split('\n'), ref)
 
 
 def test_features_single_threshold(env):
@@ -81,4 +81,4 @@ def test_features_single_threshold(env):
     out = mic.features(*images, S=20, n=2, s='myores', b=8, G=True,
                        random_seed=0, _env=env['env'])
     ref = open(os.path.join(env['testdata'], 'emitted-features-global-t.json'))
-    test_reference_feature_json(out.split('\n'), ref)
+    check_reference_feature_json(out.split('\n'), ref)
