@@ -16,8 +16,8 @@ from six.moves import map
 from six.moves import zip
 
 
-def feature_vector_from_rgb(image, sample_size=None, random_seed=None,
-                            **kwargs):
+def feature_vector_from_rgb(image, threshold=None, sample_size=None,
+                            random_seed=None, **kwargs):
     """Compute a feature vector from the composite images.
 
     The channels are assumed to be in the following order:
@@ -29,6 +29,9 @@ def feature_vector_from_rgb(image, sample_size=None, random_seed=None,
     ----------
     im : array, shape (M, N, 3)
         The input image.
+    threshold : tuple of float, length 3, optional
+        A threshold for each channel. If none is provided, two types of
+        thresholds are automatically generated.
     sample_size : int, optional
         For features based on quantiles, sample this many objects
         rather than computing full distribution. This can considerably
@@ -47,34 +50,38 @@ def feature_vector_from_rgb(image, sample_size=None, random_seed=None,
     names : list of string
         The feature names.
     """
+    if threshold is None:
+        threshold = (None, None, None)
+        # use mean threshold for specialised features
+        thresholded = image > np.mean(np.mean(image, axis=0), axis=0)
+    else:
+        thresholded = image > threshold
     all_fs, all_names = [], []
-    ims = np.rollaxis(image[..., :3], -1, 0) # toss out alpha chan if present
+
+    ims = np.rollaxis(image, -1, 0)[:3] # toss out alpha chan if present
     mcf, cells, nuclei = ims
+    mcft, cellst, nucleit = np.rollaxis(thresholded, -1, 0)[:3]
     prefixes = ['mcf', 'cells', 'nuclei']
-    for im, prefix in zip(ims, prefixes):
-        fs, names = features.intensity_object_features(im,
+    for im, prefix, t in zip(ims, prefixes, threshold):
+        fs, names = features.intensity_object_features(im, threshold=t,
                                                        sample_size=sample_size,
                                                        random_seed=random_seed)
         names = [prefix + '-' + name for name in names]
         all_fs.append(fs)
         all_names.extend(names)
-    nuclei_mean = nd.label(nuclei > np.mean(nuclei))[0]
-    fs, names = features.nearest_neighbors(nuclei_mean)
+
+    fs, names = features.nearest_neighbors(nucleit)
     all_fs.append(fs)
     all_names.extend(['nuclei-' + name for name in names])
-    mcf_mean = nd.label(mcf)[0]
-    fs, names = features.fraction_positive(nuclei_mean, mcf_mean,
-                                           positive_name='mcf')
+
+    fs, names = features.fraction_positive(nucleit, mcft, positive_name='mcf')
     all_fs.append(fs)
     all_names.extend(names)
-    cells_t_otsu = cells > threshold_otsu(cells)
-    cells_t_adapt = threshold_adaptive(cells, 51)
-    fs, names = features.nuclei_per_cell_histogram(nuclei_mean, cells_t_otsu)
+
+    fs, names = features.nuclei_per_cell_histogram(nucleit, cellst)
     all_fs.append(fs)
-    all_names.extend(['otsu-' + name for name in names])
-    fs, names = features.nuclei_per_cell_histogram(nuclei_mean, cells_t_adapt)
-    all_fs.append(fs)
-    all_names.extend(['adapt-' + name for name in names])
+    all_names.extend(names)
+
     return np.concatenate(all_fs), all_names
 
 
