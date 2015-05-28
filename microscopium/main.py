@@ -262,9 +262,6 @@ def run_features(args):
     images = map(io.imread, args.images)
     screen_info = screens.d[args.screen]
     index_function, fmap = screen_info['index'], screen_info['fmap']
-    if args.threshold_image is not None:
-        tim = mio.imread(args.threshold_image)
-        args.threshold_image = filters.threshold_isodata(tim)
     fmap = tz.partial(fmap, threshold=thresholds,
                             sample_size=args.sample_size,
                             random_seed=args.random_seed)
