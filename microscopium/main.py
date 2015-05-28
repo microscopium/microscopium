@@ -141,6 +141,8 @@ illum.add_argument('-v', '--verbose', action='store_true',
 illum.add_argument('--method', metavar='STR', default='median',
                    help='How to collapse filtered images to illumination '
                         'field. options: median (default), mean.')
+illum.add_argument('--random-seed', type=int, default=None,
+                   help='The random seed for sampling illumination image.')
 def run_illum(args):
     """Run illumination correction.
 
@@ -161,7 +163,8 @@ def run_illum(args):
     base_fns = [pre.basefn(fn) for fn in args.images]
     ims_out = [fn + args.output_suffix for fn in base_fns]
     corrected = pre.correct_multiimage_illumination(args.images, il,
-                                                    args.stretchlim_output)
+                                                    args.stretchlim_output,
+                                                    args.random_seed)
     for im, fout in zip(corrected, ims_out):
         mio.imsave(fout, im, compress=args.compress)
 
