@@ -701,8 +701,8 @@ def global_threshold(ims_iter, random_state=None):
 
     References
     ----------
-    .. [1]: Ridler, TW & Calvard, S (1978), “Picture thresholding
-            using an iterative selection method”
+    .. [1]: Ridler, TW & Calvard, S (1978), "Picture thresholding
+            using an iterative selection method"
 
     Examples
     --------
