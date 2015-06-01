@@ -8,8 +8,6 @@ import json
 import numpy as np
 import sh
 
-from microscopium import io
-
 
 def assert_close(current, expected):
     np.testing.assert_allclose(current, expected, atol=1e-3, rtol=1e-3)
