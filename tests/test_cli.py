@@ -31,6 +31,9 @@ def check_reference_feature_json(output, reference_file):
         if 'feature_vector' in d:
             assert_close(d['feature_vector'], dref['feature_vector'])
         elif 'pca_vector' in d:
+            # 'pca_vector' and 'feature_vector_std' are emitted in the same
+            # line of JSON, so we only check for one in `d` and assume the
+            # other is there.
             assert_close(d['feature_vector_std'], dref['feature_vector_std'])
             assert_close(d['pca_vector'], dref['pca_vector'])
         elif 'neighbours' in d:
