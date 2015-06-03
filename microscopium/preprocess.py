@@ -681,7 +681,7 @@ def global_threshold(ims_iter, random_state=None):
     """Generate a global threshold for the collection of images given.
 
     The threshold is determined by sampling the intensity of every
-    image and then computing the isodata [1]_ threshold on this sample.
+    image and then computing the Otsu [1]_ threshold on this sample.
 
     When the input images are multi-channel, the threshold is computed
     separately for each channel.
@@ -701,8 +701,9 @@ def global_threshold(ims_iter, random_state=None):
 
     References
     ----------
-    .. [1]: Ridler, TW & Calvard, S (1978), "Picture thresholding
-            using an iterative selection method"
+    .. [1]: Nobuyuki Otsu (1979). "A threshold selection method from
+            gray-level histograms". IEEE Trans. Sys., Man., Cyber.
+            9 (1): 62–66. doi:10.1109/TSMC.1979.4310076
 
     Examples
     --------
@@ -713,7 +714,7 @@ def global_threshold(ims_iter, random_state=None):
     sampled = _reservoir_sampled_image(ims_iter, random_state)
     if sampled.ndim < 3:
         sampled = sampled[..., np.newaxis]  # add dummy channel dimension
-    thresholds = [imfilter.threshold_isodata(sampled[..., i])
+    thresholds = [imfilter.threshold_otsu(sampled[..., i])
                   for i in range(sampled.shape[-1])]
     return tuple(thresholds)
 
