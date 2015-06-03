@@ -18,6 +18,31 @@ except ImportError:
 
 imread = io.imread
 
+def imread(fn, discard_alpha=True, **kwargs):
+    """Read an image, but discard alpha if it is present.
+
+    Parameters
+    ----------
+    fn : string
+        The image filename.
+    discard_alpha : bool, optional
+        Only keep channels 0, 1, and 2 if image looks RGBA.
+
+    Other Parameters
+    ----------------
+    **kwargs : keyword arguments
+        Arguments to pass through to imread.
+
+    Returns
+    -------
+    im : numpy array, shape (M, N, 3)
+        The loaded image.
+    """
+    im = io.imread(fn, **kwargs)
+    if im.ndim == 3 and im.shape[-1] == 4:
+        im = im[..., :3]
+    return im
+
 
 def imsave(fn, im, **kwargs):
     """Wrapper around various libraries that haven't got their act together.
