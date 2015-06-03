@@ -6,16 +6,15 @@ import os
 import sys
 import argparse
 import ast
-import json
 
 # dependencies
 import numpy as np
-from skimage import io, img_as_ubyte, filters
+from skimage import img_as_ubyte
 import toolz as tz
 from sklearn import neighbors
 
 # local imports
-from . import io as mio
+from . import io
 from . import screens
 from .screens import cellomics
 from . import preprocess as pre
@@ -92,7 +91,7 @@ def run_crop(args):
         fnout = os.path.splitext(imfn)[0] + args.output_suffix
         if args.output_dir is not None:
             fnout = os.path.join(args.output_dir, os.path.split(fnout)[1])
-        mio.imsave(fnout, imout, compress=args.compress)
+        io.imsave(fnout, imout, compress=args.compress)
 
 
 mask = subpar.add_parser('mask', help="Estimate a mask over image artifacts.")
@@ -159,14 +158,14 @@ def run_illum(args):
     if args.verbose:
         print('illumination field:', type(il), il.dtype, il.min(), il.max())
     if args.save_illumination is not None:
-        mio.imsave(args.save_illumination, il / il.max())
+        io.imsave(args.save_illumination, il / il.max())
     base_fns = [pre.basefn(fn) for fn in args.images]
     ims_out = [fn + args.output_suffix for fn in base_fns]
     corrected = pre.correct_multiimage_illumination(args.images, il,
                                                     args.stretchlim_output,
                                                     args.random_seed)
     for im, fout in zip(corrected, ims_out):
-        mio.imsave(fout, im, compress=args.compress)
+        io.imsave(fout, im, compress=args.compress)
 
 
 montage = subpar.add_parser('montage',
@@ -214,10 +213,10 @@ def run_montage(args):
     out_fns = (out_fn(fn) for fn in args.images[::step])
     for im, fn in zip(ims_out, out_fns):
         try:
-            mio.imsave(fn, im, compress=args.compress)
+            io.imsave(fn, im, compress=args.compress)
         except ValueError:
             im = img_as_ubyte(pre.stretchlim(im, 0.001, 0.999))
-            mio.imsave(fn, im, compress=args.compress)
+            io.imsave(fn, im, compress=args.compress)
 
 
 features = subpar.add_parser('features',
@@ -272,7 +271,7 @@ def run_features(args):
     online_pca = cluster.OnlineIncrementalPCA(n_components=args.n_components,
                                               batch_size=args.pca_batch_size)
     nimages, nfeatures = len(args.images), len(f0)
-    emit = mio.emitter_function(args.emitter)
+    emit = io.emitter_function(args.emitter)
     with temporary_hdf5_dataset((nimages, nfeatures), 'float') as dset:
         # First pass: compute the features, compute the mean and SD,
         # compute the PCA
