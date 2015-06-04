@@ -3,6 +3,7 @@ import itertools as it
 import numpy as np
 from scipy.stats.mstats import mquantiles
 from scipy import ndimage as nd
+from scipy import sparse
 from skimage import morphology as skmorph
 from skimage import filters as imfilter, measure, util
 from sklearn.neighbors import NearestNeighbors
@@ -93,6 +94,8 @@ def nearest_neighbors(lab_im, n=3, quantiles=[0.05, 0.25, 0.5, 0.75, 0.95]):
     names : list of string
         The name of each feature.
     """
+    if lab_im.dtype == bool:
+        lab_im = nd.label(lab_im)[0]
     centroids = np.array([p.centroid for p in measure.regionprops(lab_im)])
     nbrs = (NearestNeighbors(n_neighbors=(n + 1), algorithm='kd_tree').
                          fit(centroids))
@@ -114,14 +117,19 @@ def nearest_neighbors(lab_im, n=3, quantiles=[0.05, 0.25, 0.5, 0.75, 0.95]):
 
 # threshold and labeling number of objects, statistics about object size and
 # shape
-def intensity_object_features(im, adaptive_t_radius=51, sample_size=None,
-                              random_seed=None):
+def intensity_object_features(im, threshold=None, adaptive_t_radius=51,
+                              sample_size=None, random_seed=None):
     """Segment objects based on intensity threshold and compute properties.
 
     Parameters
     ----------
     im : 2D np.ndarray of float or uint8.
         The input image.
+    threshold : float, optional
+        A threshold for the image to determine objects: connected pixels
+        above this threshold will be considered objects. If ``None``
+        (default), the threshold will be automatically determined with
+        both Otsu's method and a locally adaptive threshold.
     adaptive_t_radius : int, optional
         The radius to calculate background with adaptive threshold.
     sample_size : int, optional
@@ -138,16 +146,22 @@ def intensity_object_features(im, adaptive_t_radius=51, sample_size=None,
     names : list of string
         The list of feature names.
     """
-    tim1 = im > imfilter.threshold_otsu(im)
-    f1, names1 = object_features(tim1, im, sample_size=sample_size,
-                                 random_seed=random_seed)
-    names1 = ['otsu-threshold-' + name for name in names1]
-    tim2 = imfilter.threshold_adaptive(im, adaptive_t_radius)
-    f2, names2 = object_features(tim2, im, sample_size=sample_size,
-                                 random_seed=random_seed)
-    names2 = ['adaptive-threshold-' + name for name in names2]
-    f = np.concatenate([f1, f2])
-    return f, names1 + names2
+    if threshold is None:
+        tim1 = im > imfilter.threshold_otsu(im)
+        f1, names1 = object_features(tim1, im, sample_size=sample_size,
+                                     random_seed=random_seed)
+        names1 = ['otsu-threshold-' + name for name in names1]
+        tim2 = imfilter.threshold_adaptive(im, adaptive_t_radius)
+        f2, names2 = object_features(tim2, im, sample_size=sample_size,
+                                     random_seed=random_seed)
+        names2 = ['adaptive-threshold-' + name for name in names2]
+        f = np.concatenate([f1, f2])
+        names = names1 + names2
+    else:
+        tim = im > threshold
+        f, names = object_features(tim, im, sample_size=sample_size,
+                                   random_seed=random_seed)
+    return f, names
 
 
 def object_features(bin_im, im, erode=2, sample_size=None, random_seed=None):
@@ -203,7 +217,7 @@ def object_features(bin_im, im, erode=2, sample_size=None, random_seed=None):
 
 
 def fraction_positive(bin_im, positive_im, erode=2, overlap_thresh=0.9,
-                     bin_name='nuclei', positive_name='tf'):
+                      bin_name='nuclei', positive_name='tf'):
     """Compute fraction of objects in bin_im overlapping positive_im.
 
     The purpose of this function is to compute the fraction of nuclei
@@ -233,16 +247,31 @@ def fraction_positive(bin_im, positive_im, erode=2, overlap_thresh=0.9,
         The feature vector.
     name : list of string, length 1
         The name of the feature.
+
+    Examples
+    --------
+    >>> bin_im = np.array([[1, 1, 0],
+    ...                    [0, 0, 0],
+    ...                    [1, 1, 1]], dtype=bool)
+    >>> pos_im = np.array([[1, 0, 0],
+    ...                    [0, 1, 1],
+    ...                    [0, 1, 1]], dtype=bool)
+    >>> f = fraction_positive(bin_im, pos_im, erode=0, overlap_thresh=0.6)
+    >>> f[0]
+    array([ 0.5])
+    >>> f[1][0]
+    'frac-nuclei-pos-tf-erode-0-thresh-0.60'
     """
     selem = skmorph.disk(erode)
     if erode > 0:
         bin_im = nd.binary_opening(bin_im, selem)
         positive_im = nd.binary_opening(positive_im, selem)
-    lab_im, n_objs = nd.label(bin_im)
-    means = measure.regionprops(lab_im,
-                                intensity_image=positive_im.astype(np.float32))
-    means = np.array([prop.mean_intensity for prop in means], np.float32)
-    f = np.array([np.mean(means > overlap_thresh)])
+    lab_im = nd.label(bin_im)[0].ravel()
+    pos_im = positive_im.ravel().astype(int)
+    counts = sparse.coo_matrix((np.ones(lab_im.size),
+                                (lab_im, pos_im))).todense()
+    means = counts[:, 1] / np.sum(counts, axis=1)
+    f = np.array([np.mean(means[1:] > overlap_thresh)])
     name = ['frac-%s-pos-%s-erode-%i-thresh-%.2f' %
             (bin_name, positive_name, erode, overlap_thresh)]
     return f, name
@@ -270,7 +299,8 @@ def nuclei_per_cell_histogram(nuc_im, cell_im, max_value=10):
     names : list of string, same length as fs
         The name of each feature.
     """
-    names = [('cells-with-%i-nuclei' % n) for n in range(max_value + 2)]
+    names = [('cells-with-%i-nuclei' % n) for n in range(max_value + 1)]
+    names.append('cells-with->%i-nuclei' % max_value)
     nuc_lab = nd.label(nuc_im)[0]
     cell_lab = nd.label(cell_im)[0]
     match = np.vstack((nuc_lab.ravel(), cell_lab.ravel())).T
@@ -289,7 +319,8 @@ def nuclei_per_cell_histogram(nuc_im, cell_im, max_value=10):
 
 
 @tz.curry
-def default_feature_map(image, channels=[0, 1, 2], channel_names=None,
+def default_feature_map(image, threshold=None,
+                        channels=[0, 1, 2], channel_names=None,
                         sample_size=None, random_seed=None):
     """Compute a feature vector from a multi-channel image.
 
@@ -297,6 +328,8 @@ def default_feature_map(image, channels=[0, 1, 2], channel_names=None,
     ----------
     image : array, shape (M, N, 3)
         The input image.
+    threshold : tuple of float, shape (3,), optional
+        The intensity threshold for object detection on each channel.
     channels : list of int, optional
         Which channels to use for feature computation
     channel_names : list of string, optional
@@ -321,7 +354,8 @@ def default_feature_map(image, channels=[0, 1, 2], channel_names=None,
     if channel_names is None:
         channel_names = ['chan{}'.format(i) for i in channels]
     for im, prefix in zip(images, channel_names):
-        fs, names = intensity_object_features(im, sample_size=sample_size,
+        fs, names = intensity_object_features(im, threshold=threshold,
+                                              sample_size=sample_size,
                                               random_seed=random_seed)
         names = [prefix + '-' + name for name in names]
         all_fs.append(fs)

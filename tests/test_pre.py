@@ -73,8 +73,6 @@ def conv(im):
 @pytest.fixture
 def image_files_noise(request):
     """Three sham images; one has no signal, one has an intensity artifact."""
-    # for clarity we define images as integer arrays in [0, 11) and
-    # divide by 10 later
     r = np.random.RandomState(0)
     shape = (5, 5)
     # no signal
@@ -102,12 +100,13 @@ def image_files_noise(request):
 
 def test_correct_multiimage_illum(image_files_noise):
     files, illum = image_files_noise
-    ims = list(pre.correct_multiimage_illumination(files, illum, (2 / 25), 0))
-    i, j, k = ims
-    # 1. check noise is not blown out in i
-    assert not np.any(i > 10)
-    # 2. check blown out corner in k has not suppressed all other values
-    assert np.median(k) > 100
+    with mio.temporary_file('.tif') as out_fn:
+        ims = pre.correct_multiimage_illumination(files, illum, (2 / 25), 0)
+        i, j, k = list(ims)
+        # 1. check noise is not blown out in i
+        assert not np.any(i > 10)
+        # 2. check blown out corner in k has not suppressed all other values
+        assert np.median(k) > 100
 
 
 if __name__ == '__main__':

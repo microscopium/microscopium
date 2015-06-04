@@ -677,6 +677,48 @@ def _reservoir_sampled_image(ims_iter, random_state=None):
     return sampled
 
 
+def global_threshold(ims_iter, random_state=None):
+    """Generate a global threshold for the collection of images given.
+
+    The threshold is determined by sampling the intensity of every
+    image and then computing the Otsu [1]_ threshold on this sample.
+
+    When the input images are multi-channel, the threshold is computed
+    separately for each channel.
+
+    Parameters
+    ----------
+    ims_iter : iterable of arrays
+        An iterable over numpy arrays (representing images).
+    random_state : None, int, or numpy RandomState instance, optional
+        An optional random number generator or seed from which to draw
+        samples.
+
+    Returns
+    -------
+    thresholds : tuple of float, length equal to number of channels
+        The global threshold for the image collection.
+
+    References
+    ----------
+    .. [1]: Nobuyuki Otsu (1979). "A threshold selection method from
+            gray-level histograms". IEEE Trans. Sys., Man., Cyber.
+            9 (1): 62-66. doi:10.1109/TSMC.1979.4310076
+
+    Examples
+    --------
+    >>> ims = iter(np.arange(27).reshape((3, 3, 3)))
+    >>> global_threshold(ims, 0)
+    (13,)
+    """
+    sampled = _reservoir_sampled_image(ims_iter, random_state)
+    if sampled.ndim < 3:
+        sampled = sampled[..., np.newaxis]  # add dummy channel dimension
+    thresholds = [imfilter.threshold_otsu(sampled[..., i])
+                  for i in range(sampled.shape[-1])]
+    return tuple(thresholds)
+
+
 def correct_image_illumination(im, illum, stretch_quantile=0, mask=None):
     """Divide input image pointwise by the illumination field.
 
