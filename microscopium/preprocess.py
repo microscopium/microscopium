@@ -709,7 +709,7 @@ def global_threshold(ims_iter, random_state=None):
     --------
     >>> ims = iter(np.arange(27).reshape((3, 3, 3)))
     >>> global_threshold(ims, 0)
-    (12,)
+    (13,)
     """
     sampled = _reservoir_sampled_image(ims_iter, random_state)
     if sampled.ndim < 3:
