@@ -703,7 +703,7 @@ def global_threshold(ims_iter, random_state=None):
     ----------
     .. [1]: Nobuyuki Otsu (1979). "A threshold selection method from
             gray-level histograms". IEEE Trans. Sys., Man., Cyber.
-            9 (1): 62–66. doi:10.1109/TSMC.1979.4310076
+            9 (1): 62-66. doi:10.1109/TSMC.1979.4310076
 
     Examples
     --------
