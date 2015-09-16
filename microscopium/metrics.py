@@ -154,3 +154,45 @@ def gene_distance_score(X, collection, metric='euclidean'):
     all_intragene_data = distance[all_intragene_index]
     all_intergene_data = distance[all_intergene_index]
     return all_intragene_data, all_intergene_data
+
+
+def partition_range(z1, z2, n):
+    #builds a partition of bins over the entire range of z1 and z2
+    #Params: z1 and z2 are arrays to be concatenated
+    #n = number of bins
+    #Returns an array of bin edges of length n+1
+
+    eps = 1e-30
+    d_max = max(np.max(z1), np.max(z2)) + eps
+    d_min = min(np.min(z1), np.min(z2))
+    partition = np.linspace(d_min, d_max, n) #or n, check this
+
+    return partition
+
+
+def empirical_distribution(values,bins):
+    #Returns an EDF of an input array 'values' over a given array of bin edges
+    #Note: this is a pdf, not a cdf
+
+    ind = np.digitize(values,bins)
+
+    #Note: np.digitize bin index starts from index 1
+    #erray returns number of times each data point occurs
+    edf = np.bincount(ind, minlength = len(bins) + 1)
+
+    #normalize
+    edf = edf/np.sum(edf)
+
+    return edf
+
+
+def bhattacharyya_distance(values0, values1, n):
+    #Returns the bhattacharyya coefficient of 2 input arrays
+
+    bins = partition_range(values0, values1, n)
+    d0 = empirical_distribution(values0, bins)
+    d1 = empirical_distribution(values1, bins)
+
+    bc = np.sum(np.sqrt(d0*d1))
+
+    return bc
