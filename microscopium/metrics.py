@@ -156,42 +156,96 @@ def gene_distance_score(X, collection, metric='euclidean'):
     return all_intragene_data, all_intergene_data
 
 
-def partition_range(z1, z2, n):
-    #builds a partition of bins over the entire range of z1 and z2
-    #Params: z1 and z2 are arrays to be concatenated
-    #n = number of bins
-    #Returns an array of bin edges of length n+1
+def _partition_range(values1, values2, n):
+    """
+    Builds a partition of bins over the entire range of values1 and values 2.
+
+    Parameters
+    ----------
+    values1, values2 : arrays
+        arrays to be concatenated
+    n : int
+        number of bins
+
+    Returns
+    -------
+    partition : array
+        A 1D array of bin edges, of length n+1
+    """
 
     eps = 1e-30
-    d_max = max(np.max(z1), np.max(z2)) + eps
-    d_min = min(np.min(z1), np.min(z2))
+    d_max = max(np.max(values1), np.max(values2)) + eps
+    d_min = min(np.min(values1), np.min(values2))
     partition = np.linspace(d_min, d_max, n) #or n, check this
 
     return partition
 
 
-def empirical_distribution(values,bins):
-    #Returns an EDF of an input array 'values' over a given array of bin edges
-    #Note: this is a pdf, not a cdf
+def _empirical_distribution(values, bins):
+    """
+    Returns an EDF of an input array 'values' over a given array of bin edges
+    Note: this is a pdf, not a cdf
 
-    ind = np.digitize(values,bins)
+    Parameters
+    ----------
+    values : array
+    bins : bins
+
+
+    Returns
+    -------
+    edf : array
+        A probability distribution of the frequencies of values which appear in the respective bins
+    """
+
+    ind = np.digitize(values, bins)
 
     #Note: np.digitize bin index starts from index 1
     #erray returns number of times each data point occurs
-    edf = np.bincount(ind, minlength = len(bins) + 1)
+    edf=np.bincount(ind, minlength = len(bins) + 1)
 
     #normalize
-    edf = edf/np.sum(edf)
+    edf = edf / np.sum(edf)
 
     return edf
 
 
 def bhattacharyya_distance(values0, values1, n):
-    #Returns the bhattacharyya coefficient of 2 input arrays
+    """Returns the Bhattacharyya coefficient of 2 input arrays
+    BC of 2 probability distributions, f(x) and g(x), is given by the sum of Sqrt(f(x_i)g(x_i)), over all indices i
+    As discrete distributions, f and g must be of the same length
 
-    bins = partition_range(values0, values1, n)
-    d0 = empirical_distribution(values0, bins)
-    d1 = empirical_distribution(values1, bins)
+    Parameters
+    ----------
+    values0, values1 : arrays
+        Return BC of these 2 arrays
+    n : int
+        number of bins to partition values0 and values1 over
+
+    Returns
+    -------
+    bc : real
+        Bhattacharyya coefficient of values0 and values1
+
+
+    >>> d1 = np.array([3,3,4,5,6])
+    >>> d2 = np.array([5,5,5,6,7])
+    >>> bins= partition_range(d1, d2, 5)
+    >>> f0 = _EDF(d1, bins)
+    >>> f1 = _EDF(d2, bins)
+    >>> bhattacharyya_distance(f0, f1, 5)
+    0.54641016151377553
+
+    See Also
+    --------
+    _partition_range : function
+    _empirical_distribution : function
+
+    """
+
+    bins = _partition_range(values0, values1, n)
+    d0 = _empirical_distribution(values0, bins)
+    d1 = _empirical_distribution(values1, bins)
 
     bc = np.sum(np.sqrt(d0*d1))
 
