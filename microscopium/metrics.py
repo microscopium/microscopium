@@ -154,3 +154,110 @@ def gene_distance_score(X, collection, metric='euclidean'):
     all_intragene_data = distance[all_intragene_index]
     all_intergene_data = distance[all_intergene_index]
     return all_intragene_data, all_intergene_data
+
+
+def _partition_range(values1, values2, n):
+    """Build a partition of bins over the entire range of values1 and values2.
+
+    Parameters
+    ----------
+    values1, values2 : arrays
+        arrays to be concatenated
+    n : int
+        number of bins
+
+    Returns
+    -------
+    partition : array
+        A 1D array of bin edges, of length n+1
+
+    Examples
+    --------
+    >>> d1 = np.array([3, 3, 4, 5, 6])
+    >>> d2 = np.array([5, 5, 5, 6, 7])
+    >>> _partition_range(d1, d2, 5)
+    array([ 3.,  4.,  5.,  6.,  7.])
+    """
+
+    eps = 1e-30
+    d_max = max(np.max(values1), np.max(values2)) + eps
+    d_min = min(np.min(values1), np.min(values2))
+    partition = np.linspace(d_min, d_max, n) #or n, check this
+
+    return partition
+
+
+def _empirical_distribution(values, bins):
+    """Return an EDF of an input array over a given array of bin edges
+    Note: returns a PDF, not a CDF
+
+    Parameters
+    ----------
+    values : array of float
+        Values of distribution to be modelled
+    bins : array of float
+        Array of bin right edge values
+
+    Returns
+    -------
+    edf : array
+        A probability distribution over the range of bins
+    """
+
+    ind = np.digitize(values, bins)
+
+    #Note: np.digitize bin index starts from index 1
+    #erray returns number of times each data point occurs
+    edf = np.bincount(ind, minlength = len(bins) + 1)
+
+    #normalize
+    edf = edf / np.sum(edf)
+
+    return edf
+
+
+def bhattacharyya_distance(values0, values1, n):
+    """Return the Bhattacharyya coefficient of 2 input arrays
+
+    BC of 2 distributions, f(x) and g(x) is given by [1]_:
+    $\sum_{k=1}^n{\sqrt(f(x_i)g(x_i))}$
+
+    Parameters
+    ----------
+    values0, values1 : arrays
+        Return BC of these 2 arrays
+    n : int
+        number of bins to partition values0 and values1 over
+
+    Returns
+    -------
+    bc : real
+        Bhattacharyya coefficient of values0 and values1
+
+    References
+    ----------
+    ..[1] Bhattacharyya, A. (1943). "On a measure of divergence between two
+    statistical populations defined by their probability distributions"
+    Bulletin of the Calcutta Mathematical Society
+
+    Examples
+    --------
+    >>> d1 = np.array([3, 3, 4, 5, 6])
+    >>> d2 = np.array([5, 5, 5, 6, 7])
+    >>> d = bhattacharyya_distance(d1, d2, 5)
+    >>> abs(d - 0.546) < 1e-3
+    True
+
+    See Also
+    --------
+    _partition_range : function
+    _empirical_distribution : function
+    """
+
+    bins = _partition_range(values0, values1, n)
+    d0 = _empirical_distribution(values0, bins)
+    d1 = _empirical_distribution(values1, bins)
+
+    bc = np.sum(np.sqrt(d0*d1))
+
+    return bc
