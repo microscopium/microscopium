@@ -158,7 +158,7 @@ def gene_distance_score(X, collection, metric='euclidean'):
 
 def _partition_range(values1, values2, n):
     """
-    Builds a partition of bins over the entire range of values1 and values 2.
+    Build a partition of bins over the entire range of values1 and values2.
 
     Parameters
     ----------
@@ -171,6 +171,13 @@ def _partition_range(values1, values2, n):
     -------
     partition : array
         A 1D array of bin edges, of length n+1
+
+    Examples
+    --------
+    >>> d1 = np.array([3,3,4,5,6])
+    >>> d2 = np.array([5,5,5,6,7])
+    >>> _partition_range(d1, d2, 5)
+    array([3., 4., 5., 6., 7.])
     """
 
     eps = 1e-30
@@ -183,26 +190,27 @@ def _partition_range(values1, values2, n):
 
 def _empirical_distribution(values, bins):
     """
-    Returns an EDF of an input array 'values' over a given array of bin edges
-    Note: this is a pdf, not a cdf
+    Return an EDF of an input array over a given array of bin edges
+    REMOVE? Note: returns a PDF, not a CDF
 
     Parameters
     ----------
-    values : array
-    bins : bins
-
+    values : array of float
+        Values of distribution to be modelled
+    bins : array of float
+        Array of bin right edge values
 
     Returns
     -------
     edf : array
-        A probability distribution of the frequencies of values which appear in the respective bins
+        A probability distribution over the range of bins
     """
 
     ind = np.digitize(values, bins)
 
     #Note: np.digitize bin index starts from index 1
     #erray returns number of times each data point occurs
-    edf=np.bincount(ind, minlength = len(bins) + 1)
+    edf = np.bincount(ind, minlength = len(bins) + 1)
 
     #normalize
     edf = edf / np.sum(edf)
@@ -212,8 +220,9 @@ def _empirical_distribution(values, bins):
 
 def bhattacharyya_distance(values0, values1, n):
     """Returns the Bhattacharyya coefficient of 2 input arrays
-    BC of 2 probability distributions, f(x) and g(x), is given by the sum of Sqrt(f(x_i)g(x_i)), over all indices i
-    As discrete distributions, f and g must be of the same length
+
+    BC of 2 distributions, f(x) and g(x) is given by [1]_:
+    $\sum_{k=1}^n{\sqrt(f(x_i)g(x_i))}$
 
     Parameters
     ----------
@@ -227,20 +236,25 @@ def bhattacharyya_distance(values0, values1, n):
     bc : real
         Bhattacharyya coefficient of values0 and values1
 
+    References
+    ----------
+    [1]Bhattacharyya, A. (1943). "On a measure of divergence between two
+    statistical populations defined by their probability distributions"
+    Bulletin of the Calcutta Mathematical Society
 
+
+    Examples
+    --------
     >>> d1 = np.array([3,3,4,5,6])
     >>> d2 = np.array([5,5,5,6,7])
-    >>> bins= partition_range(d1, d2, 5)
-    >>> f0 = _EDF(d1, bins)
-    >>> f1 = _EDF(d2, bins)
-    >>> bhattacharyya_distance(f0, f1, 5)
-    0.54641016151377553
+    >>> d = bhattacharyya_distance(d1, d2, 5)
+    >>> abs(d - 0.546) < 1e-3
+    True
 
     See Also
     --------
     _partition_range : function
     _empirical_distribution : function
-
     """
 
     bins = _partition_range(values0, values1, n)
