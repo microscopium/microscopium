@@ -157,8 +157,7 @@ def gene_distance_score(X, collection, metric='euclidean'):
 
 
 def _partition_range(values1, values2, n):
-    """
-    Build a partition of bins over the entire range of values1 and values2.
+    """Build a partition of bins over the entire range of values1 and values2.
 
     Parameters
     ----------
@@ -189,9 +188,8 @@ def _partition_range(values1, values2, n):
 
 
 def _empirical_distribution(values, bins):
-    """
-    Return an EDF of an input array over a given array of bin edges
-    REMOVE? Note: returns a PDF, not a CDF
+    """Return an EDF of an input array over a given array of bin edges
+    Note: returns a PDF, not a CDF
 
     Parameters
     ----------
@@ -219,7 +217,7 @@ def _empirical_distribution(values, bins):
 
 
 def bhattacharyya_distance(values0, values1, n):
-    """Returns the Bhattacharyya coefficient of 2 input arrays
+    """Return the Bhattacharyya coefficient of 2 input arrays
 
     BC of 2 distributions, f(x) and g(x) is given by [1]_:
     $\sum_{k=1}^n{\sqrt(f(x_i)g(x_i))}$
@@ -238,10 +236,9 @@ def bhattacharyya_distance(values0, values1, n):
 
     References
     ----------
-    [1]Bhattacharyya, A. (1943). "On a measure of divergence between two
+    ..[1] Bhattacharyya, A. (1943). "On a measure of divergence between two
     statistical populations defined by their probability distributions"
     Bulletin of the Calcutta Mathematical Society
-
 
     Examples
     --------
