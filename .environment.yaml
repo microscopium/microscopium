@@ -1,0 +1,87 @@
+name: mic
+dependencies:
+- appnope=0.1.0=py35_0
+- certifi=14.05.14=py35_0
+- chest=0.2.3=py35_0
+- coverage=4.0=py35_0
+- cytoolz=0.7.3=py35_0
+- dask=0.7.3=py35_0
+- decorator=4.0.4=py35_0
+- dill=0.2.4=py35_0
+- freetype=2.5.2=2
+- h5py=2.5.0=np19py35_3
+- hdf5=1.8.15.1=1
+- heapdict=1.0.0=py35_0
+- ipykernel=4.0.3=py35_0
+- ipython=4.0.0=py35_1
+- ipython_genutils=0.1.0=py35_0
+- ipywidgets=4.0.3=py35_0
+- jinja2=2.8=py35_0
+- jpeg=8d=1
+- jsonschema=2.4.0=py35_0
+- jupyter=1.0.0=py35_0
+- jupyter_client=4.0.0=py35_0
+- jupyter_console=4.0.2=py35_0
+- jupyter_core=4.0.6=py35_0
+- libpng=1.6.17=0
+- libsodium=0.4.5=0
+- libtiff=4.0.2=1
+- locket=0.2.0=py35_0
+- markupsafe=0.23=py35_0
+- matplotlib=1.4.3=np19py35_3
+- mistune=0.7.1=py35_0
+- nbconvert=4.0.0=py35_0
+- nbformat=4.0.0=py35_0
+- networkx=1.10=py35_0
+- nose=1.3.7=py35_0
+- notebook=4.0.5=py35_0
+- numpy=1.9.3=py35_0
+- openssl=1.0.1k=1
+- pandas=0.16.2=np19py35_0
+- partd=0.3.2=py35_1
+- path.py=8.1.1=py35_0
+- pexpect=3.3=py35_0
+- pickleshare=0.5=py35_0
+- pillow=2.9.0=py35_0
+- pip=7.1.2=py35_0
+- ptyprocess=0.5=py35_0
+- py=1.4.30=py35_0
+- pygments=2.0.2=py35_0
+- pymongo=3.0.3=py35_0
+- pyparsing=2.0.3=py35_0
+- pyqt=4.11.3=py35_0
+- pytest=2.8.1=py35_0
+- python=3.5.0=0
+- python-dateutil=2.4.2=py35_0
+- python.app=1.2=py35_4
+- pytz=2015.6=py35_0
+- pyzmq=14.7.0=py35_0
+- qt=4.8.6=3
+- qtconsole=4.0.1=py35_0
+- readline=6.2=2
+- scikit-image=0.11.3=np19py35_0
+- scikit-learn=0.16.1=np19py35_0
+- scipy=0.16.0=np19py35_1
+- setuptools=18.3.2=py35_0
+- sh=1.11=py35_0
+- simplegeneric=0.8.1=py35_0
+- sip=4.16.5=py35_0
+- six=1.9.0=py35_0
+- sqlite=3.8.4.1=1
+- terminado=0.5=py35_0
+- tk=8.5.18=0
+- toolz=0.7.4=py35_0
+- tornado=4.2.1=py35_0
+- traitlets=4.0.0=py35_0
+- ujson=1.33=py35_0
+- wheel=0.26.0=py35_1
+- xz=5.0.5=0
+- zeromq=4.0.5=0
+- zlib=1.2.8=0
+- pip:
+  - ipython-genutils==0.1.0
+  - jupyter-client==4.0.0
+  - jupyter-console==4.0.2
+  - jupyter-core==4.0.6
+  - pytest-cov==2.1.0
+
