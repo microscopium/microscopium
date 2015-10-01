@@ -11,3 +11,5 @@ pymongo
 pandas
 pytest
 sh
+coverage
+pytest-cov
