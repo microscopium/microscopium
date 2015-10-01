@@ -1,0 +1,13 @@
+numpy
+scipy
+scikit-learn
+scikit-image
+six
+toolz
+cytoolz
+h5py
+ujson
+pymongo
+pandas
+pytest
+sh
