@@ -14,7 +14,7 @@ before_install:
     - conda update -q conda
     - conda info -a
 
-    - conda create -q -n mic-test python=$TRAVIS_PYTHON_VERSION numpy scipy pillow scikit-learn scikit-image toolz cytoolz pandas setuptools pip pymongo matplotlib six h5py
+    - conda create -q -n mic-test python=$TRAVIS_PYTHON_VERSION numpy scipy pillow scikit-learn scikit-image toolz cytoolz pandas setuptools pip pymongo=2.8.1 matplotlib six h5py
     - source activate mic-test
 
     - pip install pytest coverage pytest-cov sh
