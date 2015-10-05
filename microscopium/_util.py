@@ -19,6 +19,16 @@ def groupby(key, iterable, transform=None):
         A dictionary mapping keys to elements of iterable. This has
         the form:
             ``{key(elem): [transform(elem)] for elem in iterable}``
+
+    Examples
+    --------
+    >>> g = groupby(lambda x: x % 2, range(6), lambda x: x ** 2)
+    >>> sorted(g.keys())
+    [0, 1]
+    >>> g[0]
+    [0, 4, 16]
+    >>> g[1]
+    [1, 9, 25]
     """
     if transform is None:
         transform = lambda x: x
