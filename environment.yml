@@ -5,6 +5,9 @@ dependencies:
 - freetype=2.5.2=2
 - h5py=2.5.0=np19py34_3
 - hdf5=1.8.15.1=1
+- jpeg=8d=1
+- libpng=1.6.17=0
+- libtiff=4.0.2=1
 - matplotlib=1.4.3=np19py34_3
 - mongodb=2.4.6=0
 - networkx=1.10=py34_0
