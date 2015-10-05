@@ -800,7 +800,7 @@ def montage(ims, order=None):
     rows, cols = ims[0].shape[:2]
     mrows, mcols = order.shape
 
-    montaged = np.zeros((rows * mrows, cols * mcols) + ims[0].shape[2:],
+    montaged = np.empty((rows * mrows, cols * mcols) + ims[0].shape[2:],
                         dtype=ims[0].dtype)
     for i in range(mrows):
         for j in range(mcols):
