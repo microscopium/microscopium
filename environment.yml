@@ -1,0 +1,46 @@
+name: mic
+dependencies:
+- cytoolz=0.7.3=py34_0
+- decorator=4.0.4=py34_0
+- freetype=2.5.2=2
+- h5py=2.5.0=np19py34_3
+- hdf5=1.8.15.1=1
+- jpeg=8d=1
+- libpng=1.6.17=0
+- libtiff=4.0.2=1
+- matplotlib=1.4.3=np19py34_3
+- mongodb=2.4.6=0
+- networkx=1.10=py34_0
+- nose=1.3.7=py34_0
+- numpy=1.9.3=py34_0
+- openssl=1.0.1k=1
+- pandas=0.16.2=np19py34_0
+- pillow=3.0.0=py34_0
+- pip=7.1.2=py34_0
+- pymongo=2.8=py34_0
+- pyparsing=2.0.3=py34_0
+- pyqt=4.11.3=py34_0
+- python=3.4.3=0
+- python-dateutil=2.4.2=py34_0
+- pytz=2015.6=py34_0
+- qt=4.8.6=3
+- readline=6.2=2
+- scikit-image=0.11.3=np19py34_0
+- scikit-learn=0.16.1=np19py34_0
+- scipy=0.16.0=np19py34_1
+- setuptools=18.3.2=py34_0
+- sip=4.16.5=py34_0
+- six=1.9.0=py34_0
+- sqlite=3.8.4.1=1
+- tk=8.5.18=0
+- toolz=0.7.4=py34_0
+- wheel=0.26.0=py34_1
+- xz=5.0.5=0
+- zlib=1.2.8=0
+- pip:
+  - coverage==4.0
+  - py==1.4.30
+  - pytest==2.8.1
+  - pytest-cov==2.2.0
+  - sh==1.11
+
