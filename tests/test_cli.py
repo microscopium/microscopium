@@ -68,7 +68,7 @@ def env():
 
 
 def test_features(env):
-    images = glob.glob(os.path.join(env['images'], '*.tif'))
+    images = sorted(glob.glob(os.path.join(env['images'], '*.tif')))
     mic = sh.Command(env['bin'])
     out = mic.features(*images, S=20, n=2, s='myores', b=8,
                        random_seed=0, _env=env['env'])
@@ -77,7 +77,7 @@ def test_features(env):
 
 
 def test_features_single_threshold(env):
-    images = glob.glob(os.path.join(env['images'], '*.tif'))
+    images = sorted(glob.glob(os.path.join(env['images'], '*.tif')))
     mic = sh.Command(env['bin'])
     out = mic.features(*images, S=20, n=2, s='myores', b=8, G=True,
                        random_seed=0, _env=env['env'])
