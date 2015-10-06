@@ -98,7 +98,7 @@ def mongo_group_by(collection, group_by):
                     }
                 }
             }
-    }])['result']
+    }])
 
     query_dict = {}
     for doc in mongo_query:
