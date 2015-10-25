@@ -951,7 +951,8 @@ def montage_stream(ims, montage_order=None, channel_order=[0, 1, 2]):
                         c.map(montage_))
 
 
-def montage_parallel(images, montage_order=None, channel_order=None):
+def montage_parallel(images, montage_order=None, channel_order=None,
+                     montages_per_partition=10):
     """Montage the images in a stream in parallel using dask.
 
     Parameters
@@ -963,6 +964,10 @@ def montage_parallel(images, montage_order=None, channel_order=None):
         The order of the montage images (in 1D or 2D).
     channel_order : list of int, optional
         The order in which the channels appear.
+    montages_per_partition : int, optional
+        How many groups of images (full final images) to process at any
+        one time. Adding these to about 100MB per "chunk" should
+        optimise IO from disk.
 
     Returns
     -------
@@ -991,4 +996,11 @@ def montage_parallel(images, montage_order=None, channel_order=None):
     ntiles = montage_order.size
     nchannels = len(channel_order)
     ncpus = multiprocessing.cpu_count()
-    partitioned_images = tz.partition(ntiles * nchannels, images)
+    stack = func.partial(stack_channels, order=channel_order)
+    montage_ = func.partial(montage, order=montage_order)
+    bag = db.from_sequence(images, partition_size=(ntiles * nchannels *
+                                                 montages_per_partition))
+    return bag.map_partitions(func.partial(tz.partition, nchannels))
+              .map(stack)
+              .map_partitions(func.partial(tz.partition, ntiles))
+              .map(montage_)
