@@ -1,6 +1,6 @@
 from __future__ import absolute_import, division
 import os
-import functools as fun
+import functools as func
 import itertools as it
 import collections as coll
 import re
@@ -11,8 +11,10 @@ from scipy.stats.mstats import mquantiles as quantiles
 from skimage import morphology as skmorph, filters as imfilter, exposure
 import skimage.filters.rank as rank
 import skimage
-import cytoolz as tz
-from cytoolz import curried as c
+import toolz as tz
+from toolz import curried as c
+from dask import bag as db
+import multiprocessing
 from six.moves import map, range, zip, filter
 
 from ._util import normalise_random_state
@@ -305,7 +307,7 @@ def group_by_channel(fns, re_string='(.*)_(w[1-3]).*',
     >>> sorted(group_by_channel(fns).items())
     [('w1', ['image_0_w1.tif', 'image_1_w1.tif']), ('w2', ['image_0_w2.tif', 'image_1_w2.tif']), ('w3', ['image_0_w3.tif', 'image_1_w3.tif'])]
     """
-    re_match = fun.partial(re.match, re_string)
+    re_match = func.partial(re.match, re_string)
     match_objs = list(map(re_match, fns))
     fns = [fn for fn, match in zip(fns, match_objs) if match is not None]
     match_objs = [x for x in match_objs if x is not None]
@@ -347,7 +349,7 @@ def group_by_quadrant(fns, re_string='(.*)_(s[1-4])_(w[1-3]).*',
     >>> sorted(group_by_quadrant(fns).items())
     [(('image_0', 'w1'), ['image_0_s1_w1.TIF', 'image_0_s2_w1.TIF', 'image_0_s3_w1.TIF', 'image_0_s4_w1.TIF']), (('image_1', 'w1'), ['image_1_s1_w1.TIF', 'image_1_s2_w1.TIF', 'image_1_s3_w1.TIF', 'image_1_s4_w1.TIF'])]
     """
-    re_match = fun.partial(re.match, re_string)
+    re_match = func.partial(re.match, re_string)
     match_objs = list(map(re_match, fns))
     fns = [fn for fn, match in zip(fns, match_objs) if match is not None]
     match_objs = [x for x in match_objs if x is not None]
@@ -557,10 +559,10 @@ def find_background_illumination(fns, radius=51, quantile=0.05,
                  if stretch_quantile > 0
                  else skimage.img_as_float)
     rescale = rescale_to_11bits
-    pad = fun.partial(skimage.util.pad, pad_width=radius, mode='reflect')
-    rank_filter = fun.partial(rank.percentile, selem=skmorph.disk(radius),
+    pad = func.partial(skimage.util.pad, pad_width=radius, mode='reflect')
+    rank_filter = func.partial(rank.percentile, selem=skmorph.disk(radius),
                               p0=quantile)
-    _unpad = fun.partial(unpad, pad_width=radius)
+    _unpad = func.partial(unpad, pad_width=radius)
     unscale = rescale_from_11bits
 
     # Next, compose all the steps, apply to all images (streaming)
@@ -808,7 +810,7 @@ def montage(ims, order=None):
     return montaged
 
 
-@tlz.curry
+@tz.curry
 def reorder(index_list, list_to_reorder):
     """Curried function to reorder a list according to input indices.
 
@@ -834,7 +836,6 @@ def reorder(index_list, list_to_reorder):
     return [list_to_reorder[j] for j in index_list]
 
 
-@tlz.curry
 def stack_channels(images, order=[0, 1, 2]):
     """Stack multiple image files to one single, multi-channel image.
 
@@ -885,6 +886,9 @@ def stack_channels(images, order=[0, 1, 2]):
     while ordered_ims:
         del ordered_ims[-1]
     return stack_image
+
+
+cstack_channels = tz.curry(stack_channels)
 
 
 def montage_stream(ims, montage_order=None, channel_order=[0, 1, 2]):
@@ -940,8 +944,51 @@ def montage_stream(ims, montage_order=None, channel_order=[0, 1, 2]):
     montage_order = np.array(montage_order)
     ntiles = montage_order.size
     nchannels = len(channel_order)
-    montage_ = fun.partial(montage, order=montage_order)
+    montage_ = func.partial(montage, order=montage_order)
     return tz.pipe(ims, c.partition(nchannels),
-                        c.map(stack_channels(order=channel_order)),
+                        c.map(cstack_channels(order=channel_order)),
                         c.partition(ntiles),
                         c.map(montage_))
+
+
+def montage_parallel(images, montage_order=None, channel_order=None):
+    """Montage the images in a stream in parallel using dask.
+
+    Parameters
+    ----------
+    images : iterator of array, shape (M, N)
+        A list of images in which consecutive images represent single
+        channels of the same image. (See example.)
+    montage_order : array-like of int, optional
+        The order of the montage images (in 1D or 2D).
+    channel_order : list of int, optional
+        The order in which the channels appear.
+
+    Returns
+    -------
+    montaged_bag : dask bag
+        An iterator of the images composed into multi-channel montages.
+
+    Examples
+    --------
+    >>> images = (i * np.ones((4, 5), dtype=np.uint8) for i in range(24))
+    >>> montaged = list(montage_parallel(images, [[0, 1], [2, 3]], [2, 0, 1]))
+    >>> len(montaged)
+    2
+    >>> montaged[0].shape
+    (8, 10, 3)
+    >>> montaged[0][0, 0, :]
+    array([2, 0, 1], dtype=uint8)
+    >>> montaged[0][4, 5, :]
+    array([11,  9, 10], dtype=uint8)
+    >>> montaged[1][4, 5, :]
+    array([23, 21, 22], dtype=uint8)
+    """
+    if montage_order is None:
+        from .screens import cellomics
+        montage_order = cellomics.SPIRAL_CLOCKWISE_RIGHT_25
+    montage_order = np.array(montage_order)
+    ntiles = montage_order.size
+    nchannels = len(channel_order)
+    ncpus = multiprocessing.cpu_count()
+    partitioned_images = tz.partition(ntiles * nchannels, images)
