@@ -1000,7 +1000,7 @@ def montage_parallel(images, montage_order=None, channel_order=None,
     montage_ = func.partial(montage, order=montage_order)
     bag = db.from_sequence(images, partition_size=(ntiles * nchannels *
                                                  montages_per_partition))
-    return bag.map_partitions(func.partial(tz.partition, nchannels))
-              .map(stack)
-              .map_partitions(func.partial(tz.partition, ntiles))
-              .map(montage_)
+    return (bag.map_partitions(func.partial(tz.partition, nchannels))
+               .map(stack)
+               .map_partitions(func.partial(tz.partition, ntiles))
+               .map(montage_))
