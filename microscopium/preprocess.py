@@ -998,9 +998,11 @@ def montage_parallel(images, montage_order=None, channel_order=None,
     ncpus = multiprocessing.cpu_count()
     stack = func.partial(stack_channels, order=channel_order)
     montage_ = func.partial(montage, order=montage_order)
-    bag = db.from_sequence(images, partition_size=(ntiles * nchannels *
-                                                 montages_per_partition))
-    return (bag.map_partitions(func.partial(tz.partition, nchannels))
-               .map(stack)
-               .map_partitions(func.partial(tz.partition, ntiles))
-               .map(montage_))
+    partition_size = ntiles * nchannels * montages_per_partition
+    chunk_size = partition_size * ncpus
+    for chunk in tz.partition_all(chunk_size, images):
+        bag = db.from_sequence(chunk, partition_size=partition_size)
+        yield from (bag.map_partitions(func.partial(tz.partition, nchannels))
+                    .map(stack)
+                    .map_partitions(func.partial(tz.partition, ntiles))
+                    .map(montage_))
