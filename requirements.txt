@@ -5,6 +5,7 @@ scikit-image
 six
 toolz
 cytoolz
+dask
 h5py
 ujson
 pymongo==2.8.1
