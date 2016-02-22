@@ -632,7 +632,7 @@ def correct_multiimage_illumination(im_fns, illum, stretch_quantile=0,
         corrected = im / illum
         rescaled = exposure.rescale_intensity(corrected, in_range=corr_range,
                                               out_range=np.uint8)
-        out = np.round(rescaled, out=np.empty(rescaled.shape, np.uint8))
+        out = np.round(rescaled, out=np.empty(rescaled.shape)).astype(np.uint8)
         yield out
 
 
