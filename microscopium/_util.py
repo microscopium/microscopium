@@ -18,7 +18,8 @@ def generate_spiral(dim, direction, clockwise=False):
         The direction the first step the spiral takes when leaving the origin.
         Should be one of up, down, left or right.
     clockwise : bool, optional
-        The direction of the spiral. Default clockwise.
+        If the spiral generated should be in a clockwise direction. Default
+        true.
 
     Returns
     -------
