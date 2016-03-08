@@ -7,7 +7,7 @@ toolz
 cytoolz
 h5py
 ujson
-pymongo==2.8.1
+pymongo
 pandas
 pytest
 sh

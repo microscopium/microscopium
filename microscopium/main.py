@@ -12,6 +12,7 @@ import numpy as np
 from skimage import img_as_ubyte
 import toolz as tz
 from sklearn import neighbors
+from sklearn.preprocessing import StandardScaler
 
 # local imports
 from . import io
@@ -267,7 +268,7 @@ def run_features(args):
     indices = list(map(index_function, args.images))
     f0, feature_names = fmap(next(images))
     feature_vectors = tz.cons(f0, (fmap(im)[0] for im in images))
-    online_scaler = cluster.OnlineStandardScaler()
+    online_scaler = StandardScaler()
     online_pca = cluster.OnlineIncrementalPCA(n_components=args.n_components,
                                               batch_size=args.pca_batch_size)
     nimages, nfeatures = len(args.images), len(f0)
@@ -278,12 +279,11 @@ def run_features(args):
         for i, (idx, v) in enumerate(zip(indices, feature_vectors)):
             emit({'_id': idx, 'feature_vector': list(v)})
             dset[i] = v
-            online_scaler.add_sample(v)
+            online_scaler.partial_fit(v.reshape(1, -1))
             online_pca.add_sample(v)
         # Second pass: standardise the feature vectors, compute PCA-transform
-        scaler = online_scaler.standard_scaler()
         for i, (idx, v) in enumerate(zip(indices, dset)):
-            v_std = scaler.transform(v)
+            v_std = online_scaler.transform(v)
             v_pca = online_pca.transform(v)
             dset[i] = v_std
             emit({'_id': idx, 'feature_vector_std': list(v_std),
