@@ -17,8 +17,10 @@ before_install:
     - conda update -q conda
     - conda info -a
 
-    - conda create -q -n mic-test python=$TRAVIS_PYTHON_VERSION numpy scipy pillow scikit-learn scikit-image toolz cytoolz pandas setuptools pip pymongo matplotlib six h5py
-    - source activate mic-test
+    - source activate mic-test || {
+        conda create -q -n mic-test python=$TRAVIS_PYTHON_VERSION;
+        source activate mic-test;}
+    - conda install numpy scipy pillow scikit-learn scikit-image toolz cytoolz pandas setuptools pip pymongo matplotlib six h5py
 
     - pip install pytest coverage pytest-cov sh
     - pip install coveralls
