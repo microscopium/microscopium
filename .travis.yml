@@ -31,5 +31,19 @@ script:
 after_success:
     - if [[ $TRAVIS_PYTHON_VERSION == 3.4 ]]; then coveralls; fi
 
+before_cache:
+# clean unused packages & installed files from conda cache
+# This reduces cache rebuilds
+# Copied from
+# https://github.com/uwescience/shablona/blob/0246556f692fdeb65ba9354e94565e6181ff993c/.travis.yml#L47
+- conda clean --tarballs --packages --index-cache
+- rm -rf $HOME/miniconda/pkgs/cache
+- xargs rm < installed_files.txt
+
+cache:
+    directories:
+        - $HOME/miniconda
+        - $HOME/.matplotlib
+
 services:
     mongodb
