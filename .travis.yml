@@ -2,20 +2,25 @@ language: python
 sudo: false
 python:
     - 2.7
-    - 3.4
+    - 3.5
 virtualenv:
     system_site_packages: false
 before_install:
     - export DISPLAY=:99.0
-    - wget http://repo.continuum.io/miniconda/Miniconda-3.7.0-Linux-x86_64.sh -O miniconda.sh
-    - bash miniconda.sh -b -p $HOME/miniconda
-    - export PATH="$HOME/miniconda/bin:$PATH"
+    - export CONDA=$HOME/miniconda
+    - export PATH="$CONDA/bin:$PATH"
+    # install conda, but only if it's not present already... Yay caching!
+    - command -v conda > /dev/null || {
+        wget http://repo.continuum.io/miniconda/Miniconda-3.7.0-Linux-x86_64.sh -O miniconda.sh;
+        bash miniconda.sh -b -f -p $CONDA; }
     - conda config --set always_yes yes --set changeps1 no
     - conda update -q conda
     - conda info -a
 
-    - conda create -q -n mic-test python=$TRAVIS_PYTHON_VERSION numpy scipy pillow scikit-learn scikit-image toolz cytoolz pandas setuptools pip pymongo matplotlib six h5py
-    - source activate mic-test
+    - source activate mic-test || {
+        conda create -q -n mic-test python=$TRAVIS_PYTHON_VERSION;
+        source activate mic-test;}
+    - conda install numpy scipy pillow scikit-learn scikit-image toolz cytoolz pandas setuptools pip pymongo matplotlib six h5py
 
     - pip install pytest coverage pytest-cov sh
     - pip install coveralls
@@ -30,6 +35,20 @@ script:
 
 after_success:
     - if [[ $TRAVIS_PYTHON_VERSION == 3.4 ]]; then coveralls; fi
+
+before_cache:
+# clean unused packages & installed files from conda cache
+# This reduces cache rebuilds
+# Copied from
+# https://github.com/uwescience/shablona/blob/0246556f692fdeb65ba9354e94565e6181ff993c/.travis.yml#L47
+- conda clean --tarballs --packages --index-cache
+- rm -rf $HOME/miniconda/pkgs/cache
+- xargs rm < installed_files.txt
+
+cache:
+    directories:
+        - $HOME/miniconda
+        - $HOME/.matplotlib
 
 services:
     mongodb
