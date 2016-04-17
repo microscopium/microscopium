@@ -109,5 +109,24 @@ def test_correct_multiimage_illum(image_files_noise):
         assert np.median(k) > 100
 
 
+cellomics_pattern = "MFGTMP_150406100001_A01f{0:02d}d0.TIF"
+
+missing_test_fns = [
+    ([cellomics_pattern.format(i) for i in range(25)], []),
+    ([cellomics_pattern.format(i) for i in range(25)], [1, 13])
+]
+
+# delete "images" with fields 1 and 13 from second set of
+# image filesnames
+missing_test_fns[1][0].remove(cellomics_pattern.format(1))
+missing_test_fns[1][0].remove(cellomics_pattern.format(13))
+
+
+@pytest.mark.parametrize("fns, expected", missing_test_fns)
+def test_find_missing_fields(fns, expected):
+    actual = pre.find_missing_fields(fns)
+    assert actual == expected
+
+
 if __name__ == '__main__':
     pytest.main()

@@ -808,6 +808,50 @@ def montage(ims, order=None):
     return montaged
 
 
+def find_missing_fields(fns, order=None,
+                        re_string=".*_[A-P]\d{2}f(\d{2})d0",
+                        re_group=1):
+    """Find which fields are missing from a list of files belonging to a well.
+
+    Given a list of image files, a stitch order, and a regex pattern
+    determining which part of the filename denotes the field, find out
+    which fields are missing.
+
+    Parameters
+    ----------
+    fns : list of str
+    order : array-like of int, shape (M, N), optional
+        The order of the stitching, with each entry referring
+        to the index of file in the fns array.
+    re_string : str, optional
+        The regex pattern used to show where in the file the field is.
+        Default follows the Cellomics pattern eg.
+        MFGTMP_150406100001_A01f00d0.TIF where the field is the number
+        after "f".
+    re_group : int, optional
+        The regex group the field value belongs to. Default 1.
+
+    Returns
+    -------
+    missing : list of int
+        Returns an empty list where no fields were determined
+        missing, otherwise a list of the missing fields.
+    """
+    if order is None:
+        from .screens import cellomics
+        order = cellomics.SPIRAL_CLOCKWISE_RIGHT_25
+
+    # get fields present in list
+    pattern = re.compile(re_string)
+    fields = [int(re.match(pattern, fn).group(re_group)) for fn in fns]
+
+    # determine which fields are missing
+    start, end = np.min(order), np.max(order)
+    missing = sorted(set(range(start, end + 1)).difference(fields))
+
+    return missing
+
+
 @tlz.curry
 def reorder(index_list, list_to_reorder):
     """Curried function to reorder a list according to input indices.
