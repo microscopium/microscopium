@@ -852,6 +852,43 @@ def find_missing_fields(fns, order=None,
     return missing
 
 
+def create_missing_mask(missing, order, rows=512, cols=512):
+    """Create a binary mask for stitched images where fields are missing.
+
+    Given a list of missing fields, a stitch order, and the size of
+    the input images, create a binary mask with False values where
+    fields are missing. This is used to prevent missing fields from
+    upsetting feature computation on images where a field is missing.
+
+    Parameters
+    ----------
+    missing : list of int, or empty list
+        The fields that are missing.
+    order : array-like of int, shape (M, N), optional
+        The order of the stitching, with each entry referring
+        to the index of file in the fns array.
+    rows : int, optional
+        The number of rows in the input images. Default 512.
+    cols : int, optional
+        The number of cols in the input images. Default 512.
+    """
+    if order is None:
+        from .screens import cellomics
+        order = cellomics.SPIRAL_CLOCKWISE_RIGHT_25
+    order = np.atleast_2d(order)
+    mrows, mcols = order.shape
+
+    mask = np.ones((rows * mrows, cols * mcols),
+                   dtype=bool)
+
+    for i in range(mrows):
+        for j in range(mcols):
+            if order[i, j] in missing:
+                mask[rows*i:rows*(i+1), cols*j:cols*(j+1)] = False
+
+    return mask
+
+
 @tlz.curry
 def reorder(index_list, list_to_reorder):
     """Curried function to reorder a list according to input indices.

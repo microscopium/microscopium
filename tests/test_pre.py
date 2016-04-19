@@ -128,5 +128,25 @@ def test_find_missing_fields(fns, expected):
     assert actual == expected
 
 
+missing_mask_test = [
+    ([], [[0, 1, 2]], 10, 5, np.ones((10, 15), dtype=np.bool)),
+    ([0, 5], [[0, 1, 2], [4, 5, 6]], 5, 10, np.ones((10, 30), dtype=np.bool)),
+    ([3, 4], [[0, 1], [2, 3], [4, 5]], 10, 5, np.ones((30, 10), dtype=np.bool))
+]
+
+# insert False to missing areas of expected output
+missing_mask_test[1][4][0:5, 0:10] = False
+missing_mask_test[1][4][5:10, 10:20] = False
+
+missing_mask_test[2][4][10:20, 5:10] = False
+missing_mask_test[2][4][20:30, 0:5] = False
+
+
+@pytest.mark.parametrize("missing, order, rows, cols, expected",
+                         missing_mask_test)
+def test_create_missing_mask(missing, order, rows, cols, expected):
+    actual = pre.create_missing_mask(missing, order, rows, cols)
+    np.testing.assert_array_equal(actual, expected)
+
 if __name__ == '__main__':
     pytest.main()
