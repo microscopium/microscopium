@@ -1,6 +1,7 @@
 import numpy as np
 import numbers
 
+
 def groupby(key, iterable, transform=None):
     """Group items in `iterable` in a dictionary according to `key`.
 
@@ -66,3 +67,25 @@ def normalise_random_state(seed):
         return seed
     else:
         raise ValueError('Invalid input %s to generate random state' % seed)
+
+
+def int_or_none(n):
+    """Returns input n cast as int, or None if input is none.
+
+    This is used in parsing sample information from image filenames.
+
+    Parameters
+    ----------
+    n : any value castable as int, None
+        The input value.
+
+    Returns
+    -------
+    The input value cast an int, or None.
+
+    Examples
+    --------
+    >>> int_or_none(3.0)
+    3
+    """
+    return int(n) if n is not None else None

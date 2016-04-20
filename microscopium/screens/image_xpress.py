@@ -5,6 +5,7 @@ import os
 import collections as coll
 import re
 from .. import features as feat
+from .. import _util
 
 
 def ix_semantic_filename(fn):
@@ -22,10 +23,8 @@ def ix_semantic_filename(fn):
     well, field, channel = map(lambda x: fn_regex.group(x), range(1, 4))
     plate = int(dir_regex.group(1))
 
-    def int_or_none(n): return int(n) if n is not None else None
-
     values = [directory, prefix, int(plate), well,
-              int_or_none(field), int_or_none(channel), suffix]
+              _util.int_or_none(field), _util.int_or_none(channel), suffix]
 
     semantic = coll.OrderedDict(zip(keys, values))
 
