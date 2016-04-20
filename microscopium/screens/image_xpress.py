@@ -14,13 +14,12 @@ def ix_semantic_filename(fn):
     directory, fn = os.path.split(fn)
     fn, suffix = fn.split('.', 1)
 
-    # no prefixes in ix filenames, so just use an empty string
-    prefix = ''
+    fn_regex = re.search(r'([^\W_]{0,})(?:_{0,})([A-P]\d+)_s(\d+)_w(\d{1})',
+                         fn)
+    # finds last set of contiguous digits after underscore
+    dir_regex = re.search(r'_(\d+)(?!.*_(\d+))', directory)
 
-    fn_regex = re.search(r'([A-P]\d+)_s(\d+)_w(\d{1})', fn)
-    dir_regex = re.search(r'.*(?:\D|^)(\d+)', directory)
-
-    well, field, channel = map(lambda x: fn_regex.group(x), range(1, 4))
+    prefix, well, field, channel = map(lambda x: fn_regex.group(x), range(1, 5))
     plate = int(dir_regex.group(1))
 
     values = [directory, prefix, int(plate), well,

@@ -14,3 +14,16 @@ def test_ix_semantic_filename():
 
     assert image_xpress.ix_semantic_filename(test_fn) == expected
 
+
+def test_ix_semantic_filename2():
+    test_fn = "./BBBC022_v1_images_20585w1/IXMtest_L09_s3_w1538679C9-F03A-" \
+              "4656-9A57-0D4A440C1C62.tif"
+    expected = coll.OrderedDict([('directory', './BBBC022_v1_images_20585w1'),
+                                 ('prefix', 'IXMtest'),
+                                 ('plate', 20585),
+                                 ('well', 'L09'),
+                                 ('field', 2),
+                                 ('channel', 0),
+                                 ('suffix', 'tif')])
+    assert image_xpress.ix_semantic_filename(test_fn) == expected
+
