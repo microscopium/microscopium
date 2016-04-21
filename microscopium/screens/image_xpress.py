@@ -9,7 +9,20 @@ from .. import _util
 
 
 def ix_semantic_filename(fn):
-    keys = ['directory', 'prefix', 'plate', 'well', 'field', 'channel', 'suffix']
+    """Split an ImageXpress filename into its annotated components.
+
+    Parameters
+    ----------
+    fn : string
+        A filename from the ImageXpress high-content screening system.
+
+    Returns
+    -------
+    semantic : collections.OrderedDict {string: string}
+        A dictionary mapping the different components of the filename.
+    """
+    keys = ['directory', 'prefix', 'plate', 'well', 'field', 'channel',
+            'suffix']
 
     directory, fn = os.path.split(fn)
     fn, suffix = fn.split('.', 1)
@@ -19,7 +32,8 @@ def ix_semantic_filename(fn):
     # finds last set of contiguous digits after underscore
     dir_regex = re.search(r'_(\d+)(?!.*_(\d+))', directory)
 
-    prefix, well, field, channel = map(lambda x: fn_regex.group(x), range(1, 5))
+    prefix, well, field, channel = map(lambda x: fn_regex.group(x),
+                                       range(1, 5))
     plate = int(dir_regex.group(1))
 
     values = [directory, prefix, int(plate), well,
