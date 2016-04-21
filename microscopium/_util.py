@@ -87,5 +87,6 @@ def int_or_none(n):
     --------
     >>> int_or_none(3.0)
     3
+    >>> int_or_none(None)
     """
     return int(n) if n is not None else None
