@@ -889,6 +889,76 @@ def create_missing_mask(missing, order, rows=512, cols=512):
     return mask
 
 
+def montage_with_missing(fns, order=None):
+    """Montage a list of images, replacing missing fields with dummy images.
+
+    The methods `montage` and `montage_stream` assume that image filenames
+    and image iterators passed to it are complete, and include the full set
+    images belonging to the well. Some screens have missing fields,
+    so this function can be used to montage together images with missing
+    fields. Missing fields are determined from the information in the image
+    file name. See 'find_missing_fields'
+
+    Parameters
+    ----------
+    fns : list of str
+        The list of filenames to montage.
+    order : array-like of int, shape (M, N), optional
+        The order of the stitching, with each entry referring
+        to the index of file in the fns array.
+
+    Returns
+    -------
+    montaged : array-like, shape (P, Q)
+        The montaged image.
+    mask : array of bool
+        A binary mask, where entries with taking the value of
+        False represent missing fields in the montaged image.
+    missing : int
+        The number of fields that were found to be missing in the
+        input list of filenames. This is useful for normalising
+        features that depend on the entirety of the montaged image
+        (e.g. count of objects).
+    """
+    if order is None:
+        from .screens import cellomics
+        order = cellomics.SPIRAL_CLOCKWISE_RIGHT_25
+    order = np.atleast_2d(order)
+    mrows, mcols = order.shape
+
+    # get width & height of first image. the rest of the images
+    # are assumed to be of the same shape
+    im0 = io.imread(fns[0])
+    rows, cols = im0.shape[:2]
+
+    # find which fields are missing
+    missing = find_missing_fields(fns, order)
+
+    # insert None value to list of files when fields missing
+    _fns = fns[:]  # create copy of list to avoid referencing problems
+    for i in missing:
+        _fns.insert(i, None)
+
+    # create binary mask for the missing fields
+    mask = create_missing_mask(missing, order, rows, cols)
+
+    # instantiate array for output montaged image
+    montaged = np.zeros((rows * mrows, cols * mcols) + im0.shape[2:],
+                        dtype=im0.dtype)
+
+    for i, j in it.product(range(mrows), range(mcols)):
+        index = order[i, j]
+
+        if _fns[index] is None:
+            im = np.zeros((rows, cols), dtype=im0.dtype)
+        else:
+            im = io.imread(_fns[index])
+
+        montaged[rows*i:rows*(i+1), cols*j:cols*(j+1)] = im
+
+    return montaged, mask, len(missing)
+
+
 @tlz.curry
 def reorder(index_list, list_to_reorder):
     """Curried function to reorder a list according to input indices.
