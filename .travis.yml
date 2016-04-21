@@ -34,7 +34,7 @@ script:
     - py.test
 
 after_success:
-    - if [[ $TRAVIS_PYTHON_VERSION == 3.4 ]]; then coveralls; fi
+    - if [[ $TRAVIS_PYTHON_VERSION == 3.5 ]]; then coveralls; fi
 
 before_cache:
 # clean unused packages & installed files from conda cache
