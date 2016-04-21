@@ -14,6 +14,7 @@ from .. import features as feat
 from six.moves import range
 from six.moves import zip
 import re
+from .. import _util
 
 
 SPIRAL_CLOCKWISE_RIGHT_25 = [[20, 21, 22, 23, 24],
@@ -221,9 +222,8 @@ def cellomics_semantic_filename(fn):
     fn_regex = re.search(r'(\w+)_(\w+)_([A-P]\d+)f?(\d+)?d?(\d+)?', fn)
     prefix, plate, well, field, channel = map(lambda x:
                                               fn_regex.group(x), range(1, 6))
-    def int_or_none(n): return int(n) if n is not None else None
     values = [directory, prefix, int(plate), well,
-              int_or_none(field), int_or_none(channel), suffix]
+              _util.int_or_none(field), _util.int_or_none(channel), suffix]
     semantic = coll.OrderedDict(list(zip(keys, values)))
 
     return semantic
