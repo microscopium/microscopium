@@ -890,13 +890,15 @@ def create_missing_mask(missing, order, rows=512, cols=512):
 
 
 def montage_with_missing(fns, order=None):
-    """Montage a list of images, replacing missing fields with dummy images.
+    """Montage a list of images, replacing missing fields with dummy values.
 
     The methods `montage` and `montage_stream` assume that image filenames
     and image iterators passed to it are complete, and include the full set
     images belonging to the well. Some screens have missing fields,
     so this function can be used to montage together images with missing
-    fields. Missing fields are determined from the information in the image
+    fields. Missing fields are replaced with 0 values.
+
+    Missing fields are determined from the information in the image
     file name. See 'find_missing_fields'
 
     Parameters
@@ -906,6 +908,7 @@ def montage_with_missing(fns, order=None):
     order : array-like of int, shape (M, N), optional
         The order of the stitching, with each entry referring
         to the index of file in the fns array.
+        Default cellomics.SPIRAL_CLOCKWISE_RIGHT_25
 
     Returns
     -------
