@@ -846,9 +846,7 @@ def find_missing_fields(fns, order=None,
     fields = [int(re.match(pattern, fn).group(re_group)) for fn in fns]
 
     # determine which fields are missing
-    start, end = np.min(order), np.max(order)
-    missing = sorted(set(range(start, end + 1)).difference(fields))
-
+    missing = np.setdiff1d(order, fields)
     return missing
 
 

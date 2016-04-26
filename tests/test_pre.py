@@ -126,7 +126,7 @@ missing_test_fns[1][0].remove(cellomics_pattern.format(13))
 @pytest.mark.parametrize("fns, expected", missing_test_fns)
 def test_find_missing_fields(fns, expected):
     actual = pre.find_missing_fields(fns)
-    assert actual == expected
+    np.testing.assert_array_equal(actual, expected)
 
 
 missing_mask_test = [
