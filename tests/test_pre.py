@@ -180,7 +180,7 @@ def test_image_files_montage(request):
     return make_test_montage_files
 
 
-def test_montage_with_missing_montage(test_image_files_montage):
+def test_montage_with_missing(test_image_files_montage):
     files = test_image_files_montage(missing_fields=[20])
     montage, mask, number_missing = pre.montage_with_missing(files)
 
