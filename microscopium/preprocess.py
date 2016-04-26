@@ -871,6 +871,11 @@ def create_missing_mask(missing, order, rows=512, cols=512):
         The number of rows in the input images. Default 512.
     cols : int, optional
         The number of cols in the input images. Default 512.
+
+    Returns
+    -------
+    mask : array of bool, shape (P, Q)
+        A binary mask where False denotes a missing field.
     """
     if order is None:
         from .screens import cellomics
@@ -914,7 +919,7 @@ def montage_with_missing(fns, order=None):
     -------
     montaged : array-like, shape (P, Q)
         The montaged image.
-    mask : array of bool
+    mask : array of bool, shape (P, Q)
         A binary mask, where entries with taking the value of
         False represent missing fields in the montaged image.
     missing : int
