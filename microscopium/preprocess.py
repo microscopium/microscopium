@@ -809,7 +809,7 @@ def montage(ims, order=None):
 
 
 def find_missing_fields(fns, order=None,
-                        re_string=".*_[A-P]\d{2}f(\d{2})d0",
+                        re_string=r".*_[A-P]\d{2}f(\d{2})d0",
                         re_group=1):
     """Find which fields are missing from a list of files belonging to a well.
 
