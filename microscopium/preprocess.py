@@ -955,12 +955,9 @@ def montage_with_missing(fns, order=None):
     for i, j in it.product(range(mrows), range(mcols)):
         index = order[i, j]
 
-        if _fns[index] is None:
-            im = np.zeros((rows, cols), dtype=im0.dtype)
-        else:
+        if _fns[index] is not None:
             im = io.imread(_fns[index])
-
-        montaged[rows*i:rows*(i+1), cols*j:cols*(j+1)] = im
+            montaged[rows*i:rows*(i+1), cols*j:cols*(j+1)] = im
 
     return montaged, mask, len(missing)
 
