@@ -129,6 +129,9 @@ def test_find_missing_fields(fns, expected):
     np.testing.assert_array_equal(actual, expected)
 
 
+# create a list of parameters for testing the create missing mask files
+# each entry in the tuple represents the fields: missing, order, rows, cols
+# and expected (the expected output from the function)
 missing_mask_test = [
     ([], [[0, 1, 2]], 10, 5, np.ones((10, 15), dtype=np.bool)),
     ([0, 5], [[0, 1, 2], [4, 5, 6]], 5, 10, np.ones((10, 30), dtype=np.bool)),
@@ -143,6 +146,9 @@ missing_mask_test[2][4][10:20, 5:10] = False
 missing_mask_test[2][4][20:30, 0:5] = False
 
 
+# pass the set of list parameters to the test_create_missing_mask
+# function. the test wil run against every of parameters in the
+# missing_mask_test list
 @pytest.mark.parametrize("missing, order, rows, cols, expected",
                          missing_mask_test)
 def test_create_missing_mask(missing, order, rows, cols, expected):
