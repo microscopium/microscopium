@@ -833,9 +833,8 @@ def find_missing_fields(fns, order=None,
 
     Returns
     -------
-    missing : list of int
-        Returns an empty list where no fields were determined
-        missing, otherwise a list of the missing fields.
+    missing : array of int
+        A possibly empty array containing the indices of missing fields.
     """
     if order is None:
         from .screens import cellomics
