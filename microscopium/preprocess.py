@@ -618,8 +618,10 @@ def correct_multiimage_illumination(im_fns, illum, stretch_quantile=0,
 
     Returns
     -------
-    ims_out : iterable of corrected uint8 images
+    ims_out : iterable of corrected images.
         The images corrected for background illumination.
+        The dtype of the output images is determined by the dtype
+        of the first image passed to the function.
 
     References
     ----------
@@ -628,6 +630,9 @@ def correct_multiimage_illumination(im_fns, illum, stretch_quantile=0,
     p0 = 100 * stretch_quantile
     p1 = 100 - p0
     im_fns = list(im_fns)
+
+    # read first image to get input image dtypes
+    im0 = mio.imread(im_fns[0])
 
     # in first pass, make a composite image to get global intensity range
     ims_pass1 = map(io.imread, im_fns)
@@ -640,8 +645,8 @@ def correct_multiimage_illumination(im_fns, illum, stretch_quantile=0,
     for im in ims_pass2:
         corrected = im / illum
         rescaled = exposure.rescale_intensity(corrected, in_range=corr_range,
-                                              out_range=np.uint8)
-        out = np.round(rescaled).astype(np.uint8)
+                                              out_range=im0.dtype.type)
+        out = np.round(rescaled).astype(im0.dtype)
         yield out
 
 
