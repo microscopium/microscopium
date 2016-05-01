@@ -5,17 +5,17 @@ import collections as coll
 import re
 import numpy as np
 from scipy import ndimage as ndi
-from skimage import io
 from scipy.stats.mstats import mquantiles as quantiles
-from skimage import morphology as skmorph, filters as imfilter, exposure
+from skimage import io, util, img_as_float, img_as_uint
+from skimage import morphology, filters as imfilter, exposure
 import skimage.filters.rank as rank
 import skimage
 import cytoolz as tz
 from cytoolz import curried as c
+import warnings
 
 from ._util import normalise_random_state
 from . import io as mio
-from .screens import cellomics
 
 
 def morphop(im, operation='open', radius='5'):
@@ -42,9 +42,9 @@ def morphop(im, operation='open', radius='5'):
     ValueError : if the image is not 2D or 3D.
     """
     if im.ndim == 2:
-        selem = skmorph.disk(radius)
+        selem = morphology.disk(radius)
     elif im.ndim == 3:
-        selem = skmorph.ball(radius)
+        selem = morphology.ball(radius)
     else:
         raise ValueError("Image input to 'morphop' should be 2D or 3D"
                          ", got %iD" % im.ndim)
@@ -512,8 +512,39 @@ def _reduce_with_count(pairwise, iterator, accumulator=None):
     return tz.reduce(new_pairwise, new_iter, new_acc)
 
 
-def find_background_illumination(fns, radius=51, quantile=0.05,
-                                 stretch_quantile=0., method='mean'):
+def mean(iterator):
+    """Use online algorithm to compute the mean of an iterator of values.
+
+    Parameters
+    ----------
+    iterator : iterable of values
+        The input iterable.
+
+    Returns
+    -------
+    m : float or array of float
+        The mean of the values in `iterator`. If the values are NumPy arrays,
+        then the mean is an array of float of the same shape.
+
+    Examples
+    --------
+    >>> values = [1, 0, 0, 1]
+    >>> mean(values)
+    0.5
+    >>> arrays = (np.full((2, 2), i) for i in range(5))
+    >>> mean(arrays)
+    array([[2., 2.],
+           [2., 2.]])
+    """
+    iterator = iter(iterator)  # in case list/tuple passed as input
+    curr_mean = np.float_(next(iterator))
+    for i, elem in enumerate(iterator, start=2):
+        curr_mean += (elem - curr_mean) / i
+    return curr_mean
+    
+
+def find_background_illumination(fns, radius=None, input_bitdepth=None,
+                                 quantile=0.5, stretch_quantile=0.):
     """Use a set of related images to find uneven background illumination.
 
     Parameters
@@ -522,22 +553,12 @@ def find_background_illumination(fns, radius=51, quantile=0.05,
         A list of image file names
     radius : int, optional
         The radius of the structuring element used to find background.
-        default: 51
+        default: The width or height of the input images divided by 4,
+        whichever is smaller.
     quantile : float in [0, 1], optional
-        The desired quantile to find background. default: 0.05
+        The desired quantile to find background. default: 0.5 (median)
     stretch_quantile : float in [0, 1], optional
         Stretch image to full dtype limit, saturating above this quantile.
-    method : 'mean', 'average', 'median', or 'histogram', optional
-        How to use combine the smoothed intensities of the input images
-        to infer the illumination field:
-
-        - 'mean' or 'average': Use the mean value of the smoothed
-        images at each pixel as the illumination field.
-        - 'median': use the median value. Since all images need to be
-        in-memory to compute this, use only for small sets of images.
-        - 'histogram': use the median value approximated by a
-        histogram. This can be computed on-line for large sets of
-        images.
 
     Returns
     -------
@@ -548,38 +569,27 @@ def find_background_illumination(fns, radius=51, quantile=0.05,
     --------
     `correct_image_illumination`, `correct_multiimage_illumination`.
     """
-    # This function follows the "PyToolz" streaming data model to
-    # obtain the illumination estimate. First, define each processing
-    # step:
-    read = io.imread
+    # this function follows the "PyToolz" streaming data model to
+    # obtain the illumination estimate.
+    # first, define the functions for each individual step:
+    in_range = ('image' if input_bitdepth is None
+                else (0, 2**input_bitdepth - 1))
+    rescale = tz.curry(exposure.rescale_intensity)
     normalize = (tz.partial(stretchlim, bottom=stretch_quantile)
                  if stretch_quantile > 0
                  else skimage.img_as_float)
-    rescale = rescale_to_11bits
-    pad = fun.partial(skimage.util.pad, pad_width=radius, mode='reflect')
-    rank_filter = fun.partial(rank.percentile, selem=skmorph.disk(radius),
-                              p0=quantile)
-    _unpad = fun.partial(unpad, pad_width=radius)
-    unscale = rescale_from_11bits
 
-    # Next, compose all the steps, apply to all images (streaming)
-    bg = (tz.pipe(fn, read, normalize, rescale, pad, rank_filter, _unpad,
-                   unscale)
-          for fn in fns)
+    # produce a stream of properly-scaled images
+    ims = (tz.pipe(fn, io.imread, rescale(in_range=in_range), normalize)
+           for fn in fns)
 
-    # Finally, reduce all the images and compute the estimate
-    if method == 'mean' or method == 'average':
-        illum, count = _reduce_with_count(np.add, bg)
-        illum = skimage.img_as_float(illum) / count
-    elif method == 'median':
-        illum = np.median(list(bg), axis=0)
-    elif method == 'histogram':
-        raise NotImplementedError('histogram background illumination method '
-                                  'not yet implemented.')
-    else:
-        raise ValueError('Method "%s" of background illumination finding '
-                         'not recognised.' % method)
+    # take the mean of that stream
+    mean_image = mean(ims)
 
+    # return the median filter of that mean
+    radius = radius or min(mean_image.shape) // 4
+    illum = ndi.percentile_filter(mean_image, percentile=(quantile * 100),
+                                  footprint=morphology.disk(radius))
     return illum
 
 

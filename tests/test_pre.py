@@ -8,7 +8,7 @@ import warnings
 
 
 @pytest.fixture
-def image_files(request):
+def image_files():
     # for clarity we define images as integer arrays in [0, 11) and
     # divide by 10 later
     i = np.array([[7, 4, 1, 1, 0],
@@ -32,37 +32,20 @@ def image_files(request):
         files.append(fn)
         mio.imsave(fn, im)
 
-    def cleanup():
-        for fn in files:
-            os.remove(fn)
-    request.addfinalizer(cleanup)
-
-    return files
+    yield files
+    
+    for fn in files:
+        os.remove(fn)
 
 
 def test_illumination_mean(image_files):
     illum = pre.find_background_illumination(image_files, radius=1,
-                                             quantile=0.5,
-                                             stretch_quantile=1e-7,
-                                             method='mean')
-    illum_true = np.array([[5., 5.33, 5.67, 3., 3.33],
-                           [5.33, 5.33, 3., 5., 3.],
-                           [5.33, 2.67, 5., 4., 5.],
-                           [2.67, 3.67, 3.67, 5., 5.33],
-                           [4.33, 2., 3.67, 5.33, 6.33]]) / 10
-    np.testing.assert_array_almost_equal(illum, illum_true, decimal=1)
-
-
-def test_illumination_median(image_files):
-    illum = pre.find_background_illumination(image_files, radius=1,
-                                             quantile=0.5,
-                                             stretch_quantile=1e-7,
-                                             method='median')
-    illum_true = np.array([[4., 5., 6., 2., 2.],
-                           [5., 5., 2., 6., 2.],
-                           [4., 3., 6., 4., 7.],
-                           [3., 3., 3., 7., 7.],
-                           [4., 3., 2., 6., 6.]]) / 10
+                                             quantile=0.5)
+    illum_true = np.array([[5.67, 5.  , 5.  , 3.  , 1.  ],
+                           [4.67, 5.33, 3.  , 5.  , 3.33],
+                           [4.67, 2.67, 5.  , 4.  , 4.  ],
+                           [4.33, 3.67, 3.67, 5.  , 6.33],
+                           [4.33, 2.  , 4.33, 5.  , 6.33]]) / 10
     np.testing.assert_array_almost_equal(illum, illum_true, decimal=1)
 
 
