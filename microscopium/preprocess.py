@@ -6,7 +6,7 @@ import collections as coll
 import re
 import numpy as np
 from scipy import ndimage as nd
-from skimage import io
+from skimage import io, util, img_as_float, img_as_uint
 from scipy.stats.mstats import mquantiles as quantiles
 from skimage import morphology as skmorph, filters as imfilter, exposure
 import skimage.filters.rank as rank
@@ -14,6 +14,7 @@ import skimage
 import cytoolz as tlz
 from cytoolz import curried
 from six.moves import map, range, zip, filter
+import warnings
 
 from ._util import normalise_random_state
 from . import io as mio
@@ -513,24 +514,31 @@ def _reduce_with_count(pairwise, iterator, accumulator=None):
     return tlz.reduce(new_pairwise, new_iter, new_acc)
 
 
-def find_background_illumination(fns, radius=51, quantile=0.05,
-                                 stretch_quantile=0., method='mean'):
+def find_background_illumination(fns, input_bitdepth=None, radius=None,
+                                 quantile=0.5, stretch_quantile=0.,
+                                 method='mean'):
     """Use a set of related images to find uneven background illumination.
 
     Parameters
     ----------
     fns : list of string
         A list of image file names
+    input_bitdepth : int, optional
+        The bit-depth of the input images. Should be specified if non-standard
+        bitdepth images are used in a 16-bit image file, e.g. 12-bit images.
+        Default is the dtype of the input image.
     radius : int, optional
         The radius of the structuring element used to find background.
-        default: 51
+        default: The width or height of the input images divided by 4,
+        whichever is smaller.
     quantile : float in [0, 1], optional
         The desired quantile to find background. default: 0.05
     stretch_quantile : float in [0, 1], optional
         Stretch image to full dtype limit, saturating above this quantile.
     method : 'mean', 'average', 'median', or 'histogram', optional
-        How to use combine the smoothed intensities of the input images
-        to infer the illumination field:
+        How to use combine the related images. The output from this
+        combination is smoothed and is used to estimate the
+        illumination correction field.
 
         - 'mean' or 'average': Use the mean value of the smoothed
         images at each pixel as the illumination field.
@@ -549,39 +557,58 @@ def find_background_illumination(fns, radius=51, quantile=0.05,
     --------
     `correct_image_illumination`, `correct_multiimage_illumination`.
     """
-    # This function follows the "PyToolz" streaming data model to
-    # obtain the illumination estimate. First, define each processing
-    # step:
-    read = io.imread
+    read = tlz.partial(io.imread)
+
+    if input_bitdepth is None:
+        in_range = "image"
+    else:
+        in_range = (0, np.power(2, input_bitdepth) - 1)
+
+    if radius is None:
+        # get default radius from input image
+        im0 = mio.imread(fns[0])
+        radius = np.round(np.min(im0.shape) / 4).astype(np.uint16)
+        # ensure radius is odd
+        radius = radius - np.mod(radius, 2) + 1
+
+    rescale = tlz.partial(exposure.rescale_intensity, in_range=in_range)
     normalize = (tlz.partial(stretchlim, bottom=stretch_quantile)
                  if stretch_quantile > 0
                  else skimage.img_as_float)
-    rescale = rescale_to_11bits
-    pad = fun.partial(skimage.util.pad, pad_width=radius, mode='reflect')
-    rank_filter = fun.partial(rank.percentile, selem=skmorph.disk(radius),
-                              p0=quantile)
-    _unpad = fun.partial(unpad, pad_width=radius)
-    unscale = rescale_from_11bits
 
-    # Next, compose all the steps, apply to all images (streaming)
-    bg = (tlz.pipe(fn, read, normalize, rescale, pad, rank_filter, _unpad,
-                   unscale)
-          for fn in fns)
+    ims = (tlz.pipe(fn, read, rescale, normalize) for fn in fns)
 
-    # Finally, reduce all the images and compute the estimate
-    if method == 'mean' or method == 'average':
-        illum, count = _reduce_with_count(np.add, bg)
-        illum = skimage.img_as_float(illum) / count
-    elif method == 'median':
-        illum = np.median(list(bg), axis=0)
-    elif method == 'histogram':
+    if method == "mean":
+        illum, count = _reduce_with_count(np.add, ims)
+        illum = illum / count
+    elif method == "median":
+        # TODO: support sub-sampling get estimate of median
+        illum = np.median(list(ims), axis=0)
+    elif method == "histogram":
         raise NotImplementedError('histogram background illumination method '
                                   'not yet implemented.')
     else:
         raise ValueError('Method "%s" of background illumination finding '
                          'not recognised.' % method)
 
-    return illum
+    # apply median filter to find ICF
+    pad = tlz.partial(util.pad, pad_width=radius, mode='reflect')
+    rank_filter = fun.partial(rank.percentile, selem=skmorph.disk(radius),
+                              p0=quantile)
+    _unpad = tlz.partial(unpad, pad_width=radius)
+
+    # ignore the loss of precision warning
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        # images are cast as uint16 to preserve the granularity
+        # of illumination values in the mean/median image.
+        # mean/median images with a small range can result in
+        # non-smooth ICFs which result in artefacts when the
+        # images are corrected
+        bg = tlz.pipe(illum, img_as_uint, pad, rank_filter, _unpad,
+                      img_as_float)
+
+    return bg
 
 
 def correct_multiimage_illumination(im_fns, illum, stretch_quantile=0,
@@ -609,8 +636,10 @@ def correct_multiimage_illumination(im_fns, illum, stretch_quantile=0,
 
     Returns
     -------
-    ims_out : iterable of corrected uint8 images
+    ims_out : iterable of corrected images.
         The images corrected for background illumination.
+        The dtype of the output images is determined by the dtype
+        of the first image passed to the function.
 
     References
     ----------
@@ -619,6 +648,9 @@ def correct_multiimage_illumination(im_fns, illum, stretch_quantile=0,
     p0 = 100 * stretch_quantile
     p1 = 100 - p0
     im_fns = list(im_fns)
+
+    # read first image to get input image dtypes
+    im0 = mio.imread(im_fns[0])
 
     # in first pass, make a composite image to get global intensity range
     ims_pass1 = map(io.imread, im_fns)
@@ -631,8 +663,8 @@ def correct_multiimage_illumination(im_fns, illum, stretch_quantile=0,
     for im in ims_pass2:
         corrected = im / illum
         rescaled = exposure.rescale_intensity(corrected, in_range=corr_range,
-                                              out_range=np.uint8)
-        out = np.round(rescaled).astype(np.uint8)
+                                              out_range=im0.dtype.type)
+        out = np.round(rescaled).astype(im0.dtype)
         yield out
 
 
