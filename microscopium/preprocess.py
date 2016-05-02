@@ -514,7 +514,7 @@ def _reduce_with_count(pairwise, iterator, accumulator=None):
     return tlz.reduce(new_pairwise, new_iter, new_acc)
 
 
-def find_background_illumination(fns, radius=None, input_bitdepth=None,
+def find_background_illumination(fns, input_bitdepth=None, radius=None,
                                  quantile=0.5, stretch_quantile=0.,
                                  method='mean'):
     """Use a set of related images to find uneven background illumination.
@@ -523,6 +523,10 @@ def find_background_illumination(fns, radius=None, input_bitdepth=None,
     ----------
     fns : list of string
         A list of image file names
+    input_bitdepth : int, optional
+        The bit-depth of the input images. Should be specified if non-standard
+        bitdepth images are used in a 16-bit image file, e.g. 12-bit images.
+        Default is the dtype of the input image.
     radius : int, optional
         The radius of the structuring element used to find background.
         default: The width or height of the input images divided by 4,
