@@ -555,6 +555,10 @@ def find_background_illumination(fns, radius=None, input_bitdepth=None,
         The radius of the structuring element used to find background.
         default: The width or height of the input images divided by 4,
         whichever is smaller.
+    input_bitdepth : int, optional
+        The bit-depth of the input images. Should be specified if non-standard
+        bitdepth images are used in a 16-bit image file, e.g. 12-bit images.
+        Default is the dtype of the input image.
     quantile : float in [0, 1], optional
         The desired quantile to find background. default: 0.5 (median)
     stretch_quantile : float in [0, 1], optional
