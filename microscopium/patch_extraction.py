@@ -7,7 +7,8 @@ from sklearn.utils.extmath import cartesian as skcartesian
 
 eps = np.finfo(float).eps
 
-"""Library containing functions directly related to extracting patches from an image.
+"""Written by: Don Teng, over 2016. 
+Library containing functions directly related to extracting patches from an image.
 Import convention: 'import patch_extraction as pex'
 
 Patch extraction is cut into 2 distinct steps:
