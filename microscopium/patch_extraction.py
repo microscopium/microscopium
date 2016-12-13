@@ -8,11 +8,12 @@ from sklearn.utils.extmath import cartesian as skcartesian
 eps = np.finfo(float).eps
 
 """Written by: Don Teng, over 2016. 
-Library containing functions directly related to extracting patches from an image.
-Import convention: 'import patch_extraction as pex'
+Library containing functions directly related to extracting patches 
+from an image. Import convention: 'import patch_extraction as pex'
 
 Patch extraction is cut into 2 distinct steps:
-1. Generate the top-left coordinates of patches to be extracted. These can be set to allow the patches to overlap, or otherwise.
+1. Generate the top-left coordinates of patches to be extracted. 
+These can be set to allow the patches to overlap, or otherwise.
 2. Extract patches from an image, based on those top-left coordinates.
 """
 
@@ -34,9 +35,12 @@ def count_grids(patch_len, im_nrows, im_ncols):
     return n_grids
 
 
-def generate_patch_coords(n_patches, patch_len,
-im_ncols, im_nrows, verbose=True,
-method='non-overlapping'):
+def generate_patch_coords(n_patches, 
+                          patch_len,
+                          im_ncols, 
+                          im_nrows, 
+                          verbose=True,
+                          method='non-overlapping'):
     """Generates a set of top-left patch coordinates.
 
     Params
@@ -46,9 +50,10 @@ method='non-overlapping'):
     im_ncols: int; no. of cols of some image, i.e. width
     im_nrows: int; no. of rows of some image, i.e. height
     method: 'random' or 'non-overlapping'.
-        'random': Generates patches entirely at random, allowing them to potentially overlap.
-        'Non-overlapping': Cuts an image into a grid, then randomly selects n_patches
-        grids by their top-left coordinates.
+        'random': Generates patches entirely at random, allowing them 
+        to potentially overlap.
+        'Non-overlapping': Cuts an image into a grid, then randomly 
+        selects n_patches grids by their top-left coordinates.
 
     Returns
     -------
@@ -60,7 +65,6 @@ method='non-overlapping'):
         for row in coords:
             row[0] = np.random.randint(0,im_ncols - patch_len)
             row[1] = np.random.randint(0,im_nrows - patch_len)
-
         chosen = coords
 
     elif method == 'non-overlapping':
@@ -81,11 +85,11 @@ method='non-overlapping'):
 
 def extract_patches_3d(image, coords, patch_len, ds_factor):
     """Extracts 3d patches from an image, given an array of top-left coordinates
-    Each set of coords is used on all 3 colour channels, to extract a "block".
+    Each set of coords is used on all colour channels, to extract a "block".
 
     Params
     ------
-    image: array. Can be 3D.
+    image: array, shape (im_width, im_height, n_channels).
     Coords: array of coordinates, shape (n_patches, 2)
     patch_len: int.
 
