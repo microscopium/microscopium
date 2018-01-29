@@ -5,18 +5,18 @@ import itertools as it
 import collections as coll
 import re
 import numpy as np
-from scipy import ndimage as nd
+from scipy import ndimage as ndi
 from skimage import io
 from scipy.stats.mstats import mquantiles as quantiles
 from skimage import morphology as skmorph, filters as imfilter, exposure
 import skimage.filters.rank as rank
 import skimage
-import cytoolz as tlz
-from cytoolz import curried
-from six.moves import map, range, zip, filter
+import cytoolz as tz
+from cytoolz import curried as c
 
 from ._util import normalise_random_state
 from . import io as mio
+from .screens import cellomics
 
 
 def morphop(im, operation='open', radius='5'):
@@ -50,13 +50,13 @@ def morphop(im, operation='open', radius='5'):
         raise ValueError("Image input to 'morphop' should be 2D or 3D"
                          ", got %iD" % im.ndim)
     if operation.startswith('open'):
-        imout = nd.grey_opening(im, footprint=selem)
+        imout = ndi.grey_opening(im, footprint=selem)
     elif operation.startswith('clos'):
-        imout = nd.grey_closing(im, footprint=selem)
+        imout = ndi.grey_closing(im, footprint=selem)
     elif operation.startswith('dila'):
-        imout = nd.grey_dilation(im, footprint=selem)
+        imout = ndi.grey_dilation(im, footprint=selem)
     elif operation.startswith('ero'):
-        imout = nd.grey_erosion(im, footprint=selem)
+        imout = ndi.grey_erosion(im, footprint=selem)
     return imout
 
 
@@ -510,7 +510,7 @@ def _reduce_with_count(pairwise, iterator, accumulator=None):
         return pairwise(elem1, elem2), c2
     new_iter = zip(iterator, it.count(1))
     new_acc = (0, accumulator)
-    return tlz.reduce(new_pairwise, new_iter, new_acc)
+    return tz.reduce(new_pairwise, new_iter, new_acc)
 
 
 def find_background_illumination(fns, radius=51, quantile=0.05,
@@ -553,7 +553,7 @@ def find_background_illumination(fns, radius=51, quantile=0.05,
     # obtain the illumination estimate. First, define each processing
     # step:
     read = io.imread
-    normalize = (tlz.partial(stretchlim, bottom=stretch_quantile)
+    normalize = (tz.partial(stretchlim, bottom=stretch_quantile)
                  if stretch_quantile > 0
                  else skimage.img_as_float)
     rescale = rescale_to_11bits
@@ -564,7 +564,7 @@ def find_background_illumination(fns, radius=51, quantile=0.05,
     unscale = rescale_from_11bits
 
     # Next, compose all the steps, apply to all images (streaming)
-    bg = (tlz.pipe(fn, read, normalize, rescale, pad, rank_filter, _unpad,
+    bg = (tz.pipe(fn, read, normalize, rescale, pad, rank_filter, _unpad,
                    unscale)
           for fn in fns)
 
@@ -753,6 +753,7 @@ def correct_image_illumination(im, illum, stretch_quantile=0, mask=None):
     return imc
 
 
+@tz.curry
 def montage(ims, order=None):
     """Stitch together a list of images according to a specified pattern.
 
@@ -796,7 +797,7 @@ def montage(ims, order=None):
     order = np.atleast_2d(order)
 
     # in case stream is passed, take one sip at a time ;)
-    ims = list(tlz.take(order.size, ims))
+    ims = list(tz.take(order.size, ims))
     rows, cols = ims[0].shape[:2]
     mrows, mcols = order.shape
 
@@ -875,7 +876,6 @@ def create_missing_mask(missing, order, rows=512, cols=512):
         A binary mask where False denotes a missing field.
     """
     if order is None:
-        from .screens import cellomics
         order = cellomics.SPIRAL_CLOCKWISE_RIGHT_25
     order = np.atleast_2d(order)
     mrows, mcols = order.shape
@@ -961,7 +961,7 @@ def montage_with_missing(fns, order=None):
     return montaged, mask, len(missing)
 
 
-@tlz.curry
+@tz.curry
 def reorder(index_list, list_to_reorder):
     """Curried function to reorder a list according to input indices.
 
@@ -987,7 +987,7 @@ def reorder(index_list, list_to_reorder):
     return [list_to_reorder[j] for j in index_list]
 
 
-@tlz.curry
+@tz.curry
 def stack_channels(images, order=[0, 1, 2]):
     """Stack multiple image files to one single, multi-channel image.
 
@@ -1021,7 +1021,7 @@ def stack_channels(images, order=[0, 1, 2]):
     array([0, 1, 2])
     """
     # ensure we support iterators
-    images = list(tlz.take(len(order), images))
+    images = list(tz.take(len(order), images))
 
     # ensure we grab an image and not `None`
     def is_array(obj): return isinstance(obj, np.ndarray)
@@ -1088,13 +1088,11 @@ def montage_stream(ims, montage_order=None, channel_order=[0, 1, 2]):
     array([23, 21, 22], dtype=uint8)
     """
     if montage_order is None:
-        from .screens import cellomics
         montage_order = cellomics.SPIRAL_CLOCKWISE_RIGHT_25
     montage_order = np.array(montage_order)
     ntiles = montage_order.size
     nchannels = len(channel_order)
-    montage_ = fun.partial(montage, order=montage_order)
-    return tlz.pipe(ims, curried.partition(nchannels),
-                         curried.map(stack_channels(order=channel_order)),
-                         curried.partition(ntiles),
-                         curried.map(montage_))
+    return tz.pipe(ims, c.partition(nchannels),
+                        c.map(stack_channels(order=channel_order)),
+                        c.partition(ntiles),
+                        c.map(montage(order=montage_order)))
