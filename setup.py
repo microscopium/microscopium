@@ -16,7 +16,7 @@ URL                 = 'https://github.com/microscopium/microscopium'
 LICENSE             = 'BSD 3-clause'
 DOWNLOAD_URL        = 'https://github.com/microscopium/microscopium'
 VERSION             = '0.1-dev'
-PYTHON_VERSION      = (2, 7)
+PYTHON_VERSION      = (3, 6)
 INST_DEPENDENCIES   = []
 
 
