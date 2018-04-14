@@ -30,6 +30,7 @@ before_script:
 
 script:
     - python setup.py develop
+    - python -c "from numpy import zeros; x = zeros(5); print(x.dtype)"
     - py.test
 
 after_success:
