@@ -31,9 +31,9 @@ def normalize_vectors(v):
     --------
     >>> vs = np.array([[2., 0.], [0., 4.], [0., 0.]])
     >>> normalize_vectors(vs)
-    array([[ 1.,  0.],
-           [ 0.,  1.],
-           [ 0.,  0.]])
+    array([[1., 0.],
+           [0., 1.],
+           [0., 0.]])
     """
     v_norm = np.sqrt((v ** 2).sum(axis=1))
     v_norm[v_norm == 0] = 1.  # ignore 0-vectors for division
@@ -258,7 +258,7 @@ def fraction_positive(bin_im, positive_im, erode=2, overlap_thresh=0.9,
     ...                    [0, 1, 1]], dtype=bool)
     >>> f = fraction_positive(bin_im, pos_im, erode=0, overlap_thresh=0.6)
     >>> f[0]
-    array([ 0.5])
+    array([0.5])
     >>> f[1][0]
     'frac-nuclei-pos-tf-erode-0-thresh-0.60'
     """

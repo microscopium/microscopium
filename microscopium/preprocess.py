@@ -439,7 +439,7 @@ def rescale_from_11bits(im11):
     --------
     >>> im = np.array([0, 1024, 2047], dtype=np.uint16)
     >>> rescale_from_11bits(im)
-    array([ 0.    ,  0.5002,  1.    ])
+    array([0.    , 0.5002, 1.    ])
 
     Notes
     -----
