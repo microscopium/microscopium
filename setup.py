@@ -17,7 +17,7 @@ LICENSE             = 'BSD 3-clause'
 DOWNLOAD_URL        = 'https://github.com/microscopium/microscopium'
 VERSION             = '0.1-dev'
 PYTHON_VERSION      = (2, 7)
-INST_DEPENDENCIES   = {}
+INST_DEPENDENCIES   = []
 
 
 if __name__ == '__main__':
