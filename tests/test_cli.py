@@ -61,6 +61,7 @@ def env():
     env_copy = os.environ.copy()
     env_copy['PATH'] = ':'.join([dirs['bin'], os.environ['PATH']])
     env_copy['PYTHONPATH'] = ':'.join([dirs['root']] + sys.path)
+    env_copy['PYTHONWARNINGS'] = 'ignore'
     dirs['env'] = env_copy
     dirs['testdata'] = os.path.join(curdir, 'testdata')
     dirs['images'] = os.path.join(dirs['testdata'], 'images')
