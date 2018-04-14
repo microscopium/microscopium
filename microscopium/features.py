@@ -151,7 +151,7 @@ def intensity_object_features(im, threshold=None, adaptive_t_radius=51,
         f1, names1 = object_features(tim1, im, sample_size=sample_size,
                                      random_seed=random_seed)
         names1 = ['otsu-threshold-' + name for name in names1]
-        tim2 = imfilter.threshold_adaptive(im, adaptive_t_radius)
+        tim2 = im > imfilter.threshold_local(im, adaptive_t_radius)
         f2, names2 = object_features(tim2, im, sample_size=sample_size,
                                      random_seed=random_seed)
         names2 = ['adaptive-threshold-' + name for name in names2]
