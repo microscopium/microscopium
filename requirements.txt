@@ -13,3 +13,4 @@ pytest
 sh
 coverage
 pytest-cov
+imageio

@@ -1,8 +1,7 @@
-from __future__ import absolute_import, division
 from itertools import combinations
 import numpy as np
 from scipy.spatial.distance import pdist
-from six.moves import map
+
 
 def sq_to_dist(i, j, n):
     """Convert coordinate of square distance matrix to condensed matrix index.
@@ -176,7 +175,7 @@ def _partition_range(values1, values2, n):
     >>> d1 = np.array([3, 3, 4, 5, 6])
     >>> d2 = np.array([5, 5, 5, 6, 7])
     >>> _partition_range(d1, d2, 5)
-    array([ 3.,  4.,  5.,  6.,  7.])
+    array([3., 4., 5., 6., 7.])
     """
 
     eps = 1e-30

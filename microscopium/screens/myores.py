@@ -1,9 +1,6 @@
 """Feature computations and other functions for the Marcelle myoblast
 fusion screen.
 """
-from __future__ import absolute_import
-from __future__ import print_function
-
 import os
 import collections as coll
 
@@ -12,8 +9,6 @@ from scipy import ndimage as nd
 from skimage.filters import threshold_otsu, threshold_adaptive
 
 from .. import features
-from six.moves import map
-from six.moves import zip
 
 
 def feature_vector_from_rgb(image, threshold=None, sample_size=None,

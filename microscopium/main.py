@@ -1,4 +1,3 @@
-from __future__ import absolute_import, division, print_function
 #!/bin/env python
 
 # standard library
@@ -21,7 +20,6 @@ from .screens import cellomics
 from . import preprocess as pre
 from . import cluster
 from .io import temporary_hdf5_dataset
-from six.moves import map, zip
 
 
 parser = argparse.ArgumentParser(description="Run the microscopium functions.")
@@ -283,7 +281,7 @@ def run_features(args):
             online_pca.add_sample(v)
         # Second pass: standardise the feature vectors, compute PCA-transform
         for i, (idx, v) in enumerate(zip(indices, dset)):
-            v_std = online_scaler.transform(v)
+            v_std = online_scaler.transform(v.reshape(1, -1))[0]
             v_pca = online_pca.transform(v)
             dset[i] = v_std
             emit({'_id': idx, 'feature_vector_std': list(v_std),

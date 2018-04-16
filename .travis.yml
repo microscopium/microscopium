@@ -1,8 +1,7 @@
 language: python
 sudo: false
 python:
-    - 2.7
-    - 3.5
+    - 3.6
 virtualenv:
     system_site_packages: false
 before_install:
@@ -11,7 +10,7 @@ before_install:
     - export PATH="$CONDA/bin:$PATH"
     # install conda, but only if it's not present already... Yay caching!
     - command -v conda > /dev/null || {
-        wget http://repo.continuum.io/miniconda/Miniconda-3.7.0-Linux-x86_64.sh -O miniconda.sh;
+        wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
         bash miniconda.sh -b -f -p $CONDA; }
     - conda config --set always_yes yes --set changeps1 no
     - conda update -q conda
@@ -24,17 +23,21 @@ before_install:
 
     - pip install pytest coverage pytest-cov sh
     - pip install coveralls
+    # need skimage master until 0.14 released
+    - pip install cython
+    - pip install git+https://github.com/scikit-image/scikit-image
 
 before_script:
     - sleep 15
-    - mongo mydb_test --eval 'db.addUser("travis", "test");'
+    - mongo mydb_test --eval 'db.createUser({user:"travis",pwd:"test",roles:["readWrite"]});'
 
 script:
     - python setup.py develop
+    - python -c "from numpy import zeros; x = zeros(5); print(x.dtype)"
     - py.test
 
 after_success:
-    - if [[ $TRAVIS_PYTHON_VERSION == 3.5 ]]; then coveralls; fi
+    - if [[ $TRAVIS_PYTHON_VERSION == 3.6 ]]; then coveralls; fi
 
 before_cache:
 # clean unused packages & installed files from conda cache

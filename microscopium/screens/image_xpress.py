@@ -1,6 +1,5 @@
 """Feature computations and other functions for Image Xpress screens
 """
-
 import os
 import collections as coll
 import re

@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-#from distutils.core import setup
 from setuptools import setup
 
 descr = """
@@ -11,13 +9,13 @@ DISTNAME            = 'microscopium'
 DESCRIPTION         = 'Clustering of High Content Screen Images'
 LONG_DESCRIPTION    = descr
 MAINTAINER          = 'Juan Nunez-Iglesias'
-MAINTAINER_EMAIL    = 'juan.n@unimelb.edu.au'
+MAINTAINER_EMAIL    = 'jni@fastmail.com'
 URL                 = 'https://github.com/microscopium/microscopium'
 LICENSE             = 'BSD 3-clause'
 DOWNLOAD_URL        = 'https://github.com/microscopium/microscopium'
 VERSION             = '0.1-dev'
-PYTHON_VERSION      = (2, 7)
-INST_DEPENDENCIES   = {}
+PYTHON_VERSION      = (3, 6)
+INST_DEPENDENCIES   = []
 
 
 if __name__ == '__main__':

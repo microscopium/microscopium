@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 from . import myores, cellomics, image_xpress
 
 __all__ = ['myores', 'cellomics', 'image_xpress']

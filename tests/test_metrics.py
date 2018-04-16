@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 from microscopium import metrics
 import time
 import numpy as np
@@ -6,7 +5,6 @@ import os
 import pandas as pd
 from pymongo import MongoClient
 import subprocess as sp
-from six.moves import range
 
 abspath = os.path.dirname(__file__)
 
@@ -21,7 +19,7 @@ db = client['myores_test']
 collection = db.wells_test
 
 if db.wells_test.find({}).count() == 0:
-    sp.Popen(['mongoimport', '-host', 'localhost:27017', '-d',
+    sp.Popen(['mongoimport', '--host', 'localhost:27017', '-d',
               'myores_test', '-c', 'wells_test',
               os.path.join(abspath, 'testdata/wells_test.json')])
     time.sleep(2)
