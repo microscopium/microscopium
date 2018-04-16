@@ -1,7 +1,5 @@
 """Feature computations and other functions for Cellomics screens.
 """
-from __future__ import absolute_import
-
 import os
 import collections as coll
 import numpy as np
@@ -11,8 +9,6 @@ from ..preprocess import stack_channels
 from .. import preprocess as pre
 from .. import io as mio
 from .. import features as feat
-from six.moves import range
-from six.moves import zip
 import re
 from .. import _util
 

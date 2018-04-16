@@ -1,12 +1,9 @@
-from __future__ import absolute_import
-from __future__ import print_function
 import os
 import sys
 import numpy as np
 import h5py
 from contextlib import contextmanager
 from tempfile import NamedTemporaryFile
-import six
 from skimage import io
 import imageio as iio
 
@@ -63,7 +60,7 @@ def imsave(fn, im, **kwargs):
     The ``fn`` and ``im`` arguments can be swapped -- the function will
     determine which to use by testing for string types.
     """
-    if isinstance(im, six.string_types):
+    if isinstance(im, str):
         fn, im = im, fn
     if fn.endswith('.tif'):
         io.imsave(fn, im, plugin='tifffile', **kwargs)

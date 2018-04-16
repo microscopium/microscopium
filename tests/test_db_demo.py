@@ -1,8 +1,5 @@
 '''Temporary file to demonstrate the sample dataset.
 '''
-from __future__ import absolute_import
-from __future__ import print_function
-
 from pymongo import MongoClient
 import pandas as pd
 from skimage import io

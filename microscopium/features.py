@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 import itertools as it
 import numpy as np
 from scipy.stats.mstats import mquantiles

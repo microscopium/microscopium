@@ -1,8 +1,7 @@
-from __future__ import absolute_import, division
 from itertools import combinations
 import numpy as np
 from scipy.spatial.distance import pdist
-from six.moves import map
+
 
 def sq_to_dist(i, j, n):
     """Convert coordinate of square distance matrix to condensed matrix index.

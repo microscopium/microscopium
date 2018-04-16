@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 from microscopium import metrics
 import time
 import numpy as np
@@ -6,7 +5,6 @@ import os
 import pandas as pd
 from pymongo import MongoClient
 import subprocess as sp
-from six.moves import range
 
 abspath = os.path.dirname(__file__)
 

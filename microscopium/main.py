@@ -1,4 +1,3 @@
-from __future__ import absolute_import, division, print_function
 #!/bin/env python
 
 # standard library
@@ -21,7 +20,6 @@ from .screens import cellomics
 from . import preprocess as pre
 from . import cluster
 from .io import temporary_hdf5_dataset
-from six.moves import map, zip
 
 
 parser = argparse.ArgumentParser(description="Run the microscopium functions.")

@@ -1,6 +1,6 @@
-from __future__ import absolute_import
 import os
 from fnmatch import fnmatch
+
 
 def all_matching_files(path, glob='*.tif', case_sensitive=True, full=True, sort=True):
     """Recurse all subdirectories of path and return all files matching glob.
