@@ -23,6 +23,8 @@ before_install:
 
     - pip install pytest coverage pytest-cov sh
     - pip install coveralls
+    # need skimage master until 0.14 released
+    - pip install git+https://github.com/scikit-image/scikit-image
 
 before_script:
     - sleep 15
