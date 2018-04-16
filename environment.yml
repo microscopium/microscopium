@@ -15,6 +15,7 @@ dependencies:
 - setuptools
 - six
 - toolz
+- imageio
 - pip:
   - coverage>=4.0
   - pytest>=2.8

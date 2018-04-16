@@ -8,10 +8,7 @@ from contextlib import contextmanager
 from tempfile import NamedTemporaryFile
 import six
 from skimage import io
-try:
-    import imageio as iio
-except ImportError:
-    iio = io
+import imageio as iio
 
 
 ### Image IO
