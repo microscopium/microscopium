@@ -21,7 +21,7 @@ db = client['myores_test']
 collection = db.wells_test
 
 if db.wells_test.find({}).count() == 0:
-    sp.Popen(['mongoimport', '-host', 'localhost:27017', '-d',
+    sp.Popen(['mongoimport', '--host', 'localhost:27017', '-d',
               'myores_test', '-c', 'wells_test',
               os.path.join(abspath, 'testdata/wells_test.json')])
     time.sleep(2)
