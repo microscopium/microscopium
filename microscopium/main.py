@@ -127,6 +127,8 @@ illum.add_argument('-L', '--stretchlim-output', metavar='[0.0-1.0]', type=float,
 illum.add_argument('-q', '--quantile', metavar='[0.0-1.0]', type=float,
                    default=0.05,
                    help='Use this quantile to determine illumination.')
+illum.add_argument('-i', '--input-bitdepth', type=int, default=None,
+                   help='Input bit-depth of images.')
 illum.add_argument('-r', '--radius', metavar='INT', type=int, default=51,
                    help='Radius in which to find quantile.')
 illum.add_argument('-s', '--save-illumination', metavar='FN',
@@ -136,9 +138,6 @@ illum.add_argument('-c', '--compress', metavar='INT', type=int, default=1,
                         'to 9 (max compression, slowest) (default 1).')
 illum.add_argument('-v', '--verbose', action='store_true',
                    help='Print runtime information to stdout.')
-illum.add_argument('--method', metavar='STR', default='median',
-                   help='How to collapse filtered images to illumination '
-                        'field. options: median (default), mean.')
 illum.add_argument('--random-seed', type=int, default=None,
                    help='The random seed for sampling illumination image.')
 def run_illum(args):
@@ -152,8 +151,8 @@ def run_illum(args):
     if args.file_list is not None:
         args.images.extend([fn.rstrip() for fn in args.file_list])
     il = pre.find_background_illumination(args.images, args.radius,
-                                          args.quantile, args.stretchlim,
-                                          args.method)
+                                          args.input_bitdepth, args.quantile,
+                                          args.stretchlim)
     if args.verbose:
         print('illumination field:', type(il), il.dtype, il.min(), il.max())
     if args.save_illumination is not None:
