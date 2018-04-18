@@ -26,53 +26,48 @@ spiral_7_left_clockwise = [[30, 31, 32, 33, 34, 35, 36],
                            [25, 24, 23, 22, 21, 20, 41],
                            [48, 47, 46, 45, 44, 43, 42]]
 
-spiral_3_down_anticlockwise_params = ("spiral_3_left_clockwise", {
-    "dim": 3,
-    "direction": "down",
-    "clockwise": False,
-    "expected": spiral_3_down_anticlockwise
-})
+spiral_3_down_anticlockwise_params = (
+    {'shape': 3, 'direction': 'down', 'clockwise': False},
+    spiral_3_down_anticlockwise
+)
 
-spiral_5_right_clockwise_params = ("spiral_3_left_clockwise", {
-    "dim": 5,
-    "direction": "right",
-    "clockwise": True,
-    "expected": spiral_5_right_clockwise
-})
+spiral_5_right_clockwise_params = (
+    {'shape': 5, 'direction': 'right', 'clockwise': True},
+    spiral_5_right_clockwise
+)
 
-spiral_5_up_anticlockwise_params = ("spiral_3_left_clockwise", {
-    "dim": 5,
-    "direction": "up",
-    "clockwise": False,
-    "expected": spiral_5_up_anticlockwise
-})
+spiral_5_up_anticlockwise_params = (
+    {'shape': 5, 'direction': 'up', 'clockwise': False},
+    spiral_5_up_anticlockwise
+)
 
-spiral_7_left_clockwise_params = ("spiral_7_left_clockwise", {
-    "dim": 7,
-    "direction": "left",
-    "clockwise": True,
-    "expected": spiral_7_left_clockwise
-})
+spiral_7_left_clockwise_params = (
+    {'shape': 7, 'direction': 'left', 'clockwise': True},
+    spiral_7_left_clockwise
+)
 
+scenarios = [spiral_3_down_anticlockwise_params,
+             spiral_5_right_clockwise_params,
+             spiral_5_up_anticlockwise_params,
+             spiral_7_left_clockwise_params]
 
-def pytest_generate_tests(metafunc):
-    idlist = []
-    argvalues = []
-    for scenario in metafunc.cls.scenarios:
-        idlist.append(scenario[0])
-        argnames = list(scenario[1].keys())
-        argvalues.append((list(scenario[1].values())))
-    metafunc.parametrize(argnames, argvalues, ids=idlist, scope="class")
+@pytest.mark.parametrize('kwargs,expected', scenarios)
+def test_generate_spiral(kwargs, expected):
+    np.testing.assert_array_equal(generate_spiral(**kwargs), expected)
 
 
-class TestSeries:
-    scenarios = [spiral_3_down_anticlockwise_params,
-                 spiral_5_right_clockwise_params,
-                 spiral_5_up_anticlockwise_params,
-                 spiral_7_left_clockwise_params]
+def test_negative_shape():
+    with pytest.raises(ValueError):
+        generate_spiral((-4, 3), 'up', clockwise=True)
 
-    def test_generate_spiral(self, dim, direction, clockwise,
-                                    expected):
-        actual = generate_spiral(dim, direction, clockwise)
-        np.testing.assert_array_equal(actual, expected)
+def test_rectangle():
+    with pytest.raises(ValueError):
+        generate_spiral((3, 5), 'down', clockwise=False)
 
+def test_incorrect_dir():
+    with pytest.raises(ValueError):
+        generate_spiral((4, 4), 'any random direction', clockwise=True)
+
+def test_3d_spiral_fails():
+    with pytest.raises(ValueError):
+        generate_spiral((4, 4, 4), 'up', clockwise=False)
