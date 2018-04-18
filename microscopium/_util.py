@@ -80,12 +80,9 @@ def generate_spiral(shape, direction, clockwise=False):
                 di, dj = dj, -di
             else:
                 di, dj = -dj, di
-            if direction in ['left', 'right']:
-                if di == 0:
-                    segment_length += 1
-            else:
-                if dj == 0:
-                    segment_length += 1
+            if ((direction in {'left', 'right'} and di == 0)
+                    or (direction in {'up', 'down'} and dj == 0)):
+                segment_length += 1
 
     return spiral_array
 
