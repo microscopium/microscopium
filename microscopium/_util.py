@@ -66,7 +66,7 @@ def generate_spiral(shape, direction, clockwise=False):
     segment_length = 1
     i = j = segment_passed = 0
     rcenter, ccenter = shape[0] // 2, shape[1] // 2
-    spiral_array = np.zeros(shape, dtype=np.uint8)
+    spiral_array = np.zeros(shape, dtype=np.min_scalar_type(size))
 
     for k in range(1, size):
         i += di

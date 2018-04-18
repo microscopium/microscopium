@@ -71,3 +71,9 @@ def test_incorrect_dir():
 def test_3d_spiral_fails():
     with pytest.raises(ValueError):
         generate_spiral((4, 4, 4), 'up', clockwise=False)
+
+
+def test_large_spirals():
+    result = generate_spiral(25, 'up')
+    assert np.max(result) == 25*25 - 1
+    assert result.dtype == np.uint16
