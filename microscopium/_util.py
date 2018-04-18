@@ -2,64 +2,77 @@ import numpy as np
 import numbers
 
 
-def generate_spiral(dim, direction, clockwise=False):
-    """Generate an dim * dim of sequental integers in a spiral pattern.
+def generate_spiral(shape, direction, clockwise=False):
+    """Generate sequential integers in a spiral pattern.
 
     Many HCS systems use a spiral pattern to capture multiple fields in
-    for each well. This function generates a spiral pattern of integers
-    to be used by the montaging functions.
+    for each well. This function generates a corresponding spiral pattern of
+    integers to be used to map and montage individual fields into a single
+    image.
 
     Parameters
     ----------
-    dim : int
-        The dimension of the spiral. The function will return a dim * dim
-        array.
-    direction : str
+    shape : int, or 2-tuple of int
+        The final shape of the spiral. If shape is scalar, the function will
+        return convert it into a 2-tuple with the same value repeated.
+    direction : str in {'up', 'down', 'left', 'right'}
         The direction the first step the spiral takes when leaving the origin.
-        Should be one of up, down, left or right.
     clockwise : bool, optional
-        If the spiral generated should be in a clockwise direction. Default
-        true.
+        If the spiral generated should be in a clockwise direction.
 
     Returns
     -------
-    spiral_array : array, shape (dim, dim)
+    spiral_array : array, shape (shape, shape)
         The spiral array.
 
     Examples
     --------
-    >>> generate_spiral(3, "up", True)
+    >>> generate_spiral(3, 'up', clockwise=True)
     array([[8, 1, 2],
            [7, 0, 3],
            [6, 5, 4]], dtype=uint8)
+    >>> generate_spiral((2, 3), 'left', clockwise=True)
+    array([[2, 3, 4],
+           [1, 0, 5]], dtype=uint8)
     """
-    if dim <= 0:
-        raise ValueError("dim must be a positive integer.")
+    if np.isscalar(shape):
+        shape = (shape, shape)
+    if len(shape) != 2:
+        ndim = len(shape)
+        mesg = (f'generate_spiral only works in 2D, but an {ndim}-D shape '
+                 'was given.')
+        raise ValueError(mesg)
+    if shape[0] < 1 or shape[1] < 1:
+        mesg = ('Shape passed to generate_spiral should always be positive, '
+                f'but {shape} was given.')
+        raise ValueError(mesg)
 
-    if dim % 2 != 1:
-        raise ValueError("dim must be an odd integer.")
+    if abs(shape[0] - shape[1]) > 1:
+        mesg = ('generate_spiral requires shapes that differ from square by '
+                f'at most 1, but {shape} was given. For example, (2, 3) and '
+                '(4, 4) are valid shapes, but (3, 5) is not.')
+        raise ValueError(mesg)
 
-    if direction not in ["down", "up", "left", "right"]:
-        raise ValueError("direction must be one of down, up, left or right.")
+    directions = {'down': [1, 0], 'up': [-1, 0],
+                  'left': [0, -1], 'right': [0, 1]}
+    if direction not in directions:
+        mesg = ('direction in generate_spirals should be one of up, down, '
+                f'left, or right, but {direction} was given.')
+        raise ValueError(mesg)
 
-    directions = {
-        "down": [1, 0],
-        "up": [-1, 0],
-        "left": [0, -1],
-        "right": [0, 1]
-    }
+    size = np.prod(shape)
 
     di, dj = directions[direction]
     segment_length = 1
     i = j = segment_passed = 0
-    center = np.floor(dim / 2).astype(np.uint8)
-    spiral_array = np.zeros((dim, dim), dtype=np.uint8)
+    rcenter, ccenter = shape[0] // 2, shape[1] // 2
+    spiral_array = np.zeros(shape, dtype=np.uint8)
 
-    for k in range(1, dim ** 2):
+    for k in range(1, size):
         i += di
         j += dj
         segment_passed += 1
-        spiral_array[center + i][center + j] = k
+        spiral_array[rcenter + i, ccenter + j] = k
 
         if segment_passed == segment_length:
             segment_passed = 0
@@ -67,7 +80,7 @@ def generate_spiral(dim, direction, clockwise=False):
                 di, dj = dj, -di
             else:
                 di, dj = -dj, di
-            if direction in ["left", "right"]:
+            if direction in ['left', 'right']:
                 if di == 0:
                     segment_length += 1
             else:
