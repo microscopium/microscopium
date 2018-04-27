@@ -42,10 +42,11 @@ def make_document(filename):
 
         def load_image(attr, old, new):
             print('new index: ', new.indices)
-            index, filename = dataframe[['info', 'path']].iloc[new.indices[0]]
-            image = imread(filename)
-            print('image size: ', image.shape)
-            image_holder.data = {'image': [image]}
+            if len(new.indices > 0):  # could be empty selection
+                index, filename = (dataframe[['info', 'path']]
+                                   .iloc[new.indices[0]])
+                image = imread(filename)
+                image_holder.data = {'image': [image]}
 
         glyphs.data_source.on_change('selected', load_image)
 
