@@ -6,16 +6,20 @@ from bokeh.application import Application
 from bokeh.application.handlers.function import FunctionHandler
 from bokeh.plotting import figure, ColumnDataSource
 from bokeh.layouts import row
-from bokeh.models.tools import TapTool
+from bokeh.models.tools import TapTool, PanTool
 from skimage import io
 import pandas as pd
 
 
 def imread(path):
     image0 = io.imread(path)
-    shape = image0.shape[:2]
-    im1 = np.concatenate((image0, np.full((shape + (1,)), 255, dtype='uint8')),
-                         axis=2)
+    if image0.shape[2] == 3:  # RGB image
+        shape = image0.shape[:2]
+        im1 = np.concatenate((image0,
+                              np.full((shape + (1,)), 255, dtype='uint8')),
+                             axis=2)
+    else:  # already RGBA
+        im1 = image0
     return im1
 
 
@@ -24,30 +28,32 @@ def make_document(filename):
     directory = os.path.dirname(filename)
     dataframe['path'] = dataframe['url'].apply(lambda x:
                                                os.path.join(directory, x))
-    print(dataframe.head())
 
     def makedoc(doc):
         source = ColumnDataSource(dataframe)
+        image_holder = ColumnDataSource({'image': []})
         pca = figure(title='PCA', x_range=[-0.6, 2.7], y_range=[-1.3, 1.8],
-                     sizing_mode='scale_both')
+                     sizing_mode='scale_both', tools=[TapTool(), PanTool()])
         glyphs = pca.circle(source=source, x='x', y='y')
 
-        sel = figure(title='selected', x_range=[0, 1], y_range=[0, 1],
+        sel = figure(title='Selected', x_range=[0, 1], y_range=[0, 1],
                      sizing_mode='scale_both')
-        image0 = imread(dataframe['path'].iloc[0])
-        sel.image_rgba([image0], 0, 0, 1, 1)
+        image_canvas = sel.image_rgba('image', 0, 0, 1, 1, source=image_holder)
 
         def load_image(attr, old, new):
-            print(attr)
-            print(old)
-            print(new)
+            print('new index: ', new.indices)
+            index, filename = dataframe[['info', 'path']].iloc[new.indices[0]]
+            image = imread(filename)
+            print('image size: ', image.shape)
+            image_holder.data = {'image': [image]}
 
         glyphs.data_source.on_change('selected', load_image)
 
-        fig = row([pca], sizing_mode='stretch_both')
+        fig = row([pca, sel], sizing_mode='stretch_both')
         doc.title = 'Bokeh microscopium app'
         doc.add_root(fig)
 
+    print('ready!')
     return makedoc
 
 
