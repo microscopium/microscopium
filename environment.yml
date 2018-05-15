@@ -1,12 +1,13 @@
 name: mic
 dependencies:
-- python=3.5*
+- python=3.6*
 - cytoolz
 - h5py
 - matplotlib=1.5*
 - networkx
 - numpy
 - pandas
+- bokeh>=0.12.5
 - pip
 - pymongo=3*
 - scikit-image
