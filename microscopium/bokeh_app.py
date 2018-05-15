@@ -65,7 +65,7 @@ def make_document(filename):
 def run_server(filename, path='/', port=5000):
     apps = {path: Application(FunctionHandler(make_document(filename)))}
 
-    server = Server(apps, port=port)
+    server = Server(apps, port=port, allow_websocket_origin=['*'])
     server.run_until_shutdown()
 
 if __name__ == '__main__':
