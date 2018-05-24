@@ -13,26 +13,77 @@ import pandas as pd
 
 
 def imread(path):
+    """Read an image from disk while ensuring it has an alpha channel.
+
+    Parameters
+    ----------
+    path : string
+        Any valid path for skimage.io. This includes a local path as well as
+        a URL.
+
+    Returns
+    -------
+    image : array, shape (M, N, 4)
+        The resulting RGBA image.
+    """
     image0 = io.imread(path)
     if image0.shape[2] == 3:  # RGB image
         shape = image0.shape[:2]
-        im1 = np.concatenate((image0,
-                              np.full((shape + (1,)), 255, dtype='uint8')),
-                             axis=2)
+        alpha = np.full((shape + (1,)), 255, dtype='uint8')
+        image = np.concatenate((image0, alpha), axis=2)
     else:  # already RGBA
-        im1 = image0
-    return im1
+        image = image0
+    return image
 
 
 def update_image_canvas_single(index, data, source):
+    """Update image canvas when a single image is selected on the scatter plot.
+
+    The ``ColumnDataSource`` `source` will be updated in-place, which will
+    cause the ``image_rgba`` plot to automatically update.
+
+    Parameters
+    ----------
+    index : string
+        The index value of the selected point. This must match the index on
+        `data`.
+    data : DataFrame
+        The image properties dataset. It must include a 'path' pointing to the
+        image file for each image.
+    source : ColumnDataSource
+        The ``image_rgba`` data source. It must include the columns 'image',
+        'x', 'y', 'dx', 'dy'.
+    """
     index, filename = (data[['info', 'path']]
                        .iloc[index])
     image = imread(filename)
-    source.data = {'image': [image],
-                         'x': [0], 'y': [0], 'dx': [1], 'dy': [1]}
+    source.data = {'image': [image], 'x': [0], 'y': [0], 'dx': [1], 'dy': [1]}
 
 
 def update_image_canvas_multi(indices, data, source, max_images=25):
+    """Update image canvas when multiple images are selected on scatter plot.
+
+    The ``ColumnDataSource`` `source` will be updated in-place, which will
+    cause the ``image_rgba`` plot to automatically update.
+
+    Parameters
+    ----------
+    indices : list of string
+        The index values of the selected points. These must match the index on
+        `data`.
+    data : DataFrame
+        The image properties dataset. It must include a 'path' pointing to the
+        image file for each image.
+    source : ColumnDataSource
+        The ``image_rgba`` data source. It must include the columns 'image',
+        'x', 'y', 'dx', 'dy'.
+
+    Notes
+    -----
+    Currently, we implement our own simple grid layout algorithm for the input
+    images. It may or may not be better to instead use a grid of ``image_rgba``
+    plots. It's unclear how we would update those, though.
+    """
     n_images = len(indices)
     filenames = data['path'].iloc[indices]
     if n_images > max_images:
