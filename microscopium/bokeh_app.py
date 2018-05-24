@@ -7,7 +7,9 @@ from bokeh.application import Application
 from bokeh.application.handlers.function import FunctionHandler
 from bokeh.plotting import figure, ColumnDataSource
 from bokeh.layouts import row
-from bokeh.models.tools import TapTool, PanTool, BoxSelectTool
+from bokeh.models.tools import (ResetTool, PanTool, WheelZoomTool, TapTool,
+                                BoxSelectTool, PolySelectTool, UndoTool,
+                                RedoTool, HoverTool)
 from skimage import io
 import pandas as pd
 
@@ -134,9 +136,10 @@ def make_makedoc(filename):
         source = ColumnDataSource(dataframe)
         image_holder = ColumnDataSource({'image': [], 'x': [], 'y': [],
                                          'dx': [], 'dy': []})
+        tools = [ResetTool(), PanTool(), WheelZoomTool(), TapTool(),
+                 BoxSelectTool(), PolySelectTool(), UndoTool(), RedoTool()]
         pca = figure(title='PCA', x_range=[-0.6, 2.7], y_range=[-1.3, 1.8],
-                     sizing_mode='scale_both', tools=[TapTool(), PanTool(),
-                                                      BoxSelectTool()])
+                     sizing_mode='scale_both', tools=tools)
         glyphs = pca.circle(source=source, x='x', y='y')
 
         sel = figure(title='Selected', x_range=[0, 1], y_range=[0, 1],
