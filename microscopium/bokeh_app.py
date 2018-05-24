@@ -106,7 +106,25 @@ def update_image_canvas_multi(indices, data, source, max_images=25):
     print(source.data)
 
 
-def make_document(filename):
+def make_makedoc(filename):
+    """Make the makedoc function required by Bokeh Server.
+
+    To run a Bokeh server, we need to create a function that takes in a Bokeh
+    "document" as input, and adds our figure (together with all the interactive
+    bells and whistles we may want to add to it) to that document. This then
+    initialises a ``FunctionHandler`` and an ``Application`` gets started by
+    the server. See the `run_server` code for details.
+
+    Parameters
+    ----------
+    filename : string
+        A CSV file containing the data for the app.
+
+    Returns
+    -------
+    makedoc : function
+        A makedoc function as expected by ``FunctionHandler``.
+    """
     dataframe = pd.read_csv(filename, index_col=0).set_index('index')
     directory = os.path.dirname(filename)
     dataframe['path'] = dataframe['url'].apply(lambda x:
@@ -150,7 +168,7 @@ def make_document(filename):
 @click.option('-p', '--path', default='/')
 @click.option('-P', '--port', type=int, default=5000)
 def run_server(filename, path='/', port=5000):
-    apps = {path: Application(FunctionHandler(make_document(filename)))}
+    apps = {path: Application(FunctionHandler(make_makedoc(filename)))}
 
     server = Server(apps, port=port, allow_websocket_origin=['*'])
     server.run_until_shutdown()
