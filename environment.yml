@@ -1,6 +1,7 @@
 name: mic
 dependencies:
 - python=3.6*
+- click
 - cytoolz
 - h5py
 - matplotlib
