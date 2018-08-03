@@ -108,6 +108,13 @@ def update_image_canvas_multi(indices, data, source, max_images=25):
     print(source.data)
 
 
+def _column_range(series):
+    minc = np.min(series)
+    maxc = np.max(series)
+    rangec = maxc - minc
+    return (minc, maxc, rangec)
+
+
 def make_makedoc(filename):
     """Make the makedoc function required by Bokeh Server.
 
@@ -131,6 +138,8 @@ def make_makedoc(filename):
     directory = os.path.dirname(filename)
     dataframe['path'] = dataframe['url'].apply(lambda x:
                                                os.path.join(directory, x))
+    minx, maxx, rangex = _column_range(dataframe['x'])
+    miny, maxy, rangey = _column_range(dataframe['y'])
 
     def makedoc(doc):
         source = ColumnDataSource(dataframe)
@@ -138,11 +147,13 @@ def make_makedoc(filename):
                                          'dx': [], 'dy': []})
         tools = [ResetTool(), PanTool(), WheelZoomTool(), TapTool(),
                  BoxSelectTool(), PolySelectTool(), UndoTool(), RedoTool()]
-        pca = figure(title='PCA', x_range=[-0.6, 2.7], y_range=[-1.3, 1.8],
+        pca = figure(title='PCA',
+                     x_range=[minx - 0.05 * rangex, maxx + 0.05 * rangex],
+                     y_range=[miny - 0.05 * rangey, maxy + 0.05 * rangey],
                      sizing_mode='scale_both', tools=tools)
         glyphs = pca.circle(source=source, x='x', y='y')
 
-        sel = figure(title='Selected', x_range=[0, 1], y_range=[0, 1],
+        sel = figure(title='Selected image', x_range=[0, 1], y_range=[0, 1],
                      sizing_mode='scale_both')
         image_canvas = sel.image_rgba('image', 'x', 'y', 'dx', 'dy',
                                       source=image_holder)
