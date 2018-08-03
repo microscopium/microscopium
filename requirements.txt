@@ -1,5 +1,7 @@
 numpy
 scipy
+click
+bokeh
 scikit-learn
 scikit-image
 six
