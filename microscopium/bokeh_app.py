@@ -90,7 +90,7 @@ def update_image_canvas_multi(indices, data, source, max_images=25):
     filenames = data['path'].iloc[indices]
     if n_images > max_images:
         filenames = filenames[:max_images - 1]
-    images = [io.imread(fn) for fn in filenames]
+    images = [imread(fn) for fn in filenames]
     if n_images > max_images:
         # from the My First Pixel Art (TM) School of Design
         dotdotdot = np.full((7, 7, 4), 255, dtype=np.uint8)

@@ -592,8 +592,14 @@ def find_background_illumination(fns, radius=None, input_bitdepth=None,
 
     # return the median filter of that mean
     radius = radius or min(mean_image.shape) // 4
-    illum = ndi.percentile_filter(mean_image, percentile=(quantile * 100),
-                                  footprint=morphology.disk(radius))
+
+    # TODO: examine min & max, look at mean_image before and after img_as_uint, look at number of unique values
+    # TODO: want to see substantial range in the result
+    mean_image = img_as_uint(stretchlim(mean_image))
+    illum = imfilter.rank.median(mean_image, selem=morphology.disk(radius))
+
+    # illum = ndi.percentile_filter(mean_image, percentile=(quantile * 100),
+    #                               footprint=morphology.disk(radius))
     return illum
 
 
