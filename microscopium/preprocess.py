@@ -597,9 +597,6 @@ def find_background_illumination(fns, radius=None, input_bitdepth=None,
     # TODO: want to see substantial range in the result
     mean_image = img_as_uint(stretchlim(mean_image))
     illum = imfilter.rank.median(mean_image, selem=morphology.disk(radius))
-
-    # illum = ndi.percentile_filter(mean_image, percentile=(quantile * 100),
-    #                               footprint=morphology.disk(radius))
     return illum
 
 
