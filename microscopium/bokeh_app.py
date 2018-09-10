@@ -147,10 +147,16 @@ def make_makedoc(filename):
                                          'dx': [], 'dy': []})
         tools_pca = [ResetTool(), PanTool(), WheelZoomTool(), TapTool(),
                      BoxSelectTool(), PolySelectTool(), UndoTool(), RedoTool()]
+        TOOLTIPS = [
+            ("index", "$index"),
+            ("info", "@info"),
+            ("url", "@url")
+        ]
         pca = figure(title='PCA',
                      x_range=[minx - 0.05 * rangex, maxx + 0.05 * rangex],
                      y_range=[miny - 0.05 * rangey, maxy + 0.05 * rangey],
-                     sizing_mode='scale_both', tools=tools_pca)
+                     sizing_mode='scale_both', tools=tools_pca,
+                     tooltips=TOOLTIPS)
         glyphs = pca.circle(source=source, x='x', y='y')
 
         tools_sel = [ResetTool(), PanTool(), WheelZoomTool(),
