@@ -172,7 +172,7 @@ def make_makedoc(filename):
 
         glyphs.data_source.on_change('selected', load_selected)
 
-        fig = row([pca, sel])
+        fig = row([pca, sel], sizing_mode="stretch_both")
         doc.title = 'Bokeh microscopium app'
         doc.add_root(fig)
 
