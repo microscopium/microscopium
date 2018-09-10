@@ -7,9 +7,10 @@ from bokeh.application import Application
 from bokeh.application.handlers.function import FunctionHandler
 from bokeh.plotting import figure, ColumnDataSource
 from bokeh.layouts import row
-from bokeh.models.tools import (ResetTool, PanTool, WheelZoomTool, TapTool,
-                                BoxSelectTool, PolySelectTool, UndoTool,
-                                RedoTool, HoverTool, BoxZoomTool)
+from bokeh.models.tools import (HoverTool, TapTool, PanTool,
+                                WheelZoomTool, BoxZoomTool,
+                                BoxSelectTool, PolySelectTool, LassoSelectTool,
+                                ResetTool, UndoTool, RedoTool)
 from skimage import io
 import pandas as pd
 
@@ -146,7 +147,8 @@ def make_makedoc(filename):
         image_holder = ColumnDataSource({'image': [], 'x': [], 'y': [],
                                          'dx': [], 'dy': []})
         tools_pca = [ResetTool(), PanTool(), WheelZoomTool(), TapTool(),
-                     BoxSelectTool(), PolySelectTool(), UndoTool(), RedoTool()]
+                     BoxSelectTool(), PolySelectTool(), LassoSelectTool(),
+                     UndoTool(), RedoTool()]
         TOOLTIPS = [
             ("index", "$index"),
             ("info", "@info"),
