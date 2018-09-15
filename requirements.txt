@@ -16,4 +16,3 @@ sh
 coverage
 pytest-cov
 imageio
-pscript
