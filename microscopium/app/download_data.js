@@ -1,10 +1,13 @@
 var data = source.data;
-var filetext = 'info,neighbors,url,x,y,path\n';
-for (var i = 0; i < data['url'].length; i++) {
-    var currRow = [data['info'][i].toString(),
+var filetext = 'index,info,neighbors,url,x,y,path\n';
+for (var i = 0; i < data['info'].length; i++) {
+    var currRow = [data['index'][i].toString(),
+                   data['info'][i].toString(),
+                   data['neighbors'][i].toString(),
                    data['url'][i].toString(),
                    data['x'][i].toString(),
-                   data['y'][i].toString().concat('\n')];
+                   data['y'][i].toString(),
+                   data['path'][i].toString().concat('\n')];
 
     var joined = currRow.join();
     filetext = filetext.concat(joined);

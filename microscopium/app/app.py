@@ -13,6 +13,14 @@ from bokeh.models import ColumnDataSource, CustomJS
 from bokeh.models.widgets import Button, DataTable, TableColumn
 
 
+def dataframe_from_file(filename):
+    """
+    """
+    df = pd.read_csv(filename, index_col=0).set_index('index')
+    df['path'] = df['url'].apply(lambda x: join(dirname(filename), x))
+    return df
+
+
 def imread(path):
     """Read an image from disk while ensuring it has an alpha channel.
 
@@ -165,77 +173,100 @@ def selected_images():
                            active_drag='pan',
                            active_scroll='wheel_zoom')
     selected_images.image_rgba('image', 'x', 'y', 'dx', 'dy', source=image_holder)
+    # Do not display axes
+    selected_images.xaxis.major_tick_line_color = None
+    selected_images.xaxis.minor_tick_line_color = None
+    selected_images.yaxis.major_tick_line_color = None
+    selected_images.yaxis.minor_tick_line_color = None
+    selected_images.xaxis.major_label_text_color = None
+    selected_images.yaxis.major_label_text_color = None
     return selected_images, image_holder
 
 
-def empty_table(df):
-    """Display an empty table, with column headings matching full dataset table."""
-    columns = [TableColumn(field=col, title=col) for col in df.columns]
-    table_source = ColumnDataSource(pd.DataFrame())
-    table = DataTable(source=table_source, columns=columns, width=1200)
-    return table
-
-
-def full_table(df):
-    """Display the entire dataset table."""
-    columns = [TableColumn(field=col, title=col) for col in df.columns]
-    table_source = ColumnDataSource(df)
-    table = DataTable(source=table_source, columns=columns, width=1200)
-    return table
-
-
-def update_table(indices, data, table):
-    """Update table values to show only the currently selected data."""
-    filtered_df = data.iloc[indices]
-    table.source.data = ColumnDataSource.from_df(filtered_df)
-
-
-def button_widget():
+def button_save_table():
     """Button to save selected data table as csv.
 
     Notes
     -----
-    Does not work for column values containing spaces (like 'neighbors')
-    Currently the columns being saved are hard coded in the javascript callback
+    * Does not work for column values containing tuples (like 'neighbors')
+    * Currently columns being saved are hard coded in the javascript callback
+    * Available styles: 'default', 'primary', 'success', 'warning', 'danger'
     """
     button = Button(label="Download selected data", button_type="success")
-    button.callback = CustomJS(args=dict(source=table),
-                               code=open(join(dirname(__file__),
-                               "download_data.js")).read())
+    button.callback = CustomJS(args=dict(source=table.source),
+                               code=open(join(dirname(__file__), "download_data_test.js")).read())
     return widgetbox(button)
+
+
+def button_print_page():
+    """Button to print currently displayed webpage to paper or pdf.
+
+    Notes
+    -----
+    * Available styles: 'default', 'primary', 'success', 'warning', 'danger'
+    """
+    button = Button(label="Print this page", button_type="primary")
+    button.callback = CustomJS(args=dict(source=table.source),
+                               code="""print()""")
+    return widgetbox(button)
+
+
+def full_table(df):
+    """Display the entire dataset table (minus 'neighbors' and 'path' cols)"""
+    columns = [TableColumn(field=col, title=col) for col in df.columns if col not in ['neighbors', 'path']]
+    df_table = df.drop(columns=['neighbors', 'path'])
+    table_source = ColumnDataSource(df_table)
+    table = DataTable(source=table_source, columns=columns, width=1200)
+    return table
+
+
+def empty_table(df):
+    """Display an empty table, with column headings (minus 'neighbors' & 'path')"""
+    column_names = [col for col in df.columns if col not in ['neighbors', 'path']]
+    table_source = ColumnDataSource(pd.DataFrame(columns=column_names))
+    columns = [TableColumn(field=col, title=col) for col in column_names]
+    table = DataTable(source=table_source, columns=columns, width=800)
+    return table
+
+
+def update_table(indices, df, table):
+    """Update table values to show only the currently selected data."""
+    # javascript csv download can't handle tuple objects in dataframe columns
+    column_names = [col for col in df.columns if col not in ['neighbors', 'path']]
+    filtered_df = df[column_names].iloc[indices]
+    table.source.data = ColumnDataSource.from_df(filtered_df)
 
 
 def load_selected(attr, old, new):
     """Update images and table to display selected data."""
     print('new index: ', new.indices)
-    # update table
-    print('update table')
-    update_table(new.indices, df, table)
-    # update images
-    print('update images')
+    # Update images
     if len(new.indices) == 1:  # could be empty selection
         update_image_canvas_single(new.indices[0], data=df,
                                    source=image_holder)
     elif len(new.indices) > 1:
         update_image_canvas_multi(new.indices, data=df,
                                   source=image_holder)
-    print('updates sucessful')
+    # Update table
+    update_table(new.indices, df, table)
 
 
+# User input - absolute filepath to csv data summary
 filename = join(dirname(__file__), '../../tests/testdata/images/data.csv')
-df = pd.read_csv(filename, index_col=0).set_index('index')
-df['path'] = df['url'].apply(lambda x: join(dirname(filename), x))
+# Set up data sources, plots and tables
+df = dataframe_from_file(filename)
 source = ColumnDataSource(df)
 pca = pca_plot(source, glyph_size=10)
 image_plot, image_holder = selected_images()
 table = empty_table(df)
-#table = full_table(df)
-controls = button_widget()
+controls = [button_save_table(), button_print_page()]
+# Callbacks
 source.on_change('selected', load_selected)
+# Page layout
 page_content = layout([
    [pca, image_plot],
-   [controls],
+   controls,
    [table]
-   ])
+   ], sizing_mode="scale_width")
 curdoc().add_root(page_content)
-curdoc().title = "microscopium"
+curdoc().title = 'microscopium'
