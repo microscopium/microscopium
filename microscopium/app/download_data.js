@@ -1,19 +1,16 @@
 var data = source.data;
-var filetext = 'index,info,neighbors,url,x,y,path\n';
+var filetext = 'info,url,x,y\n';
 for (var i = 0; i < data['info'].length; i++) {
-    var currRow = [data['index'][i].toString(),
-                   data['info'][i].toString(),
-                   data['neighbors'][i].toString(),
+    var currRow = [data['info'][i].toString(),
                    data['url'][i].toString(),
                    data['x'][i].toString(),
-                   data['y'][i].toString(),
-                   data['path'][i].toString().concat('\n')];
+                   data['y'][i].toString().concat('\n')];
 
     var joined = currRow.join();
     filetext = filetext.concat(joined);
 }
 
-var filename = 'selected_data.csv';
+var filename = 'data_result.csv';
 var blob = new Blob([filetext], { type: 'text/csv;charset=utf-8;' });
 
 //addresses IE

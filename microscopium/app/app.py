@@ -199,7 +199,7 @@ def button_save_table(table):
     button = Button(label="Download selected data", button_type="success")
     button.callback = CustomJS(args=dict(source=table.source),
                                code=open(join(dirname(__file__),
-                                              "download_data_test.js")).read())
+                                              "download_data.js")).read())
     return widgetbox(button)
 
 
