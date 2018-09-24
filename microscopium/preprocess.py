@@ -6,7 +6,7 @@ import re
 import numpy as np
 from scipy import ndimage as ndi
 from scipy.stats.mstats import mquantiles as quantiles
-from skimage import io, util, img_as_float, img_as_uint
+from skimage import io, util, img_as_float, img_as_ubyte
 from skimage import morphology, filters as imfilter, exposure
 import skimage.filters.rank as rank
 import skimage
@@ -592,8 +592,9 @@ def find_background_illumination(fns, radius=None, input_bitdepth=None,
 
     # return the median filter of that mean
     radius = radius or min(mean_image.shape) // 4
-    illum = ndi.percentile_filter(mean_image, percentile=(quantile * 100),
-                                  footprint=morphology.disk(radius))
+
+    mean_image = img_as_ubyte(stretchlim(mean_image))
+    illum = imfilter.rank.median(mean_image, selem=morphology.disk(radius))
     return illum
 
 

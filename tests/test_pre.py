@@ -41,11 +41,11 @@ def image_files():
 def test_illumination_mean(image_files):
     illum = pre.find_background_illumination(image_files, radius=1,
                                              quantile=0.5)
-    illum_true = np.array([[5.67, 5.  , 5.  , 3.  , 1.  ],
-                           [4.67, 5.33, 3.  , 5.  , 3.33],
-                           [4.67, 2.67, 5.  , 4.  , 4.  ],
-                           [4.33, 3.67, 3.67, 5.  , 6.33],
-                           [4.33, 2.  , 4.33, 5.  , 6.33]]) / 10
+    illum_true = np.array([[161, 174, 188,  81,  94],
+                           [174, 174,  81, 161,  94],
+                           [174,  67, 161, 121, 161],
+                           [134, 107, 107, 161, 215],
+                           [134, 134, 134, 174, 215]], np.uint8)
     np.testing.assert_array_almost_equal(illum, illum_true, decimal=1)
 
 
