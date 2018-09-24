@@ -6,7 +6,7 @@ import re
 import numpy as np
 from scipy import ndimage as ndi
 from scipy.stats.mstats import mquantiles as quantiles
-from skimage import io, util, img_as_float, img_as_uint
+from skimage import io, util, img_as_float, img_as_ubyte
 from skimage import morphology, filters as imfilter, exposure
 import skimage.filters.rank as rank
 import skimage
@@ -595,7 +595,7 @@ def find_background_illumination(fns, radius=None, input_bitdepth=None,
 
     # TODO: examine min & max, look at mean_image before and after img_as_uint, look at number of unique values
     # TODO: want to see substantial range in the result
-    mean_image = img_as_uint(stretchlim(mean_image))
+    mean_image = img_as_ubyte(stretchlim(mean_image))
     illum = imfilter.rank.median(mean_image, selem=morphology.disk(radius))
     return illum
 
