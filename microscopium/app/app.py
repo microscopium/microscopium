@@ -22,6 +22,9 @@ def dataframe_from_file(filename):
     """Read in pandas dataframe from filename."""
     df = pd.read_csv(filename, index_col=0).set_index('index')
     df['path'] = df['url'].apply(lambda x: join(dirname(filename), x))
+    valid_x = df.x.notna()
+    valid_y = df.y.notna()
+    df = df[valid_x & valid_y]
     return df
 
 
