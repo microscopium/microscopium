@@ -7,9 +7,10 @@ from bokeh.application import Application
 from bokeh.application.handlers.function import FunctionHandler
 from bokeh.plotting import figure, ColumnDataSource
 from bokeh.layouts import row
-from bokeh.models.tools import (ResetTool, PanTool, WheelZoomTool, TapTool,
-                                BoxSelectTool, PolySelectTool, UndoTool,
-                                RedoTool, HoverTool)
+from bokeh.models.tools import (HoverTool, TapTool, PanTool,
+                                WheelZoomTool, BoxZoomTool,
+                                BoxSelectTool, PolySelectTool, LassoSelectTool,
+                                ResetTool, UndoTool, RedoTool)
 from skimage import io
 import pandas as pd
 
@@ -145,16 +146,26 @@ def make_makedoc(filename):
         source = ColumnDataSource(dataframe)
         image_holder = ColumnDataSource({'image': [], 'x': [], 'y': [],
                                          'dx': [], 'dy': []})
-        tools = [ResetTool(), PanTool(), WheelZoomTool(), TapTool(),
-                 BoxSelectTool(), PolySelectTool(), UndoTool(), RedoTool()]
+        tools_pca = [ResetTool(), PanTool(), WheelZoomTool(), TapTool(),
+                     BoxSelectTool(), PolySelectTool(), LassoSelectTool(),
+                     UndoTool(), RedoTool()]
+        TOOLTIPS = [
+            ("index", "$index"),
+            ("info", "@info"),
+            ("url", "@url")
+        ]
         pca = figure(title='PCA',
                      x_range=[minx - 0.05 * rangex, maxx + 0.05 * rangex],
                      y_range=[miny - 0.05 * rangey, maxy + 0.05 * rangey],
-                     sizing_mode='scale_both', tools=tools)
+                     sizing_mode='scale_both', tools=tools_pca,
+                     tooltips=TOOLTIPS)
         glyphs = pca.circle(source=source, x='x', y='y')
 
+        tools_sel = [ResetTool(), PanTool(), WheelZoomTool(),
+                     BoxZoomTool(match_aspect=True),
+                     UndoTool(), RedoTool()]
         sel = figure(title='Selected image', x_range=[0, 1], y_range=[0, 1],
-                     sizing_mode='scale_both')
+                     sizing_mode='scale_both', tools=tools_sel)
         image_canvas = sel.image_rgba('image', 'x', 'y', 'dx', 'dy',
                                       source=image_holder)
 
@@ -169,7 +180,7 @@ def make_makedoc(filename):
 
         glyphs.data_source.on_change('selected', load_selected)
 
-        fig = row([pca, sel], sizing_mode='stretch_both')
+        fig = row([pca, sel], sizing_mode="scale_width")
         doc.title = 'Bokeh microscopium app'
         doc.add_root(fig)
 
