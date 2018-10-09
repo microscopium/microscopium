@@ -169,14 +169,12 @@ def pca_plot(source, glyph_size=1, alpha_value=0.8):
     else:
         group_names = pd.Series(source.data['group']).unique()
         my_colors = bokeh.palettes.viridis(len(group_names))
-        legend_items = []
         for i, group in enumerate(group_names):
             group_filter = GroupFilter(column_name='group', group=group)
             view = CDSView(source=source, filters=[group_filter])
-            glyphs = pca.circle(x="x", y="y", source=source, view=view, size=10, color=my_colors[i])
-            legend_items.append((str(group), [glyphs]))
-        legend = Legend(items=legend_items)
-        pca.add_layout(legend, 'right')
+            glyphs = pca.circle(x="x", y="y", source=source, view=view,
+                                size=10, color=my_colors[i], legend=group)
+        pca.legend.location = "top_right"
         pca.legend.click_policy="hide"
     return pca
 
