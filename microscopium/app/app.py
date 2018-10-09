@@ -14,8 +14,13 @@ from bokeh.application import Application
 from bokeh.application.handlers.function import FunctionHandler
 from bokeh.plotting import figure
 from bokeh.layouts import widgetbox, layout
-from bokeh.models import ColumnDataSource, CustomJS
+from bokeh.models import (ColumnDataSource,
+                          CustomJS,
+                          CDSView,
+                          GroupFilter,
+                          Legend)
 from bokeh.models.widgets import Button, DataTable, TableColumn
+import bokeh.palettes
 
 
 def dataframe_from_file(filename):
