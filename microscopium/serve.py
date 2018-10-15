@@ -268,7 +268,7 @@ def update_table(indices, df, table):
     table.source.data = ColumnDataSource(filtered_df).data
 
 
-def make_makedoc(filename):
+def make_makedoc(filename, color_column=None):
     """Make the makedoc function required by Bokeh Server.
 
     To run a Bokeh server, we need to create a function that takes in a Bokeh
@@ -281,6 +281,8 @@ def make_makedoc(filename):
     ----------
     filename : string
         A CSV file containing the data for the app.
+    color_column : string, optional
+        Which column in the CSV to use to color points in the embedding.
 
     Returns
     -------
@@ -291,7 +293,7 @@ def make_makedoc(filename):
 
     def makedoc(doc):
         source = ColumnDataSource(dataframe)
-        embed = embedding(source, glyph_size=10)
+        embed = embedding(source, glyph_size=10, color_column=color_column)
         image_plot, image_holder = selected_images()
         table = empty_table(dataframe)
         controls = [button_save_table(table), button_print_page()]
@@ -324,9 +326,11 @@ def make_makedoc(filename):
 @click.argument('filename')
 @click.option('-p', '--path', default='/')
 @click.option('-P', '--port', type=int, default=5000)
-def run_server(filename, path='/', port=5000):
+@click.option('-c', '--color-column', default='group')
+def run_server(filename, path='/', port=5000, color_column='group'):
     """Run the bokeh server."""
-    apps = {path: Application(FunctionHandler(make_makedoc(filename)))}
+    makedoc = make_makedoc(filename, color_column=color_column)
+    apps = {path: Application(FunctionHandler(makedoc))}
 
     server = Server(apps, port=port, allow_websocket_origin=['*'])
     server.run_until_shutdown()
