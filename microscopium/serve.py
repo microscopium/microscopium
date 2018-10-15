@@ -179,6 +179,15 @@ def pca_plot(source, glyph_size=1, alpha_value=0.8):
     return pca
 
 
+def _remove_axes_spines(plot):
+    plot.xaxis.major_tick_line_color = None
+    plot.xaxis.minor_tick_line_color = None
+    plot.yaxis.major_tick_line_color = None
+    plot.yaxis.minor_tick_line_color = None
+    plot.xaxis.major_label_text_color = None
+    plot.yaxis.major_label_text_color = None
+
+
 def selected_images():
     """Create image canvas to display images from selected data.
 
@@ -195,16 +204,10 @@ def selected_images():
                              y_range=[0, 1],
                              sizing_mode='scale_both',
                              tools=tools_sel,
-                             active_drag='box_zoom',
+                             active_drag='pan',
                              active_scroll='wheel_zoom')
     selected_images.image_rgba('image', 'x', 'y', 'dx', 'dy', source=image_holder)
-    # Do not display axes
-    selected_images.xaxis.major_tick_line_color = None
-    selected_images.xaxis.minor_tick_line_color = None
-    selected_images.yaxis.major_tick_line_color = None
-    selected_images.yaxis.minor_tick_line_color = None
-    selected_images.xaxis.major_label_text_color = None
-    selected_images.yaxis.major_label_text_color = None
+    _remove_axes_spines(selected_images)
     return selected_images, image_holder
 
 
@@ -236,32 +239,18 @@ def button_print_page():
     return widgetbox(button)
 
 
-def full_table(df):
-    """Display the entire dataset table (minus 'neighbors' and 'path' cols)"""
-    columns = [TableColumn(field=col, title=col)
-               for col in df.columns
-               if col not in ['neighbors', 'path']]
-    df_table = df.drop(columns=['neighbors', 'path'])
-    table_source = ColumnDataSource(df_table)
-    table = DataTable(source=table_source, columns=columns, width=1200)
-    return table
-
-
 def empty_table(df):
     """Display an empty table with column headings."""
-    col_names = [col for col in df.columns if col not in ['neighbors', 'path']]
-    table_source = ColumnDataSource(pd.DataFrame(columns=col_names))
-    columns = [TableColumn(field=col, title=col) for col in col_names]
+    table_source = ColumnDataSource(pd.DataFrame(columns=df.columns))
+    columns = [TableColumn(field=col, title=col) for col in df.columns]
     table = DataTable(source=table_source, columns=columns, width=800)
     return table
 
 
 def update_table(indices, df, table):
     """Update table values to show only the currently selected data."""
-    # javascript csv download can't handle tuple objects in dataframe columns
-    col_names = [col for col in df.columns if col not in ['neighbors', 'path']]
-    filtered_df = df[col_names].iloc[indices]
-    table.source.data = ColumnDataSource.from_df(filtered_df)
+    filtered_df = df.iloc[indices]
+    table.source.data = ColumnDataSource(filtered_df).data
 
 
 def make_makedoc(filename):
@@ -283,13 +272,13 @@ def make_makedoc(filename):
     makedoc : function
         A makedoc function as expected by ``FunctionHandler``.
     """
-    df = dataframe_from_file(filename)
+    dataframe = dataframe_from_file(filename)
 
     def makedoc(doc):
-        source = ColumnDataSource(df)
+        source = ColumnDataSource(dataframe)
         pca = pca_plot(source, glyph_size=10)
         image_plot, image_holder = selected_images()
-        table = empty_table(df)
+        table = empty_table(dataframe)
         controls = [button_save_table(table), button_print_page()]
 
         def load_selected(attr, old, new):
@@ -297,12 +286,12 @@ def make_makedoc(filename):
             print('new index: ', new.indices)
             # Update images & table
             if len(new.indices) == 1:  # could be empty selection
-                update_image_canvas_single(new.indices[0], data=df,
+                update_image_canvas_single(new.indices[0], data=dataframe,
                                            source=image_holder)
             elif len(new.indices) > 1:
-                update_image_canvas_multi(new.indices, data=df,
+                update_image_canvas_multi(new.indices, data=dataframe,
                                           source=image_holder)
-            update_table(new.indices, df, table)
+            update_table(new.indices, dataframe, table)
 
         source.on_change('selected', load_selected)
         page_content = layout([
