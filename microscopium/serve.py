@@ -134,49 +134,64 @@ def _column_range(series):
     return column_range(minc, maxc, rangec)
 
 
-def pca_plot(source, glyph_size=1, alpha_value=0.8):
-    """Display principal components analysis as bokeh scatterplotself.
+def _palette(num, type='categorical'):
+    """Return a suitable palette for the given number of categories."""
+    if type == 'categorical':
+        if num in range(0, 3):
+            return bokeh.palettes.Colorblind[3][:num]
+        if num in range(3, 9):
+            return bokeh.palettes.Colorblind[num]
+        if num in range(9, 13):
+            return bokeh.palettes.Set3[num]
+        else:
+            return bokeh.palettes.viridis(num)
+    else:  # numerical
+        return bokeh.palettes.viridis(num)
+
+
+def embedding(source, glyph_size=1, color_column='group'):
+    """Display a 2-dimensional embedding of the images.
 
     Parameters
     ----------
     source : ColumnDataSource
     glyph_size : size of scatter points, optional
-    alpha_value : opacity of scatter points, optional
+    color_column : str
+        Name of column in `source` to represent with color
 
     Returns
     -------
-    pca : bokeh figure, scatterplot of principal components analysis result
+    embed : bokeh figure
+        Scatterplot of precomputed x/y coordinates result
     """
     minx, maxx, rangex = _column_range(source.data['x'])
     miny, maxy, rangey = _column_range(source.data['y'])
-    tooltips_pca = [
+    tooltips_scatter = [
         ("index", "$index"),
         ("info", "@info"),
         ("url", "@url")
     ]
-    tools_pca = ['pan, box_select, poly_select, wheel_zoom, reset']
-    pca = figure(title='Principal components analysis',
-                 x_range=[minx - 0.05 * rangex, maxx + 0.05 * rangex],
-                 y_range=[miny - 0.05 * rangey, maxy + 0.05 * rangey],
-                 sizing_mode='scale_both',
-                 tools=tools_pca,
-                 active_drag="box_select",
-                 tooltips=tooltips_pca)
-    try:
-        source.data['group']
-    except KeyError:
-        pca.circle(source=source, x='x', y='y', size=glyph_size)
-    else:
-        group_names = pd.Series(source.data['group']).unique()
-        my_colors = bokeh.palettes.viridis(len(group_names))
+    tools_scatter = ['pan, box_select, poly_select, wheel_zoom, reset, tap']
+    embed = figure(title='Embedding',
+                   x_range=[minx - 0.05 * rangex, maxx + 0.05 * rangex],
+                   y_range=[miny - 0.05 * rangey, maxy + 0.05 * rangey],
+                   sizing_mode='scale_both',
+                   tools=tools_scatter,
+                   active_drag="box_select",
+                   tooltips=tooltips_scatter)
+    if color_column in source.data:
+        group_names = pd.Series(source.data[color_column]).unique()
+        my_colors = _palette(len(group_names))
         for i, group in enumerate(group_names):
-            group_filter = GroupFilter(column_name='group', group=group)
+            group_filter = GroupFilter(column_name=color_column, group=group)
             view = CDSView(source=source, filters=[group_filter])
-            glyphs = pca.circle(x="x", y="y", source=source, view=view,
+            glyphs = embed.circle(x="x", y="y", source=source, view=view,
                                 size=10, color=my_colors[i], legend=group)
-        pca.legend.location = "top_right"
-        pca.legend.click_policy="hide"
-    return pca
+        embed.legend.location = "top_right"
+        embed.legend.click_policy="hide"
+    else:
+        embed.circle(source=source, x='x', y='y', size=glyph_size)
+    return embed
 
 
 def _remove_axes_spines(plot):
@@ -276,7 +291,7 @@ def make_makedoc(filename):
 
     def makedoc(doc):
         source = ColumnDataSource(dataframe)
-        pca = pca_plot(source, glyph_size=10)
+        embed = embedding(source, glyph_size=10)
         image_plot, image_holder = selected_images()
         table = empty_table(dataframe)
         controls = [button_save_table(table), button_print_page()]
@@ -295,7 +310,7 @@ def make_makedoc(filename):
 
         source.on_change('selected', load_selected)
         page_content = layout([
-            [pca, image_plot],
+            [embed, image_plot],
             controls,
             [table]
             ], sizing_mode="scale_width")
