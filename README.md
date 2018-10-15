@@ -22,7 +22,7 @@ You should then be able to see the app in your web browser at:
 http://localhost:5000
 
 Additionally, you can specify the port number using -P
-`python microscopium/bokeh_app.oy tests/testdata/images/data.csv -P 5001`
+`python microscopium/serve.oy tests/testdata/images/data.csv -P 5001`
 
 Which will run the web app locally at http://localhost:5001/
 
