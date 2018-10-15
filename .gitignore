@@ -1,3 +1,6 @@
+.DS_Store
+.spyproject/
+
 *.py[cod]
 
 # C extensions

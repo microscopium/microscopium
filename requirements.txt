@@ -1,7 +1,7 @@
 numpy
 scipy
 click
-bokeh
+bokeh>=0.13
 scikit-learn
 scikit-image
 six
