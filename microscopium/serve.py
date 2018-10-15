@@ -186,9 +186,9 @@ def embedding(source, glyph_size=1, color_column='group'):
             group_filter = GroupFilter(column_name=color_column, group=group)
             view = CDSView(source=source, filters=[group_filter])
             glyphs = embed.circle(x="x", y="y", source=source, view=view,
-                                size=10, color=my_colors[i], legend=group)
+                                  size=10, color=my_colors[i], legend=group)
         embed.legend.location = "top_right"
-        embed.legend.click_policy="hide"
+        embed.legend.click_policy = "hide"
     else:
         embed.circle(source=source, x='x', y='y', size=glyph_size)
     return embed
