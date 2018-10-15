@@ -17,7 +17,7 @@ We encourage pull requests - please get in touch if you think you might like to 
 ### Serving the web app locally
 
 To run the web app locally in your browser:
-`python microscopium/bokeh_app.py tests/testdata/images/data.csv`
+`python microscopium/serve.py tests/testdata/images/data.csv`
 You should then be able to see the app in your web browser at:
 http://localhost:5000
 
