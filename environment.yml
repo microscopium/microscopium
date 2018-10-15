@@ -8,7 +8,7 @@ dependencies:
 - networkx
 - numpy
 - pandas
-- bokeh>=0.12.5
+- bokeh>=0.13
 - pip
 - pymongo=3*
 - scikit-image
