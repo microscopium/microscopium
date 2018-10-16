@@ -18,7 +18,8 @@ from bokeh.models import (ColumnDataSource,
                           CustomJS,
                           CDSView,
                           GroupFilter,
-                          Legend)
+                          Legend,
+                          RadioButtonGroup)
 from bokeh.models.widgets import Button, DataTable, TableColumn
 import bokeh.palettes
 
@@ -27,9 +28,11 @@ def dataframe_from_file(filename):
     """Read in pandas dataframe from filename."""
     df = pd.read_csv(filename, index_col=0).set_index('index')
     df['path'] = df['url'].apply(lambda x: join(dirname(filename), x))
-    valid_x = df.x.notna()
-    valid_y = df.y.notna()
+    valid_x = df['x.tsne'].notna()
+    valid_y = df['y.tsne'].notna()
     df = df[valid_x & valid_y]
+    df['x'] = df['x.tsne']
+    df['y'] = df['y.tsne']
     return df
 
 
@@ -267,6 +270,19 @@ def update_table(indices, df, table):
     filtered_df = df.iloc[indices]
     table.source.data = ColumnDataSource(filtered_df).data
 
+def switch_modes_button_group():
+    from bokeh.models.widgets import RadioButtonGroup
+
+    radio_button_group = RadioButtonGroup(
+        labels=["tSNE", "UMAP", "PCA"], active=0)
+    return radio_button_group
+
+def update_plot(my_plot, source, button_dict, mode, glyph_size=1, alpha_value=0.8):
+    x_source = "x." + button_dict[mode]
+    y_source = "y." + button_dict[mode]
+    source.data['x'] = source.data[x_source]
+    source.data['y'] = source.data[y_source]
+    source.trigger("data", 0, 0)
 
 def make_makedoc(filename, color_column=None):
     """Make the makedoc function required by Bokeh Server.
@@ -297,6 +313,8 @@ def make_makedoc(filename, color_column=None):
         image_plot, image_holder = selected_images()
         table = empty_table(dataframe)
         controls = [button_save_table(table), button_print_page()]
+        radio_buttons = switch_modes_button_group()
+        button_reference = {0:"tsne", 1:"umap", 2:"pca"}
 
         def load_selected(attr, old, new):
             """Update images and table to display selected data."""
@@ -310,8 +328,13 @@ def make_makedoc(filename, color_column=None):
                                           source=image_holder)
             update_table(new.indices, dataframe, table)
 
+        def new_scatter(attr, old, new):
+            mode = radio_buttons.active
+            update_plot(embed, source, button_reference, mode)
+
+        radio_buttons.on_change('active', new_scatter)
         source.on_change('selected', load_selected)
-        page_content = layout([
+        page_content = layout([radio_buttons,
             [embed, image_plot],
             controls,
             [table]
