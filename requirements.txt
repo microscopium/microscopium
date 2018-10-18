@@ -4,6 +4,8 @@ click
 bokeh==0.13
 scikit-learn
 scikit-image
+umap-learn
+ipyvolume
 six
 toolz
 cytoolz
