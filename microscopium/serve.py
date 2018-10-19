@@ -186,6 +186,33 @@ def transfer_functions(colors):
     return transfer_functions
 
 
+def volume_rendering(image_filename, image_info, url, transfer_functions):
+    """3D volume rendering saved to html file with ipyvolume.
+    Parameters
+    ----------
+    index :
+    data :
+    url :
+    transfer_functions :
+    Returns
+    -------
+    """
+    ipv.pylab.clear()
+    image_3d = io.imread(image_filename)
+    image_3d = np.moveaxis(image_3d, 1, 0)
+    print(image_3d.shape)
+    #possible_colors = ['red', 'green', 'blue', 'grey', 'cyan', 'magenta', 'yellow']
+    #colors = possible_colors[:image_3d.shape[0]]
+    # should make transfer functions if none passed in
+    fig = ipv.figure()
+    fig.vol = None
+    ipv.pylab.style.box_off()
+    ipv.pylab.style.axes_off()
+    for channel, transfer_function in zip(image_3d, transfer_functions):
+        ipv.volshow(channel, tf=transfer_function)
+    ipv.embed.embed_html('./tmp/'+url, ipv.gcc(), title=image_info)
+
+
 def _column_range(series):
     minc = np.min(series)
     maxc = np.max(series)
