@@ -381,9 +381,12 @@ def make_makedoc(filename, color_column=None):
     def makedoc(doc):
         source = ColumnDataSource(dataframe)
         embed = embedding(source, glyph_size=10, color_column=color_column)
+        taptool = embed.select(TapTool)[0]
         image_plot, image_holder = selected_images()
         table = empty_table(dataframe)
         controls = [button_save_table(table), button_print_page()]
+        url_base = "volume_preview.html"
+        url = "http://localhost:5007/" + url_base
 
         def load_selected(attr, old, new):
             """Update images and table to display selected data."""
@@ -396,8 +399,16 @@ def make_makedoc(filename, color_column=None):
                 update_image_canvas_multi(new.indices, data=dataframe,
                                           source=image_holder)
             update_table(new.indices, dataframe, table)
-
         source.on_change('selected', load_selected)
+
+        tap_callback = CustomJS(args=dict(url=url, source=table.source), code="""
+            setTimeout(myFunction, 2000);
+            function myFunction() {
+                window.open(url);
+            }
+            """)
+        taptool.callback = tap_callback
+
         page_content = layout([
             [embed, image_plot],
             controls,
