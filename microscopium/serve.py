@@ -51,13 +51,36 @@ def imread(path):
         The resulting RGBA image.
     """
     image0 = io.imread(path)
-    if image0.shape[2] == 3:  # RGB image
-        shape = image0.shape[:2]
+    if image0.ndim == 4:
+        image0 = np.moveaxis(image0, 1, -1)  # expect (pln, row, col, ch)
+    shape = image0.shape[:-1]
+    while image0.shape[-1] < 3:
+        blank_channel = np.zeros((shape + (1,)), dtype='uint8')
+        image0 = np.concatenate((image0, blank_channel), axis=-1)
+    if image0.shape[-1] == 3:  # RGB image
+        shape = image0.shape[:-1]
         alpha = np.full((shape + (1,)), 255, dtype='uint8')
-        image = np.concatenate((image0, alpha), axis=2)
+        image = np.concatenate((image0, alpha), axis=-1)
     else:  # already RGBA
         image = image0
     return image
+
+
+def maximum_intensity_projection(data):
+    """Maximum intensity projection
+     Parameters
+    -----------
+    data : ndarray
+        Image volume, 3 spatial dimensions, plus optional channel dimensions
+     Returns
+    -------
+    max_projection : ndarray
+        Maximum intensity projection of image volume, 2D image plus channels
+    """
+    max_projection = np.array([np.max(data[..., channel], axis=0)
+                               for channel in range(data.shape[-1])])
+    max_projection = np.moveaxis(max_projection, 0, -1)
+    return max_projection
 
 
 def update_image_canvas_single(index, data, source):
@@ -81,6 +104,8 @@ def update_image_canvas_single(index, data, source):
     index, filename = (data[['info', 'path']]
                        .iloc[index])
     image = imread(filename)
+    if image.ndim >= 4:
+        image = maximum_intensity_projection(image)
     source.data = {'image': [image], 'x': [0], 'y': [0], 'dx': [1], 'dy': [1]}
 
 
@@ -113,6 +138,8 @@ def update_image_canvas_multi(indices, data, source, max_images=25):
     if n_images > max_images:
         filenames = filenames[:max_images - 1]
     images = [imread(fn) for fn in filenames]
+    if images[0].ndim > 3:
+        images = [maximum_intensity_projection(image) for image in images]
     if n_images > max_images:
         # from the My First Pixel Art (TM) School of Design
         dotdotdot = np.full((7, 7, 4), 255, dtype=np.uint8)
