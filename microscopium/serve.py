@@ -429,10 +429,10 @@ def make_makedoc(filename, color_column=None):
         source.on_change('selected', load_selected)
 
         tap_callback = CustomJS(args=dict(url=url, source=table.source), code="""
-            setTimeout(myFunction, 2000);
             function myFunction() {
                 window.open(url);
             }
+            setTimeout(myFunction, 2000);
             """)
         taptool.callback = tap_callback
 
