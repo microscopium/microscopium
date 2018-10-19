@@ -224,7 +224,7 @@ def volume_rendering(image_filename, image_info, url, transfer_functions):
     Returns
     -------
     """
-    print('Volume rendering...')
+    print(f'Volume rendering {image_info}')
     ipv.pylab.clear()
     image_3d = io.imread(image_filename)
     image_3d = np.moveaxis(image_3d, 1, 0)
@@ -426,26 +426,20 @@ def make_makedoc(filename, color_column=None):
                                            source=image_holder)
                 image_filename = dataframe['path'].iloc[new.indices[0]]
                 image_info = dataframe['info'].iloc[new.indices[0]]
-                volume_rendering(image_filename, image_info, url_base,
-                                 volume_rendering_transfer_functions)
             elif len(new.indices) > 1:
                 update_image_canvas_multi(new.indices, data=dataframe,
                                           source=image_holder)
             update_table(new.indices, dataframe, table)
+            volume_rendering(image_filename, image_info, url_base,
+                             volume_rendering_transfer_functions)
+
         source.on_change('selected', load_selected)
 
         tap_callback = CustomJS(args=dict(url=url), code="""
             function myFunction() {
                 window.open(url);
             }
-            console.log(url)
             setTimeout(myFunction, 2000);
-            //var columns = Object.keys(source.data);
-            //var nrows = source.data[columns[0]].length;
-            //console.log(nrows);
-            //if (nrows == 0) {
-            //    setTimeout(myFunction, 2000);
-            //}
             """)
         taptool.callback = tap_callback
 
