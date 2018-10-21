@@ -7,6 +7,11 @@ Unsupervised clustering and dataset exploration for high content screens.
 [![Coverage Status](https://img.shields.io/coveralls/microscopium/microscopium.svg)](https://coveralls.io/r/microscopium/microscopium?branch=master)
 [![Gitter](https://img.shields.io/gitter/room/nwjs/nw.js.svg)](https://gitter.im/microscopium/microscopium?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
+## See microscopium in action
+![microscopium_bbbc021](https://user-images.githubusercontent.com/30920819/47262600-c2ed0c00-d538-11e8-8bd0-224ade21f8eb.gif)
+
+Public dataset BBBC021 from the [Broad Bioimage Benchmark Collection](https://data.broadinstitute.org/bbbc/BBBC021/) with t-SNE image embedding.
+
 ## License
 
 This project uses the 3-clause BSD license. See `LICENSE.txt`.
