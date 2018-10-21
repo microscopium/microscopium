@@ -8,7 +8,9 @@ import click
 from skimage import io
 import numpy as np
 import pandas as pd
-
+import matplotlib.colors
+import matplotlib.cm
+import ipyvolume as ipv
 from bokeh.server.server import Server
 from bokeh.application import Application
 from bokeh.application.handlers.function import FunctionHandler
@@ -18,7 +20,8 @@ from bokeh.models import (ColumnDataSource,
                           CustomJS,
                           CDSView,
                           GroupFilter,
-                          Legend)
+                          Legend,
+                          TapTool)
 from bokeh.models.widgets import Button, DataTable, TableColumn
 import bokeh.palettes
 
@@ -48,13 +51,36 @@ def imread(path):
         The resulting RGBA image.
     """
     image0 = io.imread(path)
-    if image0.shape[2] == 3:  # RGB image
-        shape = image0.shape[:2]
+    if image0.ndim == 4:
+        image0 = np.moveaxis(image0, 1, -1)  # expect (pln, row, col, ch)
+    shape = image0.shape[:-1]
+    while image0.shape[-1] < 3:
+        blank_channel = np.zeros((shape + (1,)), dtype='uint8')
+        image0 = np.concatenate((image0, blank_channel), axis=-1)
+    if image0.shape[-1] == 3:  # RGB image
+        shape = image0.shape[:-1]
         alpha = np.full((shape + (1,)), 255, dtype='uint8')
-        image = np.concatenate((image0, alpha), axis=2)
+        image = np.concatenate((image0, alpha), axis=-1)
     else:  # already RGBA
         image = image0
     return image
+
+
+def maximum_intensity_projection(data):
+    """Maximum intensity projection
+     Parameters
+    -----------
+    data : ndarray
+        Image volume, 3 spatial dimensions, plus optional channel dimensions
+     Returns
+    -------
+    max_projection : ndarray
+        Maximum intensity projection of image volume, 2D image plus channels
+    """
+    max_projection = np.array([np.max(data[..., channel], axis=0)
+                               for channel in range(data.shape[-1])])
+    max_projection = np.moveaxis(max_projection, 0, -1)
+    return max_projection
 
 
 def update_image_canvas_single(index, data, source):
@@ -78,6 +104,8 @@ def update_image_canvas_single(index, data, source):
     index, filename = (data[['info', 'path']]
                        .iloc[index])
     image = imread(filename)
+    if image.ndim >= 4:
+        image = maximum_intensity_projection(image)
     source.data = {'image': [image], 'x': [0], 'y': [0], 'dx': [1], 'dy': [1]}
 
 
@@ -110,6 +138,8 @@ def update_image_canvas_multi(indices, data, source, max_images=25):
     if n_images > max_images:
         filenames = filenames[:max_images - 1]
     images = [imread(fn) for fn in filenames]
+    if images[0].ndim > 3:
+        images = [maximum_intensity_projection(image) for image in images]
     if n_images > max_images:
         # from the My First Pixel Art (TM) School of Design
         dotdotdot = np.full((7, 7, 4), 255, dtype=np.uint8)
@@ -124,6 +154,91 @@ def update_image_canvas_multi(indices, data, source, max_images=25):
     source.data = {'image': images, 'x': start_xs.ravel()[:n_rows],
                    'y': start_ys.ravel()[:n_rows],
                    'dx': step_sizes, 'dy': step_sizes}
+
+
+def linear_transfer_function(color,
+                             min_opacity=0,
+                             max_opacity=0.05,
+                             reverse_opacity=False,
+                             n_elements = 256):
+    """Return ipyvolume transfer function of a single color and linear opacity.
+    Parameters
+    ----------
+    color : Listlike RGB, or string with hexidecimal or named color.
+        RGB values should be within 0-1 range.
+    min_opacity : Minimum opacity, default value is 0.0.
+        Lowest possible value is 0.0, optional. Float or integer value.
+    max_opacity : Maximum opacity, default value is 0.05.
+        Highest possible value is 1.0, optional. Float or integer value.
+    reverse_opacity : Linearly decrease opacity, optional. Boolean value.
+    n_elements : Integer length of rgba array transfer function attribute.
+    Returns
+    -------
+    transfer_function : ipyvolume TransferFunction
+    Example
+    -------
+    >>> import ipyvolume as ipv
+    >>> green_tf = linear_transfer_function('green')
+    >>> ds = ipv.datasets.aquariusA2.fetch()
+    >>> ipv.volshow(ds.data[::4,::4,::4], tf=green_tf)
+    >>> ipv.show()
+    """
+    r, g, b = matplotlib.colors.to_rgb(color)
+    opacity = np.linspace(min_opacity, max_opacity, num=n_elements)
+    if reverse_opacity:
+        opacity = np.flip(opacity, axis=0)
+    rgba = np.transpose(np.stack([[r] * n_elements,
+                                  [g] * n_elements,
+                                  [b] * n_elements,
+                                  opacity]))
+    transfer_function = ipv.transferfunction.TransferFunction(rgba=rgba)
+    return transfer_function
+
+
+def transfer_functions(colors):
+    """Create dict of linear ipyvolume transfer functions for specified colors.
+    Parameters
+    ----------
+    colors : List of colors in form accepted by matplotlib
+        i.e. List containing elements of any of the following:
+        1. hexidecimal strings,
+        2. named colors,
+        3. listlike RGB values. RGB values should be within 0-1 range.
+    Returns
+    -------
+    tf_dict : dictionary of ipyvolume transfer functions.
+        key, val = str(colorname), ipyvolume transfer function.
+    """
+    transfer_functions = [linear_transfer_function(color) for color in colors]
+    return transfer_functions
+
+
+def volume_rendering(image_filename, image_info, url, transfer_functions):
+    """3D volume rendering saved to html file with ipyvolume.
+    Parameters
+    ----------
+    index :
+    data :
+    url :
+    transfer_functions :
+    Returns
+    -------
+    """
+    print('Volume rendering...')
+    ipv.pylab.clear()
+    image_3d = io.imread(image_filename)
+    image_3d = np.moveaxis(image_3d, 1, 0)
+    print(image_3d.shape)
+    #possible_colors = ['red', 'green', 'blue', 'grey', 'cyan', 'magenta', 'yellow']
+    #colors = possible_colors[:image_3d.shape[0]]
+    # should make transfer functions if none passed in
+    fig = ipv.figure()
+    fig.vol = None
+    ipv.pylab.style.box_off()
+    ipv.pylab.style.axes_off()
+    for channel, transfer_function in zip(image_3d, transfer_functions):
+        ipv.volshow(channel, tf=transfer_function)
+    ipv.embed.embed_html('./tmp/'+url, ipv.gcc(), title=image_info)
 
 
 def _column_range(series):
@@ -290,13 +405,17 @@ def make_makedoc(filename, color_column=None):
         A makedoc function as expected by ``FunctionHandler``.
     """
     dataframe = dataframe_from_file(filename)
+    volume_rendering_transfer_functions = transfer_functions(['red', 'green'])
 
     def makedoc(doc):
         source = ColumnDataSource(dataframe)
         embed = embedding(source, glyph_size=10, color_column=color_column)
+        taptool = embed.select(TapTool)[0]
         image_plot, image_holder = selected_images()
         table = empty_table(dataframe)
         controls = [button_save_table(table), button_print_page()]
+        url_base = "volume_preview.html"
+        url = "http://localhost:5007/" + url_base
 
         def load_selected(attr, old, new):
             """Update images and table to display selected data."""
@@ -305,12 +424,31 @@ def make_makedoc(filename, color_column=None):
             if len(new.indices) == 1:  # could be empty selection
                 update_image_canvas_single(new.indices[0], data=dataframe,
                                            source=image_holder)
+                image_filename = dataframe['path'].iloc[new.indices[0]]
+                image_info = dataframe['info'].iloc[new.indices[0]]
+                volume_rendering(image_filename, image_info, url_base,
+                                 volume_rendering_transfer_functions)
             elif len(new.indices) > 1:
                 update_image_canvas_multi(new.indices, data=dataframe,
                                           source=image_holder)
             update_table(new.indices, dataframe, table)
-
         source.on_change('selected', load_selected)
+
+        tap_callback = CustomJS(args=dict(url=url), code="""
+            function myFunction() {
+                window.open(url);
+            }
+            console.log(url)
+            setTimeout(myFunction, 2000);
+            //var columns = Object.keys(source.data);
+            //var nrows = source.data[columns[0]].length;
+            //console.log(nrows);
+            //if (nrows == 0) {
+            //    setTimeout(myFunction, 2000);
+            //}
+            """)
+        taptool.callback = tap_callback
+
         page_content = layout([
             [embed, image_plot],
             controls,
