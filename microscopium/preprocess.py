@@ -1040,7 +1040,8 @@ def stack_channels(images, order=[0, 1, 2]):
     array([0, 1, 2])
     """
     # ensure we support iterators
-    images = list(tz.take(len(order), images))
+    images = list(tz.take(len([pos for pos in order if pos is not None]),
+                          images))
 
     # ensure we grab an image and not `None`
     def is_array(obj): return isinstance(obj, np.ndarray)
@@ -1059,7 +1060,8 @@ def stack_channels(images, order=[0, 1, 2]):
     return stack_image
 
 
-def montage_stream(ims, montage_order=None, channel_order=[0, 1, 2]):
+def montage_stream(ims, montage_order=None, channel_order=[0, 1, 2],
+                   clear_none=True):
     """From a sequence of single-channel field images, montage multichannels.
 
     Suppose the input is a list:
@@ -1110,7 +1112,10 @@ def montage_stream(ims, montage_order=None, channel_order=[0, 1, 2]):
         montage_order = cellomics.SPIRAL_CLOCKWISE_RIGHT_25
     montage_order = np.array(montage_order)
     ntiles = montage_order.size
-    nchannels = len(channel_order)
+    if clear_none:
+        nchannels = len([i for i in channel_order if i is not None])
+    else:
+        nchannels = len(channel_order)
     return tz.pipe(ims, c.partition(nchannels),
                         c.map(stack_channels(order=channel_order)),
                         c.partition(ntiles),
