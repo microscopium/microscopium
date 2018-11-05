@@ -49,6 +49,13 @@ def test_illumination_mean(image_files):
     np.testing.assert_array_almost_equal(illum, illum_true, decimal=1)
 
 
+def test_color_stack(image_files):
+    images = list(map(mio.imread, image_files))
+    stack = pre.stack_channels(images[:2], [None, 1, 0])
+    np.testing.assert_equal(stack[0, 0], [0, 1, 7])
+    np.testing.assert_equal(stack[..., 2], images[0])
+
+
 def conv(im):
     return np.round(np.clip(im, 0, np.inf) * 255).astype(np.uint8)
 
@@ -202,6 +209,7 @@ def test_montage_with_missing_number_missing(test_image_files_montage):
     files = test_image_files_montage(missing_fields=[10, 11, 12])
     montage, mask, number_missing = pre.montage_with_missing(files)
     assert number_missing == 3
+
 
 if __name__ == '__main__':
     pytest.main()
