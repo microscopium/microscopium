@@ -1,6 +1,7 @@
 import os
 import tempfile
 import numpy as np
+from microscopium.screens.cellomics import SPIRAL_CLOCKWISE_RIGHT_25
 from microscopium import preprocess as pre
 from microscopium import io as mio
 import pytest
@@ -177,7 +178,10 @@ def test_image_files_montage(request):
 
 def test_montage_with_missing(test_image_files_montage):
     files = test_image_files_montage(missing_fields=[20])
-    montage, mask, number_missing = pre.montage_with_missing(files)
+    montage, mask, number_missing = \
+            pre.montage_with_missing(files, order=SPIRAL_CLOCKWISE_RIGHT_25,
+                                     re_string=r'.*_[A-P]\d{2}f(\d{2})d0',
+                                     re_group=1)
 
     expect_montage = np.array([[0, 0, 21, 21, 22, 22, 23, 23, 24, 24],
                                [0, 0, 21, 21, 22, 22, 23, 23, 24, 24],
@@ -196,7 +200,10 @@ def test_montage_with_missing(test_image_files_montage):
 
 def test_montage_with_missing_mask(test_image_files_montage):
     files = test_image_files_montage(missing_fields=[3, 8])
-    montage, mask, number_missing = pre.montage_with_missing(files)
+    montage, mask, number_missing = \
+            pre.montage_with_missing(files, order=SPIRAL_CLOCKWISE_RIGHT_25,
+                                     re_string=r'.*_[A-P]\d{2}f(\d{2})d0',
+                                     re_group=1)
 
     expected_mask = np.ones((10, 10), np.bool)
     expected_mask[6:8, 4:6] = False
@@ -207,7 +214,10 @@ def test_montage_with_missing_mask(test_image_files_montage):
 
 def test_montage_with_missing_number_missing(test_image_files_montage):
     files = test_image_files_montage(missing_fields=[10, 11, 12])
-    montage, mask, number_missing = pre.montage_with_missing(files)
+    montage, mask, number_missing = \
+            pre.montage_with_missing(files, order=SPIRAL_CLOCKWISE_RIGHT_25,
+                                     re_string=r'.*_[A-P]\d{2}f(\d{2})d0',
+                                     re_group=1)
     assert number_missing == 3
 
 
