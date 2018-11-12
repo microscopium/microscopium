@@ -300,17 +300,17 @@ def make_makedoc(filename, color_column=None):
 
         def load_selected(attr, old, new):
             """Update images and table to display selected data."""
-            print('new index: ', new.indices)
+            print('new index: ', new)
             # Update images & table
-            if len(new.indices) == 1:  # could be empty selection
-                update_image_canvas_single(new.indices[0], data=dataframe,
+            if len(new) == 1:  # could be empty selection
+                update_image_canvas_single(new[0], data=dataframe,
                                            source=image_holder)
-            elif len(new.indices) > 1:
-                update_image_canvas_multi(new.indices, data=dataframe,
+            elif len(new) > 1:
+                update_image_canvas_multi(new, data=dataframe,
                                           source=image_holder)
-            update_table(new.indices, dataframe, table)
+            update_table(new, dataframe, table)
 
-        source.on_change('selected', load_selected)
+        source.selected.on_change('indices', load_selected)
         page_content = layout([
             [embed, image_plot],
             controls,
