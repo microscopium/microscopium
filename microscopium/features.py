@@ -95,7 +95,8 @@ def nearest_neighbors(lab_im, n=3, quantiles=[0.05, 0.25, 0.5, 0.75, 0.95]):
     """
     if lab_im.dtype == bool:
         lab_im = nd.label(lab_im)[0]
-    centroids = np.array([p.centroid for p in measure.regionprops(lab_im)])
+    centroids = np.array([p.centroid
+                          for p in measure.regionprops(lab_im, coordinates='rc')])
     nbrs = (NearestNeighbors(n_neighbors=(n + 1), algorithm='kd_tree').
                          fit(centroids))
     distances, indices = nbrs.kneighbors(centroids)
@@ -201,7 +202,7 @@ def object_features(bin_im, im, erode=2, sample_size=None, random_seed=None):
     prop_names = ['area', 'eccentricity', 'euler_number', 'extent',
                   'min_intensity', 'mean_intensity', 'max_intensity',
                   'solidity']
-    objects = measure.regionprops(lab_im, intensity_image=im)
+    objects = measure.regionprops(lab_im, intensity_image=im, coordinates='rc')
     properties = np.empty((sample_size, len(prop_names)), dtype=np.float)
     for i, j in enumerate(sample_indices):
         properties[i] = [getattr(objects[j], prop) for prop in prop_names]
