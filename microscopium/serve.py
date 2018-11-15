@@ -183,7 +183,7 @@ def _plot_continuous_data(source, embed, color_column, glyph_size):
     color_bar = ColorBar(color_mapper=color_mapper,
                          label_standoff=5,
                          border_line_color=None,
-                         location=(0,0))
+                         location=(0, 0))
     embed.scatter(source=source, x='x', y='y', size=glyph_size,
                   color={'field': color_column,
                          'transform': color_mapper})
@@ -261,7 +261,8 @@ def selected_images():
                              tools=tools_sel,
                              active_drag='pan',
                              active_scroll='wheel_zoom')
-    selected_images.image_rgba('image', 'x', 'y', 'dx', 'dy', source=image_holder)
+    selected_images.image_rgba('image', 'x', 'y', 'dx', 'dy',
+                               source=image_holder)
     _remove_axes_spines(selected_images)
     return selected_images, image_holder
 
@@ -335,8 +336,10 @@ def make_makedoc(filename, color_column=None):
         source = ColumnDataSource(dataframe)
         embed = embedding(source, glyph_size=10, color_column=color_column)
         image_plot, image_holder = selected_images()
-        table = empty_table(dataframe)
+        dropdown = Select(title="Color coding:", value=color_column,
+                          options=_available_color_columns(dataframe))
         controls = [button_save_table(table), button_print_page()]
+        table = empty_table(dataframe)
 
         def load_selected(attr, old, new):
             """Update images and table to display selected data."""
@@ -350,13 +353,12 @@ def make_makedoc(filename, color_column=None):
                                           source=image_holder)
             update_table(new, dataframe, table)
 
-        source.selected.on_change('indices', load_selected)
-
-        dropdown = Select(title="Color coding:", value=color_column,
-                          options=_available_color_columns(dataframe))
         def dropdown_update(attr, old, new):
-            embed = embedding(source, glyph_size=10, color_column=dropdown.value)
+            embed = embedding(source, glyph_size=10,
+                              color_column=dropdown.value)
             page_content.children[0] = row([embed, image_plot])
+
+        source.selected.on_change('indices', load_selected)
         dropdown.on_change('value', dropdown_update)
 
         page_content = layout([
