@@ -17,7 +17,7 @@ from bokeh.layouts import widgetbox, layout
 from bokeh.models import (ColumnDataSource,
                           CustomJS,
                           CDSView,
-                          GroupFilter,
+                          BooleanFilter,
                           Legend)
 from bokeh.models.widgets import Button, DataTable, TableColumn
 import bokeh.palettes
@@ -180,13 +180,15 @@ def embedding(source, glyph_size=1, color_column='group'):
                    active_drag="box_select",
                    tooltips=tooltips_scatter)
     if color_column in source.data:
-        group_names = pd.Series(source.data[color_column]).unique()
+        group_names = sorted(set(source.data[color_column]))
         my_colors = _palette(len(group_names))
         for i, group in enumerate(group_names):
-            group_filter = GroupFilter(column_name=color_column, group=group)
+            boolean_indexing = source.data[color_column] == group
+            group_filter = BooleanFilter(boolean_indexing)
             view = CDSView(source=source, filters=[group_filter])
             glyphs = embed.circle(x="x", y="y", source=source, view=view,
-                                  size=10, color=my_colors[i], legend=group)
+                                  size=10, color=my_colors[i],
+                                  legend=str(group))
         embed.legend.location = "top_right"
         embed.legend.click_policy = "hide"
     else:
