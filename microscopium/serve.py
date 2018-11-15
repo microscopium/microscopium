@@ -361,8 +361,8 @@ def make_makedoc(filename, color_column=None):
 
         page_content = layout([
             [embed, image_plot],
-            controls,
             [widgetbox(dropdown)],
+            controls,
             [table]
             ], sizing_mode="scale_width")
         doc.title = 'Bokeh microscopium app'
