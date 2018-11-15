@@ -178,6 +178,7 @@ def embedding(source, glyph_size=1, color_column='group'):
                    sizing_mode='scale_both',
                    tools=tools_scatter,
                    active_drag="box_select",
+                   active_scroll='wheel_zoom',
                    tooltips=tooltips_scatter)
     if color_column in source.data:
         group_names = pd.Series(source.data[color_column]).unique()
