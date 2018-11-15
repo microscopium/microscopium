@@ -13,7 +13,7 @@ from bokeh.server.server import Server
 from bokeh.application import Application
 from bokeh.application.handlers.function import FunctionHandler
 from bokeh.plotting import figure
-from bokeh.layouts import widgetbox, layout
+from bokeh.layouts import widgetbox, layout, row
 from bokeh.models import (ColumnDataSource,
                           CustomJS,
                           CDSView,
@@ -40,6 +40,7 @@ def _available_color_columns(dataframe):
     available_color_columns = list(dataframe.columns)
     available_color_columns.remove('info')  # expect all values may be unique
     available_color_columns.remove('path')  # expect all values may be unique
+    available_color_columns.remove('url')  # expect all values may be unique
     return available_color_columns
 
 
@@ -351,10 +352,11 @@ def make_makedoc(filename, color_column=None):
 
         source.selected.on_change('indices', load_selected)
 
-        dropdown = Select(title="Option:", value="foo",
+        dropdown = Select(title="Color coding:", value=color_column,
                           options=_available_color_columns(dataframe))
         def dropdown_update(attr, old, new):
-            print(dropdown.value)
+            embed = embedding(source, glyph_size=10, color_column=dropdown.value)
+            page_content.children[0] = row([embed, image_plot])
         dropdown.on_change('value', dropdown_update)
 
         page_content = layout([
