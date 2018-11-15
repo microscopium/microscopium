@@ -151,6 +151,37 @@ def _palette(num, type='categorical'):
         return bokeh.palettes.viridis(num)
 
 
+def _plot_categorical_data(source, embed, group_names, color_column,
+                           glyph_size):
+    my_colors = _palette(len(group_names), type='categorical')
+    for i, group in enumerate(group_names):
+        boolean_indexing = source.data[color_column] == group
+        group_filter = BooleanFilter(boolean_indexing)
+        view = CDSView(source=source, filters=[group_filter])
+        glyphs = embed.circle(x="x", y="y", source=source, view=view,
+                              size=10, color=my_colors[i],
+                              legend=str(group))
+    embed.legend.location = "top_right"
+    embed.legend.click_policy = "hide"
+    return embed
+
+
+def _plot_continuous_data(source, embed, color_column, glyph_size):
+    my_colors = _palette(256)
+    color_mapper = LinearColorMapper(palette=my_colors,
+                                     low=min(source.data[color_column]),
+                                     high=max(source.data[color_column]))
+    color_bar = ColorBar(color_mapper=color_mapper,
+                         label_standoff=5,
+                         border_line_color=None,
+                         location=(0,0))
+    embed.scatter(source=source, x='x', y='y', size=glyph_size,
+                  color={'field': color_column,
+                         'transform': color_mapper})
+    embed.add_layout(color_bar, 'right')
+    return embed
+
+
 def embedding(source, glyph_size=1, color_column='group'):
     """Display a 2-dimensional embedding of the images.
 
@@ -184,31 +215,13 @@ def embedding(source, glyph_size=1, color_column='group'):
     if color_column in source.data:
         group_names = sorted(set(source.data[color_column]))
         if isinstance(group_names[0], str):
-            my_colors = _palette(len(group_names), type='categorical')
-            for i, group in enumerate(group_names):
-                boolean_indexing = source.data[color_column] == group
-                group_filter = BooleanFilter(boolean_indexing)
-                view = CDSView(source=source, filters=[group_filter])
-                glyphs = embed.circle(x="x", y="y", source=source, view=view,
-                                      size=10, color=my_colors[i],
-                                      legend=str(group))
-            embed.legend.location = "top_right"
-            embed.legend.click_policy = "hide"
+            embed = _plot_categorical_data(source, embed, group_names,
+                                           color_column, glyph_size)
         elif isinstance(group_names[0], (int, float)):
-            my_colors = _palette(256)
-            color_mapper = LinearColorMapper(palette=my_colors,
-                low=min(source.data[color_column]),
-                high=max(source.data[color_column]))
-            color_bar = ColorBar(color_mapper=color_mapper,
-                                 label_standoff=5,
-                                 border_line_color=None,
-                                 location=(0,0))
-            embed.scatter(source=source, x='x', y='y', size=glyph_size,
-                          color={'field': color_column,
-                                 'transform': color_mapper})
-            embed.add_layout(color_bar, 'right')
+            embed = _plot_continuous_data(source, embed, color_column,
+                                          glyph_size)
     else:
-        embed.circle(source=source, x='x', y='y', size=glyph_size)
+        embed.scatter(source=source, x='x', y='y', size=glyph_size)
     return embed
 
 
