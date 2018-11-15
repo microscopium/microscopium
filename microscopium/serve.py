@@ -189,6 +189,7 @@ def embedding(source, glyph_size=1, color_column='group'):
                                   size=10, color=my_colors[i], legend=group)
         embed.legend.location = "top_right"
         embed.legend.click_policy = "hide"
+        embed.legend.background_fill_alpha = 0.5
     else:
         embed.circle(source=source, x='x', y='y', size=glyph_size)
     return embed
