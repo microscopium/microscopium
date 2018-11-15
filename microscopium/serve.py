@@ -20,7 +20,8 @@ from bokeh.models import (ColumnDataSource,
                           BooleanFilter,
                           Legend,
                           LinearColorMapper,
-                          ColorBar)
+                          ColorBar,
+                          Select)
 from bokeh.models.widgets import Button, DataTable, TableColumn
 import bokeh.palettes
 
@@ -33,6 +34,13 @@ def dataframe_from_file(filename):
     valid_y = df.y.notna()
     df = df[valid_x & valid_y]
     return df
+
+
+def _available_color_columns(dataframe):
+    available_color_columns = list(dataframe.columns)
+    available_color_columns.remove('info')  # expect all values may be unique
+    available_color_columns.remove('path')  # expect all values may be unique
+    return available_color_columns
 
 
 def imread(path):
@@ -342,9 +350,17 @@ def make_makedoc(filename, color_column=None):
             update_table(new, dataframe, table)
 
         source.selected.on_change('indices', load_selected)
+
+        dropdown = Select(title="Option:", value="foo",
+                          options=_available_color_columns(dataframe))
+        def dropdown_update(attr, old, new):
+            print(dropdown.value)
+        dropdown.on_change('value', dropdown_update)
+
         page_content = layout([
             [embed, image_plot],
             controls,
+            [widgetbox(dropdown)],
             [table]
             ], sizing_mode="scale_width")
         doc.title = 'Bokeh microscopium app'
