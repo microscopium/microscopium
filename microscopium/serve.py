@@ -18,7 +18,9 @@ from bokeh.models import (ColumnDataSource,
                           CustomJS,
                           CDSView,
                           BooleanFilter,
-                          Legend)
+                          Legend,
+                          LinearColorMapper,
+                          ColorBar)
 from bokeh.models.widgets import Button, DataTable, TableColumn
 import bokeh.palettes
 
@@ -181,16 +183,30 @@ def embedding(source, glyph_size=1, color_column='group'):
                    tooltips=tooltips_scatter)
     if color_column in source.data:
         group_names = sorted(set(source.data[color_column]))
-        my_colors = _palette(len(group_names))
-        for i, group in enumerate(group_names):
-            boolean_indexing = source.data[color_column] == group
-            group_filter = BooleanFilter(boolean_indexing)
-            view = CDSView(source=source, filters=[group_filter])
-            glyphs = embed.circle(x="x", y="y", source=source, view=view,
-                                  size=10, color=my_colors[i],
-                                  legend=str(group))
-        embed.legend.location = "top_right"
-        embed.legend.click_policy = "hide"
+        if isinstance(group_names[0], str):
+            my_colors = _palette(len(group_names), type='categorical')
+            for i, group in enumerate(group_names):
+                boolean_indexing = source.data[color_column] == group
+                group_filter = BooleanFilter(boolean_indexing)
+                view = CDSView(source=source, filters=[group_filter])
+                glyphs = embed.circle(x="x", y="y", source=source, view=view,
+                                      size=10, color=my_colors[i],
+                                      legend=str(group))
+            embed.legend.location = "top_right"
+            embed.legend.click_policy = "hide"
+        elif isinstance(group_names[0], (int, float)):
+            my_colors = _palette(256)
+            color_mapper = LinearColorMapper(palette=my_colors,
+                low=min(source.data[color_column]),
+                high=max(source.data[color_column]))
+            color_bar = ColorBar(color_mapper=color_mapper,
+                                 label_standoff=5,
+                                 border_line_color=None,
+                                 location=(0,0))
+            embed.scatter(source=source, x='x', y='y', size=glyph_size,
+                          color={'field': color_column,
+                                 'transform': color_mapper})
+            embed.add_layout(color_bar, 'right')
     else:
         embed.circle(source=source, x='x', y='y', size=glyph_size)
     return embed
