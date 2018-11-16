@@ -30,8 +30,10 @@ pip install -e .
 ```
 
 ### Serving the web app
+Supported browsers are Chrome and Firefox.
+(We do not support Safari or Internet Explorer.)
 
-To run the web app locally in your browser:
+To run the web app locally:
 
 `python microscopium/serve.py tests/testdata/images/data.csv`
 
@@ -43,4 +45,3 @@ http://localhost:5000
 This specifies the port number as 5001, and the app will run locally at: http://localhost:5001/
 
 For more information, run `python microscopium/serve.py --help`
-
