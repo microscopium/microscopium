@@ -178,6 +178,7 @@ def embedding(source, glyph_size=1, color_column='group'):
                    sizing_mode='scale_both',
                    tools=tools_scatter,
                    active_drag="box_select",
+                   active_scroll='wheel_zoom',
                    tooltips=tooltips_scatter)
     embed = _dynamic_range(embed)
     if color_column in source.data:
@@ -190,6 +191,7 @@ def embedding(source, glyph_size=1, color_column='group'):
                                   size=10, color=my_colors[i], legend=group)
         embed.legend.location = "top_right"
         embed.legend.click_policy = "hide"
+        embed.legend.background_fill_alpha = 0.5
     else:
         embed.circle(source=source, x='x', y='y', size=glyph_size)
     return embed
@@ -319,22 +321,23 @@ def make_makedoc(filename, color_column=None):
 
         def load_selected(attr, old, new):
             """Update images and table to display selected data."""
-            print('new index: ', new.indices)
+            print('new index: ', new)
             # Update images & table
-            if len(new.indices) == 1:  # could be empty selection
-                update_image_canvas_single(new.indices[0], data=dataframe,
+            if len(new) == 1:  # could be empty selection
+                update_image_canvas_single(new[0], data=dataframe,
                                            source=image_holder)
-            elif len(new.indices) > 1:
-                update_image_canvas_multi(new.indices, data=dataframe,
+            elif len(new) > 1:
+                update_image_canvas_multi(new, data=dataframe,
                                           source=image_holder)
-            update_table(new.indices, dataframe, table)
+            update_table(new, dataframe, table)
 
         def new_scatter(attr, old, new):
             mode = radio_buttons.active
             update_plot(source, button_reference, mode)
 
+        source.selected.on_change('indices', load_selected)
         radio_buttons.on_change('active', new_scatter)
-        source.on_change('selected', load_selected)
+
         page_content = layout([
             radio_buttons,
             [embed, image_plot],
