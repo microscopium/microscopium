@@ -278,7 +278,7 @@ def switch_modes_button_group():
     return radio_button_group
 
 
-def update_plot(my_plot, source, button_dict, mode, glyph_size=1, alpha_value=0.8):
+def update_plot(source, button_dict, mode):
     """Update source of image embedding scatterplot."""
     x_source = "x." + button_dict[mode]
     y_source = "y." + button_dict[mode]
@@ -333,7 +333,7 @@ def make_makedoc(filename, color_column=None):
 
         def new_scatter(attr, old, new):
             mode = radio_buttons.active
-            update_plot(embed, source, button_reference, mode)
+            update_plot(source, button_reference, mode)
 
         radio_buttons.on_change('active', new_scatter)
         source.on_change('selected', load_selected)
