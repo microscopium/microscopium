@@ -226,7 +226,14 @@ def embedding(source, glyph_size=1, color_column='group'):
         if isinstance(group_names[0], str):
             embed = _plot_categorical_data(source, embed, group_names,
                                            color_column, glyph_size)
-        elif isinstance(group_names[0], (int, float)):
+        elif isinstance(group_names[0], int):
+            if len(group_names) <= 12:
+                embed = _plot_categorical_data(source, embed, group_names,
+                                               color_column, glyph_size)
+            else:
+                embed = _plot_continuous_data(source, embed, color_column,
+                                              glyph_size)
+        elif isinstance(group_names[0], float):
             embed = _plot_continuous_data(source, embed, color_column,
                                           glyph_size)
     else:
@@ -338,8 +345,8 @@ def make_makedoc(filename, color_column=None):
         image_plot, image_holder = selected_images()
         dropdown = Select(title="Color coding:", value=color_column,
                           options=_available_color_columns(dataframe))
-        controls = [button_save_table(table), button_print_page()]
         table = empty_table(dataframe)
+        controls = [button_save_table(table), button_print_page()]
 
         def load_selected(attr, old, new):
             """Update images and table to display selected data."""
