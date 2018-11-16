@@ -270,19 +270,22 @@ def update_table(indices, df, table):
     filtered_df = df.iloc[indices]
     table.source.data = ColumnDataSource(filtered_df).data
 
-def switch_modes_button_group():
-    from bokeh.models.widgets import RadioButtonGroup
 
+def switch_modes_button_group():
+    """Create radio button group for switching between UMAP, tSNE, and PCA."""
     radio_button_group = RadioButtonGroup(
         labels=["tSNE", "UMAP", "PCA"], active=0)
     return radio_button_group
 
+
 def update_plot(my_plot, source, button_dict, mode, glyph_size=1, alpha_value=0.8):
+    """Update source of image embedding scatterplot."""
     x_source = "x." + button_dict[mode]
     y_source = "y." + button_dict[mode]
     source.data['x'] = source.data[x_source]
     source.data['y'] = source.data[y_source]
     source.trigger("data", 0, 0)
+
 
 def make_makedoc(filename, color_column=None):
     """Make the makedoc function required by Bokeh Server.
@@ -334,7 +337,8 @@ def make_makedoc(filename, color_column=None):
 
         radio_buttons.on_change('active', new_scatter)
         source.on_change('selected', load_selected)
-        page_content = layout([radio_buttons,
+        page_content = layout([
+            radio_buttons,
             [embed, image_plot],
             controls,
             [table]
