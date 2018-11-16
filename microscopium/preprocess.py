@@ -6,7 +6,7 @@ import re
 import numpy as np
 from scipy import ndimage as ndi
 from scipy.stats.mstats import mquantiles as quantiles
-from skimage import io, util, img_as_float, img_as_uint
+from skimage import io, util, img_as_float, img_as_ubyte
 from skimage import morphology, filters as imfilter, exposure
 import skimage.filters.rank as rank
 import skimage
@@ -592,8 +592,9 @@ def find_background_illumination(fns, radius=None, input_bitdepth=None,
 
     # return the median filter of that mean
     radius = radius or min(mean_image.shape) // 4
-    illum = ndi.percentile_filter(mean_image, percentile=(quantile * 100),
-                                  footprint=morphology.disk(radius))
+
+    mean_image = img_as_ubyte(stretchlim(mean_image))
+    illum = imfilter.rank.median(mean_image, selem=morphology.disk(radius))
     return illum
 
 
@@ -909,7 +910,7 @@ def create_missing_mask(missing, order, rows=512, cols=512):
     return mask
 
 
-def montage_with_missing(fns, order=None):
+def montage_with_missing(fns, *, order, re_string, re_group):
     """Montage a list of images, replacing missing fields with dummy values.
 
     The methods `montage` and `montage_stream` assume that image filenames
@@ -928,7 +929,10 @@ def montage_with_missing(fns, order=None):
     order : array-like of int, shape (M, N), optional
         The order of the stitching, with each entry referring
         to the index of file in the fns array.
-        Default cellomics.SPIRAL_CLOCKWISE_RIGHT_25
+    re_string : str
+        The regular expression pattern to match to the filenames.
+    re_group : str
+        The group to find the field value in a regexp match.
 
     Returns
     -------
@@ -943,11 +947,12 @@ def montage_with_missing(fns, order=None):
         features that depend on the entirety of the montaged image
         (e.g. count of objects).
     """
-    if order is None:
-        from .screens import cellomics
-        order = cellomics.SPIRAL_CLOCKWISE_RIGHT_25
     order = np.atleast_2d(order)
     mrows, mcols = order.shape
+
+    if len(fns) == order.size:
+        montaged = montage([io.imread(fn) for fn in fns], order)
+        return montaged, np.ones_like(montaged, dtype=bool), 0
 
     # get width & height of first image. the rest of the images
     # are assumed to be of the same shape
@@ -955,7 +960,7 @@ def montage_with_missing(fns, order=None):
     rows, cols = im0.shape[:2]
 
     # find which fields are missing
-    missing = find_missing_fields(fns, order)
+    missing = find_missing_fields(fns, order, re_string, re_group)
 
     # insert None value to list of files when fields missing
     _fns = fns[:]  # create copy of list to avoid referencing problems
@@ -1039,7 +1044,8 @@ def stack_channels(images, order=[0, 1, 2]):
     array([0, 1, 2])
     """
     # ensure we support iterators
-    images = list(tz.take(len(order), images))
+    images = list(tz.take(len([pos for pos in order if pos is not None]),
+                          images))
 
     # ensure we grab an image and not `None`
     def is_array(obj): return isinstance(obj, np.ndarray)
@@ -1058,7 +1064,8 @@ def stack_channels(images, order=[0, 1, 2]):
     return stack_image
 
 
-def montage_stream(ims, montage_order=None, channel_order=[0, 1, 2]):
+def montage_stream(ims, montage_order=None, channel_order=[0, 1, 2],
+                   clear_none=True):
     """From a sequence of single-channel field images, montage multichannels.
 
     Suppose the input is a list:
@@ -1109,7 +1116,10 @@ def montage_stream(ims, montage_order=None, channel_order=[0, 1, 2]):
         montage_order = cellomics.SPIRAL_CLOCKWISE_RIGHT_25
     montage_order = np.array(montage_order)
     ntiles = montage_order.size
-    nchannels = len(channel_order)
+    if clear_none:
+        nchannels = len([i for i in channel_order if i is not None])
+    else:
+        nchannels = len(channel_order)
     return tz.pipe(ims, c.partition(nchannels),
                         c.map(stack_channels(order=channel_order)),
                         c.partition(ntiles),

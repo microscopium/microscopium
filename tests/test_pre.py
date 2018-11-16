@@ -1,6 +1,7 @@
 import os
 import tempfile
 import numpy as np
+from microscopium.screens.cellomics import SPIRAL_CLOCKWISE_RIGHT_25
 from microscopium import preprocess as pre
 from microscopium import io as mio
 import pytest
@@ -41,12 +42,19 @@ def image_files():
 def test_illumination_mean(image_files):
     illum = pre.find_background_illumination(image_files, radius=1,
                                              quantile=0.5)
-    illum_true = np.array([[5.67, 5.  , 5.  , 3.  , 1.  ],
-                           [4.67, 5.33, 3.  , 5.  , 3.33],
-                           [4.67, 2.67, 5.  , 4.  , 4.  ],
-                           [4.33, 3.67, 3.67, 5.  , 6.33],
-                           [4.33, 2.  , 4.33, 5.  , 6.33]]) / 10
+    illum_true = np.array([[161, 174, 188,  81,  94],
+                           [174, 174,  81, 161,  94],
+                           [174,  67, 161, 121, 161],
+                           [134, 107, 107, 161, 215],
+                           [134, 134, 134, 174, 215]], np.uint8)
     np.testing.assert_array_almost_equal(illum, illum_true, decimal=1)
+
+
+def test_color_stack(image_files):
+    images = list(map(mio.imread, image_files))
+    stack = pre.stack_channels(images[:2], [None, 1, 0])
+    np.testing.assert_equal(stack[0, 0], [0, 1, 7])
+    np.testing.assert_equal(stack[..., 2], images[0])
 
 
 def conv(im):
@@ -170,7 +178,10 @@ def test_image_files_montage(request):
 
 def test_montage_with_missing(test_image_files_montage):
     files = test_image_files_montage(missing_fields=[20])
-    montage, mask, number_missing = pre.montage_with_missing(files)
+    montage, mask, number_missing = \
+            pre.montage_with_missing(files, order=SPIRAL_CLOCKWISE_RIGHT_25,
+                                     re_string=r'.*_[A-P]\d{2}f(\d{2})d0',
+                                     re_group=1)
 
     expect_montage = np.array([[0, 0, 21, 21, 22, 22, 23, 23, 24, 24],
                                [0, 0, 21, 21, 22, 22, 23, 23, 24, 24],
@@ -189,7 +200,10 @@ def test_montage_with_missing(test_image_files_montage):
 
 def test_montage_with_missing_mask(test_image_files_montage):
     files = test_image_files_montage(missing_fields=[3, 8])
-    montage, mask, number_missing = pre.montage_with_missing(files)
+    montage, mask, number_missing = \
+            pre.montage_with_missing(files, order=SPIRAL_CLOCKWISE_RIGHT_25,
+                                     re_string=r'.*_[A-P]\d{2}f(\d{2})d0',
+                                     re_group=1)
 
     expected_mask = np.ones((10, 10), np.bool)
     expected_mask[6:8, 4:6] = False
@@ -200,8 +214,12 @@ def test_montage_with_missing_mask(test_image_files_montage):
 
 def test_montage_with_missing_number_missing(test_image_files_montage):
     files = test_image_files_montage(missing_fields=[10, 11, 12])
-    montage, mask, number_missing = pre.montage_with_missing(files)
+    montage, mask, number_missing = \
+            pre.montage_with_missing(files, order=SPIRAL_CLOCKWISE_RIGHT_25,
+                                     re_string=r'.*_[A-P]\d{2}f(\d{2})d0',
+                                     re_group=1)
     assert number_missing == 3
+
 
 if __name__ == '__main__':
     pytest.main()
