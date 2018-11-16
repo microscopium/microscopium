@@ -129,12 +129,13 @@ def update_image_canvas_multi(indices, data, source, max_images=25):
                    'dx': step_sizes, 'dy': step_sizes}
 
 
-def _column_range(series):
-    minc = np.min(series)
-    maxc = np.max(series)
-    rangec = maxc - minc
-    column_range = namedtuple("column_range", ["minc", "maxc", "rangec"])
-    return column_range(minc, maxc, rangec)
+def _dynamic_range(fig, range_padding=0.05, range_padding_units='percent'):
+    """Automatically rescales figure axes range when source data changes."""
+    fig.x_range.range_padding = range_padding
+    fig.x_range.range_padding_units = range_padding_units
+    fig.y_range.range_padding = range_padding
+    fig.y_range.range_padding_units = range_padding_units
+    return fig
 
 
 def _palette(num, type='categorical'):
@@ -167,8 +168,6 @@ def embedding(source, glyph_size=1, color_column='group'):
     embed : bokeh figure
         Scatterplot of precomputed x/y coordinates result
     """
-    minx, maxx, rangex = _column_range(source.data['x'])
-    miny, maxy, rangey = _column_range(source.data['y'])
     tooltips_scatter = [
         ("index", "$index"),
         ("info", "@info"),
@@ -176,12 +175,11 @@ def embedding(source, glyph_size=1, color_column='group'):
     ]
     tools_scatter = ['pan, box_select, poly_select, wheel_zoom, reset, tap']
     embed = figure(title='Embedding',
-                   x_range=[minx - 0.05 * rangex, maxx + 0.05 * rangex],
-                   y_range=[miny - 0.05 * rangey, maxy + 0.05 * rangey],
                    sizing_mode='scale_both',
                    tools=tools_scatter,
                    active_drag="box_select",
                    tooltips=tooltips_scatter)
+    embed = _dynamic_range(embed)
     if color_column in source.data:
         group_names = pd.Series(source.data[color_column]).unique()
         my_colors = _palette(len(group_names))
