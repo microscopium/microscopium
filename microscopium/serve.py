@@ -25,7 +25,7 @@ import bokeh.palettes
 
 def dataframe_from_file(filename):
     """Read in pandas dataframe from filename."""
-    df = pd.read_csv(filename, index_col=0).set_index('index')
+    df = pd.read_csv(filename, index_col=0).reset_index().set_index('index')
     df['path'] = df['url'].apply(lambda x: join(dirname(filename), x))
     valid_x = df.x.notna()
     valid_y = df.y.notna()
@@ -179,7 +179,8 @@ def embedding(source, glyph_size=1, color_column='group'):
                    tools=tools_scatter,
                    active_drag="box_select",
                    active_scroll='wheel_zoom',
-                   tooltips=tooltips_scatter)
+                   tooltips=tooltips_scatter,
+                   output_backend='webgl')
     if color_column in source.data:
         group_names = pd.Series(source.data[color_column]).unique()
         my_colors = _palette(len(group_names))
