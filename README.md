@@ -30,8 +30,8 @@ pip install -e .
 ```
 
 ### Serving the web app
-Supported browsers are Chrome and Firefox.
-(We do not support Safari or Internet Explorer.)
+Supported browsers are Chrome and Firefox. However we have observed that performance is much better on Chrome.
+(Unfortunately, we do not currently support Safari or Internet Explorer.)
 
 To run the web app locally:
 
