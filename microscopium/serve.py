@@ -121,9 +121,10 @@ def update_image_canvas_multi(indices, data, source, max_images=25):
     start_xs, start_ys = np.meshgrid(grid_points, grid_points, indexing='ij')
     n_rows = len(images)
     step_sizes = np.full(n_rows, step_size)
-    source.data = {'image': images, 'x': start_xs.ravel()[:n_rows],
-                   'y': start_ys.ravel()[:n_rows],
-                   'dx': step_sizes, 'dy': step_sizes}
+    margin = 0.05 * step_size / 2
+    source.data = {'image': images, 'x': start_xs.ravel()[:n_rows] + margin,
+                   'y': start_ys.ravel()[:n_rows] + margin,
+                   'dx': step_sizes * 0.95, 'dy': step_sizes * 0.95}
 
 
 def _column_range(series):
