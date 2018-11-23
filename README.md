@@ -22,11 +22,39 @@ We encourage pull requests - please get in touch if you think you might like to 
 This project uses the 3-clause BSD license. See `LICENSE.txt`.
 
 ### Development installation
+
+First, clone this repository, and change into its directory:
 ```
 git clone https://github.com/microscopium/microscopium.git
-pip install -r requirements.txt
 cd microscopium
-pip install -e .
+```
+
+Then, install the dependencies via one of the below methods
+
+#### conda, new environment (recommended)
+
+```
+conda env create -f environment.yml
+conda activate mic
+```
+
+#### conda, existing environment
+
+```
+# conda activate <env-name>
+conda install -f environment.yml
+```
+
+#### pip
+
+```
+pip install -r requirements.txt
+```
+
+Finally, install microscopium, optionally as an editable package:
+
+```
+pip install [-e] .
 ```
 
 ### Serving the web app
