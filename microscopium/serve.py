@@ -270,6 +270,13 @@ def update_table(indices, df, table):
     table.source.data = ColumnDataSource(filtered_df).data
 
 
+def reset_plot_axes(plot, x_start=0, x_end=1, y_start=0, y_end=1):
+    plot.x_range.start = x_start
+    plot.x_range.end = x_end
+    plot.y_range.start = y_start
+    plot.y_range.end = y_end
+
+
 def make_makedoc(filename, color_column=None):
     """Make the makedoc function required by Bokeh Server.
 
@@ -310,6 +317,7 @@ def make_makedoc(filename, color_column=None):
             elif len(new) > 1:
                 update_image_canvas_multi(new, data=dataframe,
                                           source=image_holder)
+            reset_plot_axes(image_plot)  # effectively resets zoom level
             update_table(new, dataframe, table)
 
         source.selected.on_change('indices', load_selected)
