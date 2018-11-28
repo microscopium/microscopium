@@ -25,7 +25,7 @@ import bokeh.palettes
 
 def dataframe_from_file(filename):
     """Read in pandas dataframe from filename."""
-    df = pd.read_csv(filename, index_col=0).reset_index().set_index('index')
+    df = pd.read_csv(filename, index_col=0)
     df['path'] = df['url'].apply(lambda x: join(dirname(filename), x))
     valid_x = df.x.notna()
     valid_y = df.y.notna()
