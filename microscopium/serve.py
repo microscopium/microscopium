@@ -25,7 +25,7 @@ import bokeh.palettes
 
 def dataframe_from_file(filename):
     """Read in pandas dataframe from filename."""
-    df = pd.read_csv(filename, index_col=0).set_index('index')
+    df = pd.read_csv(filename, index_col=0)
     df['path'] = df['url'].apply(lambda x: join(dirname(filename), x))
     valid_x = df.x.notna()
     valid_y = df.y.notna()
@@ -121,9 +121,10 @@ def update_image_canvas_multi(indices, data, source, max_images=25):
     start_xs, start_ys = np.meshgrid(grid_points, grid_points, indexing='ij')
     n_rows = len(images)
     step_sizes = np.full(n_rows, step_size)
-    source.data = {'image': images, 'x': start_xs.ravel()[:n_rows],
-                   'y': start_ys.ravel()[:n_rows],
-                   'dx': step_sizes, 'dy': step_sizes}
+    margin = 0.05 * step_size / 2
+    source.data = {'image': images, 'x': start_xs.ravel()[:n_rows] + margin,
+                   'y': start_ys.ravel()[:n_rows] + margin,
+                   'dx': step_sizes * 0.95, 'dy': step_sizes * 0.95}
 
 
 def _column_range(series):
@@ -179,7 +180,8 @@ def embedding(source, glyph_size=1, color_column='group'):
                    tools=tools_scatter,
                    active_drag="box_select",
                    active_scroll='wheel_zoom',
-                   tooltips=tooltips_scatter)
+                   tooltips=tooltips_scatter,
+                   output_backend='webgl')
     if color_column in source.data:
         group_names = pd.Series(source.data[color_column]).unique()
         my_colors = _palette(len(group_names))
