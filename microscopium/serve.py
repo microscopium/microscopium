@@ -13,12 +13,15 @@ from bokeh.server.server import Server
 from bokeh.application import Application
 from bokeh.application.handlers.function import FunctionHandler
 from bokeh.plotting import figure
-from bokeh.layouts import widgetbox, layout
+from bokeh.layouts import widgetbox, layout, row
 from bokeh.models import (ColumnDataSource,
                           CustomJS,
                           CDSView,
-                          GroupFilter,
-                          Legend)
+                          BooleanFilter,
+                          Legend,
+                          LinearColorMapper,
+                          ColorBar,
+                          Select)
 from bokeh.models.widgets import Button, DataTable, TableColumn
 import bokeh.palettes
 
@@ -31,6 +34,14 @@ def dataframe_from_file(filename):
     valid_y = df.y.notna()
     df = df[valid_x & valid_y]
     return df
+
+
+def _available_color_columns(dataframe):
+    available_color_columns = list(dataframe.columns)
+    available_color_columns.remove('info')  # expect all values may be unique
+    available_color_columns.remove('path')  # expect all values may be unique
+    available_color_columns.remove('url')  # expect all values may be unique
+    return available_color_columns
 
 
 def imread(path):
@@ -150,6 +161,37 @@ def _palette(num, type='categorical'):
         return bokeh.palettes.viridis(num)
 
 
+def _plot_categorical_data(source, embed, group_names, color_column,
+                           glyph_size):
+    my_colors = _palette(len(group_names), type='categorical')
+    for i, group in enumerate(group_names):
+        boolean_indexing = source.data[color_column] == group
+        group_filter = BooleanFilter(boolean_indexing)
+        view = CDSView(source=source, filters=[group_filter])
+        glyphs = embed.circle(x="x", y="y", source=source, view=view,
+                              size=10, color=my_colors[i],
+                              legend=str(group))
+    embed.legend.location = "top_right"
+    embed.legend.click_policy = "hide"
+    return embed
+
+
+def _plot_continuous_data(source, embed, color_column, glyph_size):
+    my_colors = _palette(256)
+    color_mapper = LinearColorMapper(palette=my_colors,
+                                     low=min(source.data[color_column]),
+                                     high=max(source.data[color_column]))
+    color_bar = ColorBar(color_mapper=color_mapper,
+                         label_standoff=5,
+                         border_line_color=None,
+                         location=(0, 0))
+    embed.scatter(source=source, x='x', y='y', size=glyph_size,
+                  color={'field': color_column,
+                         'transform': color_mapper})
+    embed.add_layout(color_bar, 'right')
+    return embed
+
+
 def embedding(source, glyph_size=1, color_column='group'):
     """Display a 2-dimensional embedding of the images.
 
@@ -183,18 +225,22 @@ def embedding(source, glyph_size=1, color_column='group'):
                    tooltips=tooltips_scatter,
                    output_backend='webgl')
     if color_column in source.data:
-        group_names = pd.Series(source.data[color_column]).unique()
-        my_colors = _palette(len(group_names))
-        for i, group in enumerate(group_names):
-            group_filter = GroupFilter(column_name=color_column, group=group)
-            view = CDSView(source=source, filters=[group_filter])
-            glyphs = embed.circle(x="x", y="y", source=source, view=view,
-                                  size=10, color=my_colors[i], legend=group)
-        embed.legend.location = "top_right"
-        embed.legend.click_policy = "hide"
-        embed.legend.background_fill_alpha = 0.5
+        group_names = sorted(set(source.data[color_column]))
+        if isinstance(group_names[0], str):
+            embed = _plot_categorical_data(source, embed, group_names,
+                                           color_column, glyph_size)
+        elif isinstance(group_names[0], int):
+            if len(group_names) <= 12:
+                embed = _plot_categorical_data(source, embed, group_names,
+                                               color_column, glyph_size)
+            else:
+                embed = _plot_continuous_data(source, embed, color_column,
+                                              glyph_size)
+        elif isinstance(group_names[0], float):
+            embed = _plot_continuous_data(source, embed, color_column,
+                                          glyph_size)
     else:
-        embed.circle(source=source, x='x', y='y', size=glyph_size)
+        embed.scatter(source=source, x='x', y='y', size=glyph_size)
     return embed
 
 
@@ -225,7 +271,8 @@ def selected_images():
                              tools=tools_sel,
                              active_drag='pan',
                              active_scroll='wheel_zoom')
-    selected_images.image_rgba('image', 'x', 'y', 'dx', 'dy', source=image_holder)
+    selected_images.image_rgba('image', 'x', 'y', 'dx', 'dy',
+                               source=image_holder)
     _remove_axes_spines(selected_images)
     return selected_images, image_holder
 
@@ -306,6 +353,8 @@ def make_makedoc(filename, color_column=None):
         source = ColumnDataSource(dataframe)
         embed = embedding(source, glyph_size=10, color_column=color_column)
         image_plot, image_holder = selected_images()
+        dropdown = Select(title="Color coding:", value=color_column,
+                          options=_available_color_columns(dataframe))
         table = empty_table(dataframe)
         controls = [button_save_table(table), button_print_page()]
 
@@ -322,9 +371,17 @@ def make_makedoc(filename, color_column=None):
             reset_plot_axes(image_plot)  # effectively resets zoom level
             update_table(new, dataframe, table)
 
+        def dropdown_update(attr, old, new):
+            embed = embedding(source, glyph_size=10,
+                              color_column=dropdown.value)
+            page_content.children[0] = row([embed, image_plot])
+
         source.selected.on_change('indices', load_selected)
+        dropdown.on_change('value', dropdown_update)
+
         page_content = layout([
             [embed, image_plot],
+            [widgetbox(dropdown)],
             controls,
             [table]
             ], sizing_mode="scale_width")
