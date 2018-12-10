@@ -18,9 +18,9 @@ dependencies:
 - six
 - toolz
 - imageio
+- pyyaml
 - pip:
   - coverage>=4.0
   - pytest>=2.8
   - pytest-cov>=2.2
   - sh>=1.11
-
