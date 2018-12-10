@@ -23,7 +23,7 @@ from bokeh.models import (ColumnDataSource,
 from bokeh.models.widgets import Button, DataTable, TableColumn
 import bokeh.palettes
 
-from config import settings, cluster_methods_names, tooltips_scatter
+from config import settings, tooltips_scatter
 
 
 def dataframe_from_file(filename):
@@ -31,6 +31,19 @@ def dataframe_from_file(filename):
     df = pd.read_csv(filename, index_col=0).set_index('index')
     df['path'] = df['url'].apply(lambda x: join(dirname(filename), x))
     return df
+
+
+def source_from_dataframe(dataframe, settings, current_selection):
+    """"""
+    source = ColumnDataSource(dataframe)
+    cluster_methods_names = list(settings['cluster-methods'].keys())
+    selected_name = cluster_methods_names[current_selection]
+    selected_column_x = settings['cluster-methods'][selected_name][0]
+    selected_column_y = settings['cluster-methods'][selected_name][1]
+    # Create empty columns to put selected coordinate data into
+    source.add(dataframe[selected_column_x], name='TEMP_COLUMN_X')
+    source.add(dataframe[selected_column_y], name='TEMP_COLUMN_Y')
+    return source
 
 
 def imread(path):
@@ -78,7 +91,10 @@ def update_image_canvas_single(index, data, source):
     index, filename = (data[['info', 'path']]
                        .iloc[index])
     image = imread(filename)
-    source.data = {'image': [image], 'x': [0], 'y': [0], 'dx': [1], 'dy': [1]}
+    source.data = {'image': [image],
+                   'TEMP_COLUMN_X': [0],
+                   'TEMP_COLUMN_Y': [0],
+                   'dx': [1], 'dy': [1]}
 
 
 def update_image_canvas_multi(indices, data, source, max_images=25):
@@ -97,7 +113,7 @@ def update_image_canvas_multi(indices, data, source, max_images=25):
         image file for each image.
     source : ColumnDataSource
         The ``image_rgba`` data source. It must include the columns 'image',
-        'x', 'y', 'dx', 'dy'.
+        'TEMP_COLUMN_X', 'TEMP_COLUMN_Y', 'dx', 'dy'.
 
     Notes
     -----
@@ -121,8 +137,9 @@ def update_image_canvas_multi(indices, data, source, max_images=25):
     start_xs, start_ys = np.meshgrid(grid_points, grid_points, indexing='ij')
     n_rows = len(images)
     step_sizes = np.full(n_rows, step_size)
-    source.data = {'image': images, 'x': start_xs.ravel()[:n_rows],
-                   'y': start_ys.ravel()[:n_rows],
+    source.data = {'image': images,
+                   'TEMP_COLUMN_X': start_xs.ravel()[:n_rows],
+                   'TEMP_COLUMN_Y': start_ys.ravel()[:n_rows],
                    'dx': step_sizes, 'dy': step_sizes}
 
 
@@ -179,13 +196,14 @@ def embedding(source, glyph_size=1, color_column='group', tooltips_scatter=toolt
         for i, group in enumerate(group_names):
             group_filter = GroupFilter(column_name=color_column, group=group)
             view = CDSView(source=source, filters=[group_filter])
-            glyphs = embed.circle(x="x", y="y", source=source, view=view,
-                                  size=10, color=my_colors[i], legend=group)
+            glyphs = embed.circle(x="TEMP_COLUMN_X", y="TEMP_COLUMN_Y",
+                                  source=source, view=view, size=10,
+                                  color=my_colors[i], legend=group)
         embed.legend.location = "top_right"
         embed.legend.click_policy = "hide"
         embed.legend.background_fill_alpha = 0.5
     else:
-        embed.circle(source=source, x='x', y='y', size=glyph_size)
+        embed.circle(source=source, x='TEMP_COLUMN_X', y='TEMP_COLUMN_Y', size=glyph_size)
     return embed
 
 
@@ -206,7 +224,8 @@ def selected_images():
     selected_images : bokeh figure
     image_holder : data source to populate image figure
     """
-    image_holder = ColumnDataSource({'image': [], 'x': [], 'y': [],
+    image_holder = ColumnDataSource({'image': [],
+                                     'TEMP_COLUMN_X': [], 'TEMP_COLUMN_Y': [],
                                      'dx': [], 'dy': []})
     tools_sel = ['pan, box_zoom, wheel_zoom, reset']
     selected_images = figure(title='Selected images',
@@ -216,7 +235,8 @@ def selected_images():
                              tools=tools_sel,
                              active_drag='pan',
                              active_scroll='wheel_zoom')
-    selected_images.image_rgba('image', 'x', 'y', 'dx', 'dy', source=image_holder)
+    selected_images.image_rgba('image', 'TEMP_COLUMN_X', 'TEMP_COLUMN_Y',
+                               'dx', 'dy', source=image_holder)
     _remove_axes_spines(selected_images)
     return selected_images, image_holder
 
@@ -263,10 +283,11 @@ def update_table(indices, df, table):
     table.source.data = ColumnDataSource(filtered_df).data
 
 
-def switch_modes_button_group(settings):
+def switch_modes_button_group(settings, selected_button):
     """Create radio button group for switching between UMAP, tSNE, and PCA."""
     button_labels = list(settings['cluster-methods'].keys())
-    radio_button_group = RadioButtonGroup(labels=button_labels, active=0)
+    radio_button_group = RadioButtonGroup(labels=button_labels,
+                                          active=selected_button)
     return radio_button_group
 
 
@@ -283,8 +304,8 @@ def update_plot(source, button_dict, mode, settings):
     cluster_methods = settings['cluster-methods']
     x_source = cluster_methods[button_dict[mode]][0]
     y_source = cluster_methods[button_dict[mode]][1]
-    source.data['x'] = source.data[x_source]
-    source.data['y'] = source.data[y_source]
+    source.data['TEMP_COLUMN_X'] = source.data[x_source]
+    source.data['TEMP_COLUMN_Y'] = source.data[y_source]
     source.trigger("data", 0, 0)
 
 
@@ -312,13 +333,15 @@ def make_makedoc(filename, color_column=None):
     dataframe = dataframe_from_file(filename)
 
     def makedoc(doc):
-        source = ColumnDataSource(dataframe)
+        initial_selection = 0
+        source = source_from_dataframe(dataframe, settings,
+                                       current_selection=initial_selection)
         embed = embedding(source, glyph_size=10, color_column=color_column,
                           tooltips_scatter=tooltips_scatter)
         image_plot, image_holder = selected_images()
         table = empty_table(dataframe)
         controls = [button_save_table(table), button_print_page()]
-        radio_buttons = switch_modes_button_group(settings)
+        radio_buttons = switch_modes_button_group(settings, initial_selection)
         button_dict = button_reference(settings)
 
         def load_selected(attr, old, new):

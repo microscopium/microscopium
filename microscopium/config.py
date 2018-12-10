@@ -8,6 +8,7 @@ with open(settings_filename, "r") as f:
     settings = yaml.load(f)
 
 cluster_methods = settings['cluster-methods']
+cluster_methods_names = list(cluster_methods.keys())
 
 tooltip_columns = settings['tooltip-columns']
 tooltips_scatter = [tuple([column, '@' + column]) for column in tooltip_columns]
