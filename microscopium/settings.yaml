@@ -1,0 +1,20 @@
+cluster-methods:
+  UMAP:
+  - x.umap
+  - y.umap
+  tSNE:
+  - x.tsne
+  - y.tsne
+  PCA:
+  - x.pca
+  - y.pca
+color-columns:
+  categorical:
+  - group
+  numeric:
+  - x
+  - y
+tooltip-columns:
+  - index
+  - info
+  - url
