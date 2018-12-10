@@ -33,25 +33,6 @@ def dataframe_from_file(filename):
     return df
 
 
-def ensure_validity(dataframe, column_x, column_y):
-    """Remove rows with NaN values in column_x or column_y and return dataframe.
-
-    Parameters
-    ----------
-    dataframe : pandas dataframe
-    column_x : string name of column containing x-coordinates.
-    column_y : string name of column containing y-coordinates.
-
-    Returns
-    -------
-    valid_dataframe : dataframe with rows removed if column_x or column_y = NaN
-    """
-    valid_x = dataframe[column_x].notna()
-    valid_y = dataframe[column_y].notna()
-    valid_dataframe = dataframe[valid_x & valid_y]
-    return valid_dataframe
-
-
 def imread(path):
     """Read an image from disk while ensuring it has an alpha channel.
 
