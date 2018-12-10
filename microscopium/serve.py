@@ -28,7 +28,7 @@ from config import settings, tooltips_scatter
 
 def dataframe_from_file(filename):
     """Read in pandas dataframe from filename."""
-    df = pd.read_csv(filename, index_col=0).set_index('index')
+    df = pd.read_csv(filename, index_col=0)
     df['path'] = df['url'].apply(lambda x: join(dirname(filename), x))
     return df
 
@@ -137,10 +137,11 @@ def update_image_canvas_multi(indices, data, source, max_images=25):
     start_xs, start_ys = np.meshgrid(grid_points, grid_points, indexing='ij')
     n_rows = len(images)
     step_sizes = np.full(n_rows, step_size)
+    margin = 0.05 * step_size / 2
     source.data = {'image': images,
-                   'TEMP_COLUMN_X': start_xs.ravel()[:n_rows],
-                   'TEMP_COLUMN_Y': start_ys.ravel()[:n_rows],
-                   'dx': step_sizes, 'dy': step_sizes}
+                   'TEMP_COLUMN_X': start_xs.ravel()[:n_rows] + margin,
+                   'TEMP_COLUMN_Y': start_ys.ravel()[:n_rows] + margin,
+                   'dx': step_sizes * 0.95, 'dy': step_sizes * 0.95}
 
 
 def _dynamic_range(fig, range_padding=0.05, range_padding_units='percent'):
@@ -188,7 +189,8 @@ def embedding(source, glyph_size=1, color_column='group', tooltips_scatter=toolt
                    tools=tools_scatter,
                    active_drag="box_select",
                    active_scroll='wheel_zoom',
-                   tooltips=tooltips_scatter)
+                   tooltips=tooltips_scatter,
+                   output_backend='webgl')
     embed = _dynamic_range(embed)
     if color_column in source.data:
         group_names = pd.Series(source.data[color_column]).unique()
@@ -309,6 +311,13 @@ def update_plot(source, button_dict, mode, settings):
     source.trigger("data", 0, 0)
 
 
+def reset_plot_axes(plot, x_start=0, x_end=1, y_start=0, y_end=1):
+    plot.x_range.start = x_start
+    plot.x_range.end = x_end
+    plot.y_range.start = y_start
+    plot.y_range.end = y_end
+
+
 def make_makedoc(filename, color_column=None):
     """Make the makedoc function required by Bokeh Server.
 
@@ -354,6 +363,7 @@ def make_makedoc(filename, color_column=None):
             elif len(new) > 1:
                 update_image_canvas_multi(new, data=dataframe,
                                           source=image_holder)
+            reset_plot_axes(image_plot)  # effectively resets zoom level
             update_table(new, dataframe, table)
 
         def new_scatter(attr, old, new):
