@@ -23,17 +23,33 @@ from bokeh.models import (ColumnDataSource,
 from bokeh.models.widgets import Button, DataTable, TableColumn
 import bokeh.palettes
 
+from config import settings, cluster_methods_names, tooltips_scatter
+
 
 def dataframe_from_file(filename):
     """Read in pandas dataframe from filename."""
     df = pd.read_csv(filename, index_col=0).set_index('index')
     df['path'] = df['url'].apply(lambda x: join(dirname(filename), x))
-    valid_x = df['x.tsne'].notna()
-    valid_y = df['y.tsne'].notna()
-    df = df[valid_x & valid_y]
-    df['x'] = df['x.tsne']
-    df['y'] = df['y.tsne']
     return df
+
+
+def ensure_validity(dataframe, column_x, column_y):
+    """Remove rows with NaN values in column_x or column_y and return dataframe.
+
+    Parameters
+    ----------
+    dataframe : pandas dataframe
+    column_x : string name of column containing x-coordinates.
+    column_y : string name of column containing y-coordinates.
+
+    Returns
+    -------
+    valid_dataframe : dataframe with rows removed if column_x or column_y = NaN
+    """
+    valid_x = dataframe[column_x].notna()
+    valid_y = dataframe[column_y].notna()
+    valid_dataframe = dataframe[valid_x & valid_y]
+    return valid_dataframe
 
 
 def imread(path):
@@ -153,7 +169,7 @@ def _palette(num, type='categorical'):
         return bokeh.palettes.viridis(num)
 
 
-def embedding(source, glyph_size=1, color_column='group'):
+def embedding(source, glyph_size=1, color_column='group', tooltips_scatter=tooltips_scatter):
     """Display a 2-dimensional embedding of the images.
 
     Parameters
@@ -168,11 +184,6 @@ def embedding(source, glyph_size=1, color_column='group'):
     embed : bokeh figure
         Scatterplot of precomputed x/y coordinates result
     """
-    tooltips_scatter = [
-        ("index", "$index"),
-        ("info", "@info"),
-        ("url", "@url")
-    ]
     tools_scatter = ['pan, box_select, poly_select, wheel_zoom, reset, tap']
     embed = figure(title='Embedding',
                    sizing_mode='scale_both',
@@ -271,17 +282,26 @@ def update_table(indices, df, table):
     table.source.data = ColumnDataSource(filtered_df).data
 
 
-def switch_modes_button_group():
+def switch_modes_button_group(settings):
     """Create radio button group for switching between UMAP, tSNE, and PCA."""
-    radio_button_group = RadioButtonGroup(
-        labels=["tSNE", "UMAP", "PCA"], active=0)
+    button_labels = list(settings['cluster-methods'].keys())
+    radio_button_group = RadioButtonGroup(labels=button_labels, active=0)
     return radio_button_group
 
 
-def update_plot(source, button_dict, mode):
+def button_reference(settings):
+    """Create dictionary to map toggle button index to meaningful names."""
+    button_reference = {}
+    for num, name in enumerate(list(settings['cluster-methods'].keys())):
+        button_reference[num] = name
+    return button_reference
+
+
+def update_plot(source, button_dict, mode, settings):
     """Update source of image embedding scatterplot."""
-    x_source = "x." + button_dict[mode]
-    y_source = "y." + button_dict[mode]
+    cluster_methods = settings['cluster-methods']
+    x_source = cluster_methods[button_dict[mode]][0]
+    y_source = cluster_methods[button_dict[mode]][1]
     source.data['x'] = source.data[x_source]
     source.data['y'] = source.data[y_source]
     source.trigger("data", 0, 0)
@@ -312,12 +332,13 @@ def make_makedoc(filename, color_column=None):
 
     def makedoc(doc):
         source = ColumnDataSource(dataframe)
-        embed = embedding(source, glyph_size=10, color_column=color_column)
+        embed = embedding(source, glyph_size=10, color_column=color_column,
+                          tooltips_scatter=tooltips_scatter)
         image_plot, image_holder = selected_images()
         table = empty_table(dataframe)
         controls = [button_save_table(table), button_print_page()]
-        radio_buttons = switch_modes_button_group()
-        button_reference = {0:"tsne", 1:"umap", 2:"pca"}
+        radio_buttons = switch_modes_button_group(settings)
+        button_dict = button_reference(settings)
 
         def load_selected(attr, old, new):
             """Update images and table to display selected data."""
@@ -333,7 +354,7 @@ def make_makedoc(filename, color_column=None):
 
         def new_scatter(attr, old, new):
             mode = radio_buttons.active
-            update_plot(source, button_reference, mode)
+            update_plot(source, button_dict, mode, settings)
 
         source.selected.on_change('indices', load_selected)
         radio_buttons.on_change('active', new_scatter)
