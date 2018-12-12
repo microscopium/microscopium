@@ -366,7 +366,7 @@ def make_makedoc(filename, settings_filename):
             update_table(new, dataframe, table)
 
         def new_embedding(attr, old, new):
-            embedding = radio_buttons.active
+            embedding = list(settings['embeddings'])[radio_buttons.active]
             update_embedding(source, embedding, settings)
 
         source.selected.on_change('indices', load_selected)
