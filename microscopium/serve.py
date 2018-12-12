@@ -1,5 +1,6 @@
 """This module runs the bokeh server."""
 
+import os
 from os.path import dirname, join
 from math import ceil, sqrt
 from collections import namedtuple
@@ -23,7 +24,7 @@ from bokeh.models import (ColumnDataSource,
 from bokeh.models.widgets import Button, DataTable, TableColumn
 import bokeh.palettes
 
-from config import settings, tooltips_scatter
+from .config import load_config, get_tooltips
 
 
 def dataframe_from_file(filename):
@@ -33,16 +34,24 @@ def dataframe_from_file(filename):
     return df
 
 
+def prepare_xy(source, settings):
+    default_embedding = settings['embeddings']['default']
+    embedding_x = settings['embeddings'][default_embedding]['x']
+    embedding_y = settings['embeddings'][default_embedding]['y']
+    source.add(source.data[embedding_x], name='x')
+    source.add(source.data[embedding_y], name='y')
+
+
 def source_from_dataframe(dataframe, settings, current_selection):
     """"""
     source = ColumnDataSource(dataframe)
-    cluster_methods_names = list(settings['cluster-methods'].keys())
-    selected_name = cluster_methods_names[current_selection]
-    selected_column_x = settings['cluster-methods'][selected_name][0]
-    selected_column_y = settings['cluster-methods'][selected_name][1]
+    embeddings_names = list(settings['embeddings'].keys())
+    selected_name = embeddings_names[current_selection]
+    selected_column_x = settings['embeddings'][selected_name][0]
+    selected_column_y = settings['embeddings'][selected_name][1]
     # Create empty columns to put selected coordinate data into
-    source.add(dataframe[selected_column_x], name='TEMP_COLUMN_X')
-    source.add(dataframe[selected_column_y], name='TEMP_COLUMN_Y')
+    source.add(dataframe[selected_column_x], name='x')
+    source.add(dataframe[selected_column_y], name='y')
     return source
 
 
@@ -91,10 +100,7 @@ def update_image_canvas_single(index, data, source):
     index, filename = (data[['info', 'path']]
                        .iloc[index])
     image = imread(filename)
-    source.data = {'image': [image],
-                   'TEMP_COLUMN_X': [0],
-                   'TEMP_COLUMN_Y': [0],
-                   'dx': [1], 'dy': [1]}
+    source.data = {'image': [image], 'x': [0], 'y': [0], 'dx': [1], 'dy': [1]}
 
 
 def update_image_canvas_multi(indices, data, source, max_images=25):
@@ -113,7 +119,7 @@ def update_image_canvas_multi(indices, data, source, max_images=25):
         image file for each image.
     source : ColumnDataSource
         The ``image_rgba`` data source. It must include the columns 'image',
-        'TEMP_COLUMN_X', 'TEMP_COLUMN_Y', 'dx', 'dy'.
+        'x', 'y', 'dx', 'dy'.
 
     Notes
     -----
@@ -139,8 +145,8 @@ def update_image_canvas_multi(indices, data, source, max_images=25):
     step_sizes = np.full(n_rows, step_size)
     margin = 0.05 * step_size / 2
     source.data = {'image': images,
-                   'TEMP_COLUMN_X': start_xs.ravel()[:n_rows] + margin,
-                   'TEMP_COLUMN_Y': start_ys.ravel()[:n_rows] + margin,
+                   'x': start_xs.ravel()[:n_rows] + margin,
+                   'y': start_ys.ravel()[:n_rows] + margin,
                    'dx': step_sizes * 0.95, 'dy': step_sizes * 0.95}
 
 
@@ -168,44 +174,44 @@ def _palette(num, type='categorical'):
         return bokeh.palettes.viridis(num)
 
 
-def embedding(source, glyph_size=1, color_column='group', tooltips_scatter=tooltips_scatter):
+def embedding(source, settings):
     """Display a 2-dimensional embedding of the images.
 
     Parameters
     ----------
     source : ColumnDataSource
-    glyph_size : size of scatter points, optional
-    color_column : str
-        Name of column in `source` to represent with color
+    settings : dictionary
 
     Returns
     -------
     embed : bokeh figure
         Scatterplot of precomputed x/y coordinates result
     """
+    glyph_size = settings['plots']['glyph_size']
     tools_scatter = ['pan, box_select, poly_select, wheel_zoom, reset, tap']
     embed = figure(title='Embedding',
                    sizing_mode='scale_both',
                    tools=tools_scatter,
                    active_drag="box_select",
                    active_scroll='wheel_zoom',
-                   tooltips=tooltips_scatter,
+                   tooltips=get_tooltips(settings),
                    output_backend='webgl')
     embed = _dynamic_range(embed)
+    color_column = settings['color-columns']['categorical'][0]
     if color_column in source.data:
         group_names = pd.Series(source.data[color_column]).unique()
         my_colors = _palette(len(group_names))
         for i, group in enumerate(group_names):
             group_filter = GroupFilter(column_name=color_column, group=group)
             view = CDSView(source=source, filters=[group_filter])
-            glyphs = embed.circle(x="TEMP_COLUMN_X", y="TEMP_COLUMN_Y",
+            glyphs = embed.circle(x="x", y="y",
                                   source=source, view=view, size=10,
                                   color=my_colors[i], legend=group)
         embed.legend.location = "top_right"
         embed.legend.click_policy = "hide"
         embed.legend.background_fill_alpha = 0.5
     else:
-        embed.circle(source=source, x='TEMP_COLUMN_X', y='TEMP_COLUMN_Y', size=glyph_size)
+        embed.circle(source=source, x='x', y='y', size=glyph_size)
     return embed
 
 
@@ -227,7 +233,7 @@ def selected_images():
     image_holder : data source to populate image figure
     """
     image_holder = ColumnDataSource({'image': [],
-                                     'TEMP_COLUMN_X': [], 'TEMP_COLUMN_Y': [],
+                                     'x': [], 'y': [],
                                      'dx': [], 'dy': []})
     tools_sel = ['pan, box_zoom, wheel_zoom, reset']
     selected_images = figure(title='Selected images',
@@ -237,8 +243,8 @@ def selected_images():
                              tools=tools_sel,
                              active_drag='pan',
                              active_scroll='wheel_zoom')
-    selected_images.image_rgba('image', 'TEMP_COLUMN_X', 'TEMP_COLUMN_Y',
-                               'dx', 'dy', source=image_holder)
+    selected_images.image_rgba('image', 'x', 'y', 'dx', 'dy',
+                               source=image_holder)
     _remove_axes_spines(selected_images)
     return selected_images, image_holder
 
@@ -285,29 +291,23 @@ def update_table(indices, df, table):
     table.source.data = ColumnDataSource(filtered_df).data
 
 
-def switch_modes_button_group(settings, selected_button):
+def switch_embeddings_button_group(settings):
     """Create radio button group for switching between UMAP, tSNE, and PCA."""
-    button_labels = list(settings['cluster-methods'].keys())
+    button_labels = list(settings['embeddings'].keys())
+    default_embedding = settings['embeddings']['default']
+    default_embedding_idx = button_labels.index(default_embedding)
     radio_button_group = RadioButtonGroup(labels=button_labels,
-                                          active=selected_button)
+                                          active=default_embedding_idx)
     return radio_button_group
 
 
-def button_reference(settings):
-    """Create dictionary to map toggle button index to meaningful names."""
-    button_reference = {}
-    for num, name in enumerate(list(settings['cluster-methods'].keys())):
-        button_reference[num] = name
-    return button_reference
-
-
-def update_plot(source, button_dict, mode, settings):
+def update_embedding(source, embedding, settings):
     """Update source of image embedding scatterplot."""
-    cluster_methods = settings['cluster-methods']
-    x_source = cluster_methods[button_dict[mode]][0]
-    y_source = cluster_methods[button_dict[mode]][1]
-    source.data['TEMP_COLUMN_X'] = source.data[x_source]
-    source.data['TEMP_COLUMN_Y'] = source.data[y_source]
+    embeddings = settings['embeddings']
+    x_source = embeddings[embedding]['x']
+    y_source = embeddings[embedding]['y']
+    source.data['x'] = source.data[x_source]
+    source.data['y'] = source.data[y_source]
     source.trigger("data", 0, 0)
 
 
@@ -318,7 +318,7 @@ def reset_plot_axes(plot, x_start=0, x_end=1, y_start=0, y_end=1):
     plot.y_range.end = y_end
 
 
-def make_makedoc(filename, color_column=None):
+def make_makedoc(filename, settings_filename):
     """Make the makedoc function required by Bokeh Server.
 
     To run a Bokeh server, we need to create a function that takes in a Bokeh
@@ -331,8 +331,8 @@ def make_makedoc(filename, color_column=None):
     ----------
     filename : string
         A CSV file containing the data for the app.
-    color_column : string, optional
-        Which column in the CSV to use to color points in the embedding.
+    settings_filename: string
+        Path to a yaml file 
 
     Returns
     -------
@@ -340,18 +340,16 @@ def make_makedoc(filename, color_column=None):
         A makedoc function as expected by ``FunctionHandler``.
     """
     dataframe = dataframe_from_file(filename)
+    settings = load_config(settings_filename)
 
     def makedoc(doc):
-        initial_selection = 0
-        source = source_from_dataframe(dataframe, settings,
-                                       current_selection=initial_selection)
-        embed = embedding(source, glyph_size=10, color_column=color_column,
-                          tooltips_scatter=tooltips_scatter)
+        source = ColumnDataSource(dataframe)
+        prepare_xy(source, settings)  # get the default embedding columns
+        embed = embedding(source, settings)
         image_plot, image_holder = selected_images()
         table = empty_table(dataframe)
         controls = [button_save_table(table), button_print_page()]
-        radio_buttons = switch_modes_button_group(settings, initial_selection)
-        button_dict = button_reference(settings)
+        radio_buttons = switch_embeddings_button_group(settings)
 
         def load_selected(attr, old, new):
             """Update images and table to display selected data."""
@@ -366,12 +364,12 @@ def make_makedoc(filename, color_column=None):
             reset_plot_axes(image_plot)  # effectively resets zoom level
             update_table(new, dataframe, table)
 
-        def new_scatter(attr, old, new):
-            mode = radio_buttons.active
-            update_plot(source, button_dict, mode, settings)
+        def new_embedding(attr, old, new):
+            embedding = radio_buttons.active
+            update_embedding(source, embedding, settings)
 
         source.selected.on_change('indices', load_selected)
-        radio_buttons.on_change('active', new_scatter)
+        radio_buttons.on_change('active', new_embedding)
 
         page_content = layout([
             radio_buttons,
@@ -385,14 +383,25 @@ def make_makedoc(filename, color_column=None):
     return makedoc
 
 
+def default_config(filename):
+    d = os.path.dirname(filename)
+    return os.path.join(d, 'settings.yaml')
+
+
 @click.command()
 @click.argument('filename')
+@click.option('-c', '--config', default=None)
 @click.option('-p', '--path', default='/')
 @click.option('-P', '--port', type=int, default=5000)
-@click.option('-c', '--color-column', default='group')
-def run_server(filename, path='/', port=5000, color_column='group'):
+def run_server_cmd(filename, config=None, path='/', port=5000):
+    run_server(filename, config=config, path=path, port=port)
+
+
+def run_server(filename, config=None, path='/', port=5000):
     """Run the bokeh server."""
-    makedoc = make_makedoc(filename, color_column=color_column)
+    if config is None:
+        config = default_config(filename)
+    makedoc = make_makedoc(filename, config)
     apps = {path: Application(FunctionHandler(makedoc))}
 
     server = Server(apps, port=port, allow_websocket_origin=['*'])
@@ -400,4 +409,4 @@ def run_server(filename, path='/', port=5000, color_column='group'):
 
 
 if __name__ == '__main__':
-    run_server()
+    run_server_cmd()

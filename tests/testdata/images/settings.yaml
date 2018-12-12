@@ -1,0 +1,21 @@
+embeddings:
+  UMAP:
+    x: x.umap
+    y: y.umap
+  tSNE:
+    x: x.tsne
+    y: y.tsne
+  PCA:
+    x: x.pca
+    y: y.pca
+  default: tSNE
+color-columns:
+  categorical:
+    - group
+  numeric:
+    - z
+tooltip-columns:
+  - index
+  - url
+plots:
+  glyph_size: 10
