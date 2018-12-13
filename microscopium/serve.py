@@ -24,7 +24,7 @@ from bokeh.models import (ColumnDataSource,
 from bokeh.models.widgets import Button, DataTable, TableColumn
 import bokeh.palettes
 
-from microscopium.config import load_config, get_tooltips
+from .config import load_config, get_tooltips
 
 
 def dataframe_from_file(filename):
