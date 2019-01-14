@@ -58,15 +58,38 @@ pip install [-e] .
 ```
 
 ### Serving the web app
+
 Supported browsers are Chrome and Firefox. However we have observed that performance is much better on Chrome.
 (Unfortunately, we do not currently support Safari or Internet Explorer.)
 
-To run the web app locally:
+Your data needs to have the following format:
+
+- a collection of image files (can be in a directory, or in a nested directory
+  structure)
+- a `.csv` file containing, at a minimum, the x/y coordinates of each image,
+  and the path to the image in the directory. The path should be relative to
+  the location of the `.csv` file.
+- a `.yaml` file containing settings. At a minimum, it should contain an
+  `embeddings` field with maps from `<embedding name>` to column names for `x`
+  and `y`, as well as `image-column` containing the name of the column
+  containing the path to each image. If you don't want to specify the settings
+  file path, place `settings.yaml` next to the `.csv` file. Microscopium will
+  look here by default.
+
+For example data, see:
+
+- `tests/testdata/images/*.png`
+- `tests/testdata/images/data.csv`
+- `tests/testdata/images/settings.yaml`
+
+To run the web app locally, try:
 
 `python -m microscopium.serve tests/testdata/images/data.csv`
 
 You should then be able to see the app in your web browser at:
 http://localhost:5000
+
+You can specify a port number with `-P`.
 
 `python -m microscopium.serve tests/testdata/images/data.csv -P 5001`
 
