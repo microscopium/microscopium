@@ -27,10 +27,10 @@ import bokeh.palettes
 from .config import load_config, get_tooltips
 
 
-def dataframe_from_file(filename):
+def dataframe_from_file(filename, image_column='url'):
     """Read in pandas dataframe from filename."""
     df = pd.read_csv(filename, index_col=0)
-    df['path'] = df['url'].apply(lambda x: join(dirname(filename), x))
+    df['path'] = df[image_column].apply(lambda x: join(dirname(filename), x))
     return df
 
 
@@ -97,8 +97,7 @@ def update_image_canvas_single(index, data, source):
         The ``image_rgba`` data source. It must include the columns 'image',
         'x', 'y', 'dx', 'dy'.
     """
-    index, filename = (data[['info', 'path']]
-                       .iloc[index])
+    filename = data['path'].iloc[index]
     image = imread(filename)
     source.data = {'image': [image], 'x': [0], 'y': [0], 'dx': [1], 'dy': [1]}
 
@@ -340,8 +339,9 @@ def make_makedoc(filename, settings_filename):
     makedoc : function
         A makedoc function as expected by ``FunctionHandler``.
     """
-    dataframe = dataframe_from_file(filename)
     settings = load_config(settings_filename)
+    dataframe = dataframe_from_file(filename,
+                                    image_column=settings['image-column'])
 
     def makedoc(doc):
         source = ColumnDataSource(dataframe)

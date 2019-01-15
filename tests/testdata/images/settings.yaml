@@ -14,6 +14,8 @@ color-columns:
     - group
   numeric:
     - z
+image-column:
+  url
 tooltip-columns:
   - index
   - url
