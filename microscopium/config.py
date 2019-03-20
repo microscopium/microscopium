@@ -5,7 +5,7 @@ import yaml
 
 def load_config(yaml_filename):
     with open(yaml_filename, "r") as f:
-        settings = yaml.load(f)
+        settings = yaml.safe_load(f)
     return settings
 
 
