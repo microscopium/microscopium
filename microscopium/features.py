@@ -6,6 +6,7 @@ from scipy import sparse
 from skimage import morphology as skmorph
 from skimage import filters as imfilter, measure, util
 from skimage.feature import greycomatrix, greycoprops
+from skimage.util import img_as_int
 from sklearn.neighbors import NearestNeighbors
 from six.moves import range
 import cytoolz as tz
@@ -218,7 +219,7 @@ def object_features(bin_im, im, erode=2, sample_size=None, random_seed=None):
 
 
 def haralick_features(im, prop_names=None, distances=[5], angles=[0],
-                      levels=None, symmetric=False, normed=False):
+                      levels=256, symmetric=False, normed=False):
     """Compute Haralick texture features of a grayscale image.
 
     Parameters
@@ -264,6 +265,9 @@ def haralick_features(im, prop_names=None, distances=[5], angles=[0],
     .. [1] The GLCM Tutorial Home Page,
            http://www.fp.ucalgary.ca/mhallbey/tutorial.htm
     """
+    if np.issubdtype(im.dtype, np.floating):
+        im = img_as_int(im)
+
     available_prop_names = ['contrast',
                             'dissimilarity',
                             'homogeneity',

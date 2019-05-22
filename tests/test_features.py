@@ -1,15 +1,17 @@
 import numpy as np
 import pytest
+from skimage.util import img_as_int, img_as_float
 
 from microscopium import features
 
 
-@pytest.fixture(scope="module", params=[np.uint8, np.float])
+@pytest.fixture(scope="module", params=[img_as_int, img_as_float])
 def haralick_image(request):
     haralick_image = np.array([[0, 0, 1, 1],
                                [0, 0, 1, 1],
                                [0, 2, 2, 2],
-                               [2, 2, 3, 3]]).astype(request.param)
+                               [2, 2, 3, 3]])
+    haralick_image = request.param(haralick_image)
     return haralick_image
 
 
