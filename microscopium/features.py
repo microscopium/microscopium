@@ -218,7 +218,7 @@ def object_features(bin_im, im, erode=2, sample_size=None, random_seed=None):
     return fs, names
 
 
-def haralick_features(im, prop_names=None, distances=[5], angles=[0],
+def haralick_features(im, prop_names=None, distances=[2, 4, 8], angles=np.arange(8) * np.pi/4,
                       levels=256, symmetric=False, normed=False):
     """Compute Haralick texture features of a grayscale image.
 
