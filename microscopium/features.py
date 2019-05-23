@@ -227,7 +227,7 @@ def haralick_features(im, prop_names=None, distances=[5], angles=[0],
     im : 2D np.ndarray of float or uint8.
         The input image.
     prop_names : list of strings, optional
-        Texture properties of a gray level co-occurance matrix.
+        Texture properties of a gray level co-occurence matrix.
         By default prop_names=None, which means all properties are computed.
         Available texture properties include: 'contrast', 'dissimilarity',
         'homogeneity', 'ASM', 'energy', and 'correlation'.
