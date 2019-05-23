@@ -5,6 +5,8 @@ from scipy import ndimage as nd
 from scipy import sparse
 from skimage import morphology as skmorph
 from skimage import filters as imfilter, measure, util
+from skimage.feature import greycomatrix, greycoprops
+from skimage.util import img_as_int
 from sklearn.neighbors import NearestNeighbors
 from six.moves import range
 import cytoolz as tz
@@ -95,10 +97,10 @@ def nearest_neighbors(lab_im, n=3, quantiles=[0.05, 0.25, 0.5, 0.75, 0.95]):
     """
     if lab_im.dtype == bool:
         lab_im = nd.label(lab_im)[0]
-    centroids = np.array([p.centroid
-                          for p in measure.regionprops(lab_im, coordinates='rc')])
-    nbrs = (NearestNeighbors(n_neighbors=(n + 1), algorithm='kd_tree').
-                         fit(centroids))
+    centroids = np.array(
+        [p.centroid for p in measure.regionprops(lab_im, coordinates='rc')])
+    nbrs = (NearestNeighbors(
+        n_neighbors=(n + 1), algorithm='kd_tree').fit(centroids))
     distances, indices = nbrs.kneighbors(centroids)
     angles = triplet_angles(centroids, indices[:, :3])
     # ignore order/orientation of vectors, only measure acute angles
@@ -214,6 +216,82 @@ def object_features(bin_im, im, erode=2, sample_size=None, random_seed=None):
              ['%s-percentile%i' % (prop, int(q * 100))
               for prop, q in it.product(prop_names, quantiles)])
     return fs, names
+
+
+def haralick_features(im, prop_names=None, distances=[2, 4, 8], angles=np.arange(8) * np.pi/4,
+                      levels=256, symmetric=False, normed=False):
+    """Compute Haralick texture features of a grayscale image.
+
+    Parameters
+    ----------
+    im : 2D np.ndarray of float or uint8.
+        The input image.
+    prop_names : list of strings, optional
+        Texture properties of a gray level co-occurence matrix.
+        By default prop_names=None, which means all properties are computed.
+        Available texture properties include: 'contrast', 'dissimilarity',
+        'homogeneity', 'ASM', 'energy', and 'correlation'.
+    distances : array_like, optional
+        List of pixel pair distance offsets, used for grey covariance matrix.
+    angles : array_like, optional
+        List of pixel pair angles in radians, used for grey covariance matrix.
+    levels : int, optional
+        The input image should contain integers in [0, levels-1],
+        where levels indicate the number of grey-levels counted
+        (typically 256 for an 8-bit image).
+        This argument is required for 16-bit images or higher and is typically
+        the maximum of the image. As the output matrix is at least
+        levels x levels, it might be preferable to use binning of the
+        input image rather than large values for levels.
+    symmetric : bool, optional
+        If True, the output matrix P[:, :, d, theta] is symmetric.
+        This is accomplished by ignoring the order of value pairs,
+        so both (i, j) and (j, i) are accumulated when (i, j)
+        is encountered for a given offset. The default is False.
+    normed : bool, optional
+        If True, normalize each matrix P[:, :, d, theta] by dividing by
+        the total number of accumulated co-occurrences for the given offset.
+        The elements of the resulting matrix sum to 1. The default is False.
+
+    Returns
+    -------
+    fs : 1D np.ndarray of float
+        The feature vector.
+    names : list of string
+        The list of feature names.
+
+    References
+    ----------
+    .. [1] The GLCM Tutorial Home Page,
+           http://www.fp.ucalgary.ca/mhallbey/tutorial.htm
+    """
+    if np.issubdtype(im.dtype, np.floating):
+        im = img_as_int(im)
+
+    available_prop_names = ['contrast',
+                            'dissimilarity',
+                            'homogeneity',
+                            'ASM',
+                            'energy',
+                            'correlation']
+    if prop_names is None:
+        prop_names = available_prop_names
+    else:  # do not allow invalid input in prop_names
+        prop_names = [prop for prop in prop_names
+                      if prop.lower() in map(str.lower, available_prop_names)]
+    glcm = greycomatrix(im, distances=distances, angles=angles,
+                        levels=levels, symmetric=symmetric, normed=normed)
+    fs = []
+    names = []
+    for prop in prop_names:
+        texture_properties = greycoprops(glcm, prop)
+        for dist, theta in it.product(distances, angles):
+            name = 'haralick-%s-distance%d-angle%d' % (prop, dist, theta)
+            names.append(name)
+            fs.append(texture_properties[distances.index(dist),
+                                         angles.index(theta)])
+
+    return np.array(fs), names
 
 
 def fraction_positive(bin_im, positive_im, erode=2, overlap_thresh=0.9,
