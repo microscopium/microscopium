@@ -1,0 +1,50 @@
+global:
+  # where to put the output file
+  output-dir: ''
+# The first phase is a feature computation from images specified in a csv file.
+# Input csv files should have one row per input image and minimally three
+# columns:
+#   - an *index* column containing a unique identifier for each image.
+#   - a *url* column containing the path to each image (can be absolute or
+#     relative to the csv file path).
+#   - a *replicate* column containing an identifier for each replicate, meaning
+#     images having received identical treatment.
+#   - optionally, *group* columns containing arbitrary groupings of samples.
+#     These will be used to color points in the plot and produce an interactive
+#     legend, so there should not be too many categories in any group.
+feature-computation:
+  source-table:
+    # column type : column name in dataset csv
+    index: index
+    path: url
+    replicates: reps
+    groups:
+      - group
+  feature-function:
+    function:
+      microscopium.feature.default_feature_map
+    kwargs:
+      random_seed : 0
+embeddings:
+  UMAP:
+    class: 
+    x: x.umap
+    y: y.umap
+  tSNE:
+    x: x.tsne
+    y: y.tsne
+  PCA:
+    x: x.pca
+    y: y.pca
+  default: tSNE
+color-columns:
+  categorical:
+    - group
+  numeric: []
+image-column:
+  url
+tooltip-columns:
+  - index
+  - url
+plots:
+  glyph_size: 10
