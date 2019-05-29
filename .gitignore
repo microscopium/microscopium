@@ -41,4 +41,5 @@ nosetests.xml
 *.iml
 
 # Data directories
+data/
 notes/
