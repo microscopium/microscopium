@@ -26,14 +26,21 @@ feature-computation:
     kwargs:
       random_seed : 0
 embeddings:
+  # Features produced by feature computation can be reduced to 2D for display
+  # as a scatter-plot. This is done with the below classes, which must follow
+  # the scikit-learn unsupervised `fit`/`fit_transform` API. The 0th component
+  # will map to x, and the 1st to y, and both will be placed in the
+  # corresponding column in the output.
   UMAP:
-    class: 
+    class: umap.UMAP
     x: x.umap
     y: y.umap
   tSNE:
+    class: sklearn.manifold.TSNE
     x: x.tsne
     y: y.tsne
   PCA:
+    class: sklearn.decomposition.PCA
     x: x.pca
     y: y.pca
   default: tSNE
