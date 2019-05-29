@@ -1,5 +1,12 @@
 global:
-  # where to put the output file
+  # where to put the output file. The rules applied to this setting are:
+  #  - if it's an empty string, put it in a sister directory to the input data.
+  #  - if it's a *relative* path, the path is relative to the parent directory
+  #    of the input data. e.g. if your file is in
+  #    /home/user/data/screen/screen.csv, then the output directory will be in
+  #    /home/user/data/{output-dir}.
+  #  - if it's an *absolute* path, any intermediate directories will be created
+  #    and the output will be placed exactly where specified.
   output-dir: ''
 # The first phase is a feature computation from images specified in a csv file.
 # Input csv files should have one row per input image and minimally three
