@@ -19,7 +19,7 @@ before_install:
     - source activate mic-test || {
         conda create -q -n mic-test python=$TRAVIS_PYTHON_VERSION;
         source activate mic-test;}
-    - conda install numpy scipy pillow scikit-learn scikit-image toolz cytoolz pandas setuptools pip matplotlib six h5py
+    - conda install numpy scipy pillow scikit-learn scikit-image toolz cytoolz pandas setuptools pip matplotlib h5py
 
     - pip install pytest coverage pytest-cov sh
     - pip install coveralls
