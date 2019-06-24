@@ -1,4 +1,4 @@
-import toolz as tz
+from collections import defaultdict
 from itertools import combinations
 import numpy as np
 from scipy.spatial.distance import pdist
@@ -72,7 +72,9 @@ def gene_distance_score(X, collection, metric='euclidean'):
     ----------
     X : Data frame, shape (n_samples, n_features)
         Feature data frame.
-
+    collection : list of dict
+        A key-value-like store mapping well-plate indices (in ``'_id'``) to
+        various other attributes of that sample.
     metric : string, optional
         Which distance measure to use when calculating distances.
         Must be one of the options allowable in
@@ -88,7 +90,9 @@ def gene_distance_score(X, collection, metric='euclidean'):
         between samples with different gene knocked down).
 
     """
-    gene_dict = tz.group_by(collection, 'gene_name')
+    gene_dict = defaultdict(list)
+    for doc in collection:
+        gene_dict[doc['gene_name']].append(doc['_id'])
     nsamples = X.shape[0]
     npairs = int(nsamples * (nsamples - 1) / 2)
 
