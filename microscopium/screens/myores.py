@@ -5,7 +5,6 @@ import os
 import collections as coll
 
 import numpy as np
-from scipy import ndimage as nd
 
 from .. import features
 
@@ -147,7 +146,7 @@ def filename2coord(fn):
 
 
 def filename2id(fn):
-    """Get a mongo ID, string representation of (plate, well), from filename.
+    """Get a string representation of (plate, well), from filename.
 
     Parameters
     ----------
@@ -157,7 +156,7 @@ def filename2id(fn):
     Returns
     -------
     id_ : string
-        The mongo ID.
+        The string ID.
 
     Examples
     --------
@@ -166,7 +165,7 @@ def filename2id(fn):
     >>> filename2id(fn)
     '2490688-C04'
     """
-    id_ = key2mongo(filename2coord(fn))
+    id_ = '-'.join(map(str, filename2coord(fn)))
     return id_
 
 
@@ -335,97 +334,6 @@ def make_gene2files_dict(gene2wells, well2file):
     for gene, wells in gene2wells.items():
         gene2files[gene] = [well2file(well) for well in wells]
     return gene2files
-
-
-def key2mongo(tup):
-    """Return a string given an (int, string) plate-well key.
-
-    Parameters
-    ----------
-    tup : (int, string) tuple
-        A (plate, well) identifier.
-
-    Returns
-    -------
-    mongo_id : string
-        A string, suitable for representing a mongodb _id field.
-
-    Examples
-    --------
-    >>> tup = (2490688, 'C04')
-    >>> key2mongo(tup)
-    '2490688-C04'
-    """
-    return str(tup[0]) + '-' + tup[1]
-
-
-def mongo2key(mongo_id):
-    """Return an (int, string) plate-well key, given its string.
-
-    Parameters
-    ----------
-    mongo_id : string
-        A string representing a plate-well key, separated by a dash.
-
-    Returns
-    -------
-    tup : (int, string) tuple
-        The plate-well representation.
-
-    Examples
-    --------
-    >>> mongo_id = "2490688-C04"
-    >>> mongo2key(mongo_id)
-    (2490688, 'C04')
-    """
-    tup = mongo_id.split('-')
-    tup[0] = int(tup[0])
-    return tuple(tup)
-
-
-def populate_db(gene_table_filename, image_filenames, db="myores",
-                coll_name="wells", host='localhost', port=27017):
-    """Populate a MongoDB database with gene entries from the screen.
-
-    Parameters
-    ----------
-    gene_table_filename : string
-        The file containing the mapping of genes to plates and wells.
-    image_filenames : list of string
-        The filenames of images in the screen.
-    db : string, optional
-        The name of the database in the MongoDB server.
-    coll_name : string, optional
-        The name of the collection within the database to hold the
-        gene data.
-    host : string, optional
-        The server hosting the MongoDB daemon.
-    port : int, optional
-        The port on which to access the MongoDB daemon.
-    """
-    key2doc = {}
-    for filename in image_filenames:
-        sem = myores_semantic_filename(filename)
-        key = (sem['plate'], sem['well'])
-        key2doc[key] = {'filename': filename, '_id': key2mongo(key)}
-    with open(gene_table_filename, 'r') as fin:
-        column_names = fin.readline().rstrip().split(',')
-        idx_plate = column_names.index('cell_plate_barcode')
-        idx_well = column_names.index('well')
-        for line in fin:
-            line = line.rstrip().split(',')
-            line[idx_plate] = int(line[idx_plate])
-            key = (line[idx_plate], line[idx_well])
-            doc = dict(zip(column_names, line))
-            if key in key2doc:
-                key2doc[key].update(doc)
-            else:
-                key2doc[key] = doc
-                key2doc[key]['_id'] = key2mongo(key)
-    from pymongo import MongoClient
-    collection = MongoClient(host, port)[db][coll_name]
-    for doc in key2doc.values():
-        collection.save(doc)
 
 
 if __name__ == '__main__':
