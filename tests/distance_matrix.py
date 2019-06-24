@@ -17,7 +17,7 @@ def euclidean_distance(a, b):
     return sqrt(sum((a-b)**2 for a, b in zip(a, b)))
 
 test_data = pd.read_csv(os.path.join(abspath, 'testdata/data_test.csv'),
-                        index_col=0, converters={0: string2tuple})
+                        index_col=0)
 
 distance_matrix = np.zeros((8, 8))
 
