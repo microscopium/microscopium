@@ -1,3 +1,4 @@
+import toolz as tz
 from itertools import combinations
 import numpy as np
 from scipy.spatial.distance import pdist
@@ -63,53 +64,6 @@ def sq_to_dist(i, j, n):
     index = i * n + j - i * (i + 1) / 2 - i - 1
     return int(index)
 
-def mongo_group_by(collection, group_by):
-    """
-    Group MongoDB collection according to specified field.
-
-    Sends aggregate query to MongoDB collection to group
-    all documents by a given field and returns dictionary
-    mapping the field to the corresponding (plate, well)
-    co-ordinate(s).
-
-    Parameters
-    ----------
-    collection : pymongo collection
-        Pymongo object directing to collection.
-    group_by : string
-        Field to group collection by.
-    Returns
-    -------
-    query_dict : dict { string : list of tuple }
-        Query dictionary mapping the specified group_by field to a list of
-        (plate, well) co-ordinates.
-    """
-    mongo_query = collection.aggregate([{
-            '$group' : {
-                # groups all documents according to specified field
-                '_id': '$' + group_by,
-                'coords': {
-                    '$addToSet': {
-                        # add plate and well for each document
-                        # belonging to the group
-                        'plate': '$plate',
-                        'well': '$well'
-                    }
-                }
-            }
-    }])
-
-    query_dict = {}
-    for doc in mongo_query:
-        query_dict[doc['_id']] = []
-        for coord in doc['coords']:
-            try:
-                new_coord = (int(coord['plate']), str(coord['well']))
-                query_dict[doc['_id']].append(new_coord)
-            except KeyError:
-                pass
-    return query_dict
-
 
 def gene_distance_score(X, collection, metric='euclidean'):
     """Find intra/inter gene distance scores between samples.
@@ -134,7 +88,7 @@ def gene_distance_score(X, collection, metric='euclidean'):
         between samples with different gene knocked down).
 
     """
-    gene_dict = mongo_group_by(collection, 'gene_name')
+    gene_dict = tz.group_by(collection, 'gene_name')
     nsamples = X.shape[0]
     npairs = int(nsamples * (nsamples - 1) / 2)
 
