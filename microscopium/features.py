@@ -346,7 +346,7 @@ def fraction_positive(bin_im, positive_im, erode=2, overlap_thresh=0.9,
     lab_im = nd.label(bin_im)[0].ravel()
     pos_im = positive_im.ravel().astype(int)
     counts = sparse.coo_matrix((np.ones(lab_im.size),
-                                (lab_im, pos_im))).todense()
+                                (lab_im, pos_im))).toarray()
     means = counts[:, 1] / np.sum(counts, axis=1)
     f = np.array([np.mean(means[1:] > overlap_thresh)])
     name = ['frac-%s-pos-%s-erode-%i-thresh-%.2f' %
