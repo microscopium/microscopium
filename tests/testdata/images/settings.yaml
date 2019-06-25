@@ -11,7 +11,7 @@ embeddings:
   default: tSNE
 color-columns:
   categorical:
-    - group
+    - gene
   numeric:
     - z
 image-column:
