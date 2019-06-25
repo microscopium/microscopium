@@ -19,19 +19,15 @@ before_install:
     - source activate mic-test || {
         conda create -q -n mic-test python=$TRAVIS_PYTHON_VERSION;
         source activate mic-test;}
-    - conda install numpy scipy pillow scikit-learn scikit-image toolz cytoolz pandas setuptools pip pymongo matplotlib six h5py
+    - conda install numpy scipy pillow scikit-learn scikit-image toolz cytoolz pandas setuptools pip matplotlib h5py
 
     - pip install pytest coverage pytest-cov sh
     - pip install coveralls
 
-before_script:
-    - sleep 15
-    - mongo mydb_test --eval 'db.createUser({user:"travis",pwd:"test",roles:["readWrite"]});'
-
 script:
     - python setup.py develop
     - python -c "from numpy import zeros; x = zeros(5); print(x.dtype)"
-    - py.test
+    - pytest
 
 after_success:
     - if [[ $TRAVIS_PYTHON_VERSION == 3.6 ]]; then coveralls; fi
@@ -49,6 +45,3 @@ cache:
     directories:
         - $HOME/miniconda
         - $HOME/.matplotlib
-
-services:
-    mongodb

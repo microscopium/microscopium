@@ -4,12 +4,10 @@ click
 bokeh>=1.0.0
 scikit-learn
 scikit-image
-six
 toolz
 cytoolz
 h5py
 ujson
-pymongo
 pandas
 pytest
 sh

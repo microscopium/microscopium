@@ -4,11 +4,10 @@ from scipy.stats.mstats import mquantiles
 from scipy import ndimage as nd
 from scipy import sparse
 from skimage import morphology as skmorph
-from skimage import filters as imfilter, measure, util
+from skimage import filters as filters, measure, util
 from skimage.feature import greycomatrix, greycoprops
 from skimage.util import img_as_int
 from sklearn.neighbors import NearestNeighbors
-from six.moves import range
 import cytoolz as tz
 from ._util import normalise_random_state
 
@@ -149,11 +148,11 @@ def intensity_object_features(im, threshold=None, adaptive_t_radius=51,
         The list of feature names.
     """
     if threshold is None:
-        tim1 = im > imfilter.threshold_otsu(im)
+        tim1 = im > filters.threshold_otsu(im)
         f1, names1 = object_features(tim1, im, sample_size=sample_size,
                                      random_seed=random_seed)
         names1 = ['otsu-threshold-' + name for name in names1]
-        tim2 = im > imfilter.threshold_local(im, adaptive_t_radius)
+        tim2 = im > filters.threshold_local(im, adaptive_t_radius)
         f2, names2 = object_features(tim2, im, sample_size=sample_size,
                                      random_seed=random_seed)
         names2 = ['adaptive-threshold-' + name for name in names2]
@@ -347,7 +346,7 @@ def fraction_positive(bin_im, positive_im, erode=2, overlap_thresh=0.9,
     lab_im = nd.label(bin_im)[0].ravel()
     pos_im = positive_im.ravel().astype(int)
     counts = sparse.coo_matrix((np.ones(lab_im.size),
-                                (lab_im, pos_im))).todense()
+                                (lab_im, pos_im))).toarray()
     means = counts[:, 1] / np.sum(counts, axis=1)
     f = np.array([np.mean(means[1:] > overlap_thresh)])
     name = ['frac-%s-pos-%s-erode-%i-thresh-%.2f' %

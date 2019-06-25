@@ -1,4 +1,5 @@
 name: mic
+channels: conda-forge
 dependencies:
 - python>=3.6*
 - click
@@ -10,17 +11,14 @@ dependencies:
 - pandas
 - bokeh>=1.0.0
 - pip
-- pymongo=3*
 - scikit-image
 - scikit-learn
 - scipy
 - setuptools
-- six
 - toolz
 - imageio
 - pyyaml
-- pip:
-  - coverage>=4.0
-  - pytest>=2.8
-  - pytest-cov>=2.2
-  - sh>=1.11
+- coverage>=4.0
+- pytest>=2.8
+- pytest-cov>=2.2
+- sh>=1.11

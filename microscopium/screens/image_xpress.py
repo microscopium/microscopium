@@ -74,28 +74,26 @@ def filename2coord(fn):
 
 
 def filename2id(fn):
-    """Get a mongo ID, string representation of (plate, well), from filename.
+    """Get a string representation of (plate, well), from filename.
 
     Parameters
     ----------
     fn : string
-        Filename of a standard Image Xpress screen image. This must include
-        the directory with plate number.
+        Filename of a standard Cellomics screen image.
 
     Returns
     -------
     id_ : string
-        The mongo ID.
-
+        The string ID.
     Examples
     --------
-    >>> fn = "./Week4_27481/Week1_22123/G10_s2_w11C3B9BCC-"\
-    "E48F-4C2F-9D31-8F46D8B5B972.tif"
+    >>> fn = ("./Week4_27481/Week1_22123/G10_s2_w11C3B9BCC-"
+    ...       "E48F-4C2F-9D31-8F46D8B5B972.tif")
     >>> filename2id(fn)
     '22123-G10'
     """
-    from .myores import key2mongo
-    id_ = key2mongo(filename2coord(fn))
+    id_ = '-'.join(map(str, filename2coord(fn)))
     return id_
+
 
 feature_map = feat.default_feature_map

@@ -43,3 +43,5 @@ nosetests.xml
 # Data directories
 data/
 notes/
+
+.pytest_cache/
