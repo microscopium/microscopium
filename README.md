@@ -84,7 +84,7 @@ For example data, see:
 
 To run the web app locally, try:
 
-`python -m microscopium.serve tests/testdata/images/data.csv`
+`python -m microscopium.serve tests/testdata/images/data.csv -c tests/testdata/images/settings.yaml`
 
 You should then be able to see the app in your web browser at:
 http://localhost:5000
