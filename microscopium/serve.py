@@ -407,8 +407,8 @@ def run_server(filename, config=None, path='/', port=5000,
         config = default_config(filename)
     makedoc = make_makedoc(filename, config)
     apps = {path: Application(FunctionHandler(makedoc))}
-    print('Web app now available at {}:{}'.format(url, port))
     server = Server(apps, port=port, allow_websocket_origin=['*'])
+    print('Web app now available at {}:{}'.format(url, port))
     server.run_until_shutdown()
 
 
