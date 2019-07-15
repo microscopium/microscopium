@@ -204,7 +204,7 @@ def embedding(source, settings):
             group_filter = GroupFilter(column_name=color_column, group=group)
             view = CDSView(source=source, filters=[group_filter])
             glyphs = embed.circle(x="x", y="y",
-                                  source=source, view=view, size=10,
+                                  source=source, view=view, size=glyph_size,
                                   color=my_colors[i], legend=group)
         embed.legend.location = "top_right"
         embed.legend.click_policy = "hide"
