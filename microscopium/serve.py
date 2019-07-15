@@ -394,17 +394,20 @@ def default_config(filename):
 @click.option('-c', '--config', default=None)
 @click.option('-p', '--path', default='/')
 @click.option('-P', '--port', type=int, default=5000)
-def run_server_cmd(filename, config=None, path='/', port=5000):
+@click.option('-u', '--url', default='http://localhost')
+def run_server_cmd(filename, config=None, path='/', port=5000,
+                   url='http://localhost'):
     run_server(filename, config=config, path=path, port=port)
 
 
-def run_server(filename, config=None, path='/', port=5000):
+def run_server(filename, config=None, path='/', port=5000,
+               url='http://localhost'):
     """Run the bokeh server."""
     if config is None:
         config = default_config(filename)
     makedoc = make_makedoc(filename, config)
     apps = {path: Application(FunctionHandler(makedoc))}
-
+    print('Web app now available at {}:{}'.format(url, port))
     server = Server(apps, port=port, allow_websocket_origin=['*'])
     server.run_until_shutdown()
 
