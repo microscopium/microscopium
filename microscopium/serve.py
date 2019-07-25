@@ -397,7 +397,7 @@ def default_config(filename):
 @click.option('-u', '--url', default='http://localhost')
 def run_server_cmd(filename, config=None, path='/', port=5000,
                    url='http://localhost'):
-    run_server(filename, config=config, path=path, port=port)
+    run_server(filename, config=config, path=path, port=port, url=url)
 
 
 def run_server(filename, config=None, path='/', port=5000,
