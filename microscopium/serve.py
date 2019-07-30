@@ -3,7 +3,6 @@
 import os
 from os.path import dirname, join
 from math import ceil, sqrt
-from collections import namedtuple
 
 import click
 from skimage import io
