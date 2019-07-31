@@ -3,7 +3,6 @@
 import os
 from os.path import dirname, join
 from math import ceil, sqrt
-from collections import namedtuple
 
 import click
 from skimage import io
@@ -23,14 +22,26 @@ from bokeh.models import (ColumnDataSource,
                           RadioButtonGroup)
 from bokeh.models.widgets import Button, DataTable, TableColumn
 import bokeh.palettes
+from tornado import web
 
 from .config import load_config, get_tooltips
+
+
+# created with https://gist.github.com/alexmill/d71b67ed84fd0150db2c
+# and the code:
+# from the My First Pixel Art (TM) School of Design
+# dotdotdot = np.full((7, 7, 4), 255, dtype=np.uint8)
+# dotdotdot[3, 1::2, :3] = 0
+B64DOT = (
+    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAcAAAAHCAYAAADEUlfTAAA'
+    'AHklEQVR42mP8////fwYcgIkBDyAsycjIyICVpo2dAHlfCA5LYYapAAAAAElFTkSuQmCC'
+)
 
 
 def dataframe_from_file(filename, image_column='url'):
     """Read in pandas dataframe from filename."""
     df = pd.read_csv(filename, index_col=0)
-    df['path'] = df[image_column].apply(lambda x: join(dirname(filename), x))
+    df['path'] = df[image_column].apply(lambda x: join('images/', x))
     return df
 
 
@@ -98,8 +109,7 @@ def update_image_canvas_single(index, data, source):
         'x', 'y', 'dx', 'dy'.
     """
     filename = data['path'].iloc[index]
-    image = imread(filename)
-    source.data = {'image': [image], 'x': [0], 'y': [0], 'dx': [1], 'dy': [1]}
+    source.data = {'image': [filename], 'x': [0], 'y': [0], 'dx': [1], 'dy': [1]}
 
 
 def update_image_canvas_multi(indices, data, source, max_images=25):
@@ -130,12 +140,9 @@ def update_image_canvas_multi(indices, data, source, max_images=25):
     filenames = data['path'].iloc[indices]
     if n_images > max_images:
         filenames = filenames[:max_images - 1]
-    images = [imread(fn) for fn in filenames]
+    images = filenames
     if n_images > max_images:
-        # from the My First Pixel Art (TM) School of Design
-        dotdotdot = np.full((7, 7, 4), 255, dtype=np.uint8)
-        dotdotdot[3, 1::2, :3] = 0
-        images.append(dotdotdot)
+        images.append(B64DOT)
     sidelen = ceil(sqrt(min(n_images, max_images)))
     step_size = 1 / sidelen
     grid_points = np.arange(0, 1 - step_size/2, step_size)
@@ -242,8 +249,9 @@ def selected_images():
                              tools=tools_sel,
                              active_drag='pan',
                              active_scroll='wheel_zoom')
-    selected_images.image_rgba('image', 'x', 'y', 'dx', 'dy',
-                               source=image_holder)
+    selected_images.image_url('image', 'x', 'y', 'dx', 'dy',
+                              source=image_holder,
+                              anchor='bottom_left')
     _remove_axes_spines(selected_images)
     return selected_images, image_holder
 
@@ -408,7 +416,12 @@ def run_server(filename, config=None, path='/', port=5000,
     makedoc = make_makedoc(filename, config)
     apps = {path: Application(FunctionHandler(makedoc))}
     server = Server(apps, port=port, allow_websocket_origin=['*'])
+    server.start()
     print('Web app now available at {}:{}'.format(url, port))
+    handlers = [(path + r'images/(.*)',
+                 web.StaticFileHandler,
+                 {'path': os.path.dirname(filename)})]
+    server._tornado.add_handlers(r".*", handlers)
     server.run_until_shutdown()
 
 
