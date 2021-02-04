@@ -4,7 +4,6 @@ click
 bokeh>=1.0.0
 scikit-learn
 scikit-image
-toolz
 cytoolz
 h5py
 ujson
