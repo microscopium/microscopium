@@ -298,7 +298,7 @@ def empty_table(df):
 def update_table(indices, df, table):
     """Update table values to show only the currently selected data."""
     filtered_df = df.iloc[indices]
-    table.source.data = ColumnDataSource(filtered_df).data
+    table.source.data = dict(ColumnDataSource(filtered_df).data)
 
 
 def switch_embeddings_button_group(settings):
