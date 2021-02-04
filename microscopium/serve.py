@@ -14,18 +14,19 @@ from bokeh.application import Application
 from bokeh.application.handlers.function import FunctionHandler
 from bokeh.plotting import figure
 from bokeh.layouts import widgetbox, layout
-from bokeh.models import (ColumnDataSource,
+from bokeh.models import (Button,
+                          ColumnDataSource,
                           CustomJS,
                           CDSView,
                           GroupFilter,
                           Legend,
                           RadioButtonGroup)
-from bokeh.models.widgets import Button, DataTable, TableColumn
+from bokeh.events import ButtonClick
+from bokeh.models.widgets import DataTable, TableColumn
 import bokeh.palettes
 from tornado import web
 
 from .config import load_config, get_tooltips
-
 
 # created with https://gist.github.com/alexmill/d71b67ed84fd0150db2c
 # and the code:
@@ -109,7 +110,8 @@ def update_image_canvas_single(index, data, source):
         'x', 'y', 'dx', 'dy'.
     """
     filename = data['path'].iloc[index]
-    source.data = {'image': [filename], 'x': [0], 'y': [0], 'dx': [1], 'dy': [1]}
+    source.data = {'image': [filename], 'x': [
+        0], 'y': [0], 'dx': [1], 'dy': [1]}
 
 
 def update_image_canvas_multi(indices, data, source, max_images=25):
@@ -212,7 +214,7 @@ def embedding(source, settings):
             view = CDSView(source=source, filters=[group_filter])
             glyphs = embed.circle(x="x", y="y",
                                   source=source, view=view, size=glyph_size,
-                                  color=my_colors[i], legend=group)
+                                  color=my_colors[i], legend_label=group)
         embed.legend.location = "top_right"
         embed.legend.click_policy = "hide"
         embed.legend.background_fill_alpha = 0.5
@@ -266,9 +268,10 @@ def button_save_table(table):
     * Available styles: 'default', 'primary', 'success', 'warning', 'danger'
     """
     button = Button(label="Download selected data", button_type="success")
-    button.callback = CustomJS(args=dict(source=table.source),
-                               code=open(join(dirname(__file__),
-                                              "js/download_data.js")).read())
+    button.js_on_event(ButtonClick,
+                       CustomJS(args=dict(source=table.source),
+                                code=open(join(dirname(__file__), "js/download_data.js")).read()))
+
     return widgetbox(button)
 
 
@@ -280,7 +283,7 @@ def button_print_page():
     * Available styles: 'default', 'primary', 'success', 'warning', 'danger'
     """
     button = Button(label="Print this page", button_type="success")
-    button.callback = CustomJS(code="""print()""")
+    button.js_on_event(ButtonClick, CustomJS(code="""print()"""))
     return widgetbox(button)
 
 
@@ -340,7 +343,7 @@ def make_makedoc(filename, settings_filename):
     filename : string
         A CSV file containing the data for the app.
     settings_filename: string
-        Path to a yaml file 
+        Path to a yaml file
 
     Returns
     -------
@@ -385,7 +388,7 @@ def make_makedoc(filename, settings_filename):
             [embed, image_plot],
             controls,
             [table]
-            ], sizing_mode="scale_width")
+        ], sizing_mode="scale_width")
         doc.title = 'Bokeh microscopium app'
         doc.add_root(page_content)
     print('ready!')
