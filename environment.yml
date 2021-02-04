@@ -10,7 +10,7 @@ dependencies:
   - networkx
   - numpy
   - pandas
-  - bokeh==1.*
+  - bokeh==2.*
   - pip
   - scikit-image
   - scikit-learn
