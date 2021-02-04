@@ -7,7 +7,6 @@ dependencies:
   - cytoolz
   - h5py
   - matplotlib
-  - networkx
   - numpy
   - pandas
   - bokeh==2.*
