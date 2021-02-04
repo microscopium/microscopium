@@ -6,7 +6,6 @@ dependencies:
   - click
   - cytoolz
   - h5py
-  - matplotlib
   - numpy
   - pandas
   - bokeh==2.*
