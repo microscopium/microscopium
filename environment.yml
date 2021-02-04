@@ -6,17 +6,14 @@ dependencies:
   - click
   - cytoolz
   - h5py
-  - matplotlib
-  - networkx
   - numpy
   - pandas
-  - bokeh==1.*
+  - bokeh==2.*
   - pip
   - scikit-image
   - scikit-learn
   - scipy
   - setuptools
-  - toolz
   - imageio
   - pyyaml
   - coverage>=4.0

@@ -1,10 +1,9 @@
 numpy
 scipy
 click
-bokeh>=1.0.0
+bokeh==2.*
 scikit-learn
 scikit-image
-toolz
 cytoolz
 h5py
 ujson
