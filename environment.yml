@@ -1,24 +1,25 @@
 name: mic
-channels: conda-forge
+channels:
+  - conda-forge
 dependencies:
-- python>=3.6*
-- click
-- cytoolz
-- h5py
-- matplotlib
-- networkx
-- numpy
-- pandas
-- bokeh>=1.0.0
-- pip
-- scikit-image
-- scikit-learn
-- scipy
-- setuptools
-- toolz
-- imageio
-- pyyaml
-- coverage>=4.0
-- pytest>=2.8
-- pytest-cov>=2.2
-- sh>=1.11
+  - python>=3.6*
+  - click
+  - cytoolz
+  - h5py
+  - matplotlib
+  - networkx
+  - numpy
+  - pandas
+  - bokeh>=1.0.0
+  - pip
+  - scikit-image
+  - scikit-learn
+  - scipy
+  - setuptools
+  - toolz
+  - imageio
+  - pyyaml
+  - coverage>=4.0
+  - pytest>=2.8
+  - pytest-cov>=2.2
+  - sh>=1.11
