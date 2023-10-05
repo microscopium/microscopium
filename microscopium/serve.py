@@ -304,8 +304,8 @@ def update_table(indices, df, table):
 def switch_embeddings_button_group(settings):
     """Create radio button group for switching between UMAP, tSNE, and PCA."""
     default_embedding = settings['embeddings']['default']
-    del settings['embeddings']['default']
     button_labels = list(settings['embeddings'].keys())
+    button_labels.remove('default')
     default_embedding_idx = button_labels.index(default_embedding)
     radio_button_group = RadioButtonGroup(labels=button_labels,
                                           active=default_embedding_idx)
