@@ -29,6 +29,7 @@ if __name__ == '__main__':
         author_email=MAINTAINER_EMAIL,
         license=LICENSE,
         packages=['microscopium', 'microscopium.screens'],
+        package_data={'microscopium': ['data/default-settings.yaml']},
         install_requires=INST_DEPENDENCIES,
         scripts=["bin/mic"]
     )
